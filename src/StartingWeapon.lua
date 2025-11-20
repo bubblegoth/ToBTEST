@@ -6,6 +6,7 @@
 ]]
 
 local WeaponGenerator = require(script.Parent.WeaponGenerator)
+local WeaponToolBuilder = require(script.Parent.WeaponToolBuilder)
 
 local StartingWeapon = {}
 
@@ -44,12 +45,15 @@ end
 -- GIVE STARTING WEAPON TO PLAYER
 -- ============================================================
 
-function StartingWeapon.GiveToPlayer(playerStats)
+function StartingWeapon.GiveToPlayer(player, playerStats)
 	-- Generate starting weapon
 	local weapon = StartingWeapon.Generate()
 
 	-- Add to player inventory
 	playerStats:AddWeapon(weapon)
+
+	-- Give player the actual Tool (auto-equip starting weapon)
+	WeaponToolBuilder:GiveWeaponToPlayer(player, weapon, true)
 
 	return weapon
 end
@@ -78,9 +82,9 @@ end
 -- HANDLE FLOOR ENTRY
 -- ============================================================
 
-function StartingWeapon.OnFloorEntry(playerStats, enteringFloor)
+function StartingWeapon.OnFloorEntry(player, playerStats, enteringFloor)
 	if StartingWeapon.ShouldReceiveStartingWeapon(playerStats, enteringFloor) then
-		local weapon = StartingWeapon.GiveToPlayer(playerStats)
+		local weapon = StartingWeapon.GiveToPlayer(player, playerStats)
 
 		return true, weapon
 	end

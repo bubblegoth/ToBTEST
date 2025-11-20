@@ -1,0 +1,216 @@
+--[[
+	WeaponToolBuilder.lua
+	Converts weapon data into functional Roblox Tools
+	Integrates WeaponModelBuilder for 3D visuals
+	Gothic FPS Roguelite - Weapon System Integration
+]]
+
+local WeaponToolBuilder = {}
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local WeaponModelBuilder = require(script.Parent.WeaponModelBuilder)
+
+-- ============================================================
+-- TOOL CREATION
+-- ============================================================
+
+function WeaponToolBuilder:CreateWeaponTool(weaponData)
+	local tool = Instance.new("Tool")
+	tool.Name = weaponData.Name
+	tool.RequiresHandle = true
+	tool.CanBeDropped = true
+	tool.ToolTip = string.format("[Lv.%d %s] %s", weaponData.Level, weaponData.Rarity, weaponData.Parts.Base.Name)
+
+	-- Grip settings for proper weapon positioning
+	tool.GripPos = Vector3.new(0, -0.2, 0.5)
+	tool.GripForward = Vector3.new(0, 0, -1)
+	tool.GripRight = Vector3.new(1, 0, 0)
+	tool.GripUp = Vector3.new(0, 1, 0)
+
+	-- Build 3D weapon model
+	local weaponModel = WeaponModelBuilder:BuildWeapon(weaponData)
+
+	-- Use the primary part (body receiver) as the handle
+	local handle = weaponModel.PrimaryPart:Clone()
+	handle.Name = "Handle"
+	handle.Parent = tool
+
+	-- Clone all other parts and weld them to handle
+	for _, part in pairs(weaponModel:GetDescendants()) do
+		if part:IsA("BasePart") and part ~= weaponModel.PrimaryPart then
+			local partClone = part:Clone()
+			partClone.Parent = tool
+
+			-- Recreate welds
+			if part:FindFirstChild("WeldConstraint") then
+				local weld = Instance.new("WeldConstraint")
+				weld.Part0 = handle
+				weld.Part1 = partClone
+				weld.Parent = partClone
+			end
+		end
+	end
+
+	-- Clean up temporary model
+	weaponModel:Destroy()
+
+	-- ============================================================
+	-- STORE WEAPON DATA AS ATTRIBUTES
+	-- ============================================================
+
+	-- Identity
+	tool:SetAttribute("WeaponType", weaponData.Parts.Base.Name)
+	tool:SetAttribute("Rarity", weaponData.Rarity)
+	tool:SetAttribute("Level", weaponData.Level)
+	tool:SetAttribute("Manufacturer", weaponData.Manufacturer)
+	tool:SetAttribute("UniqueID", game:GetService("HttpService"):GenerateGUID(false))
+
+	-- Core stats
+	tool:SetAttribute("Damage", weaponData.Damage)
+	tool:SetAttribute("FireRate", weaponData.FireRate)
+	tool:SetAttribute("Capacity", weaponData.Capacity)
+	tool:SetAttribute("Accuracy", weaponData.Accuracy)
+	tool:SetAttribute("Range", weaponData.Range)
+	tool:SetAttribute("ReloadTime", weaponData.ReloadTime)
+	tool:SetAttribute("Pellets", weaponData.Pellets)
+	tool:SetAttribute("DPS", weaponData.DPS)
+
+	-- Critical stats
+	if weaponData.CritChance and weaponData.CritChance > 0 then
+		tool:SetAttribute("CritChance", weaponData.CritChance)
+	end
+	if weaponData.CritDamage and weaponData.CritDamage > 0 then
+		tool:SetAttribute("CritDamage", weaponData.CritDamage)
+	end
+
+	-- Special stats
+	if weaponData.SoulGain and weaponData.SoulGain > 0 then
+		tool:SetAttribute("SoulGain", weaponData.SoulGain)
+	end
+	if weaponData.KillHeal and weaponData.KillHeal > 0 then
+		tool:SetAttribute("KillHeal", weaponData.KillHeal)
+	end
+
+	-- Elemental damage
+	if weaponData.FireDamage and weaponData.FireDamage > 0 then
+		tool:SetAttribute("FireDamage", weaponData.FireDamage)
+	end
+	if weaponData.FrostDamage and weaponData.FrostDamage > 0 then
+		tool:SetAttribute("FrostDamage", weaponData.FrostDamage)
+	end
+	if weaponData.ShadowDamage and weaponData.ShadowDamage > 0 then
+		tool:SetAttribute("ShadowDamage", weaponData.ShadowDamage)
+	end
+	if weaponData.LightDamage and weaponData.LightDamage > 0 then
+		tool:SetAttribute("LightDamage", weaponData.LightDamage)
+	end
+	if weaponData.VoidDamage and weaponData.VoidDamage > 0 then
+		tool:SetAttribute("VoidDamage", weaponData.VoidDamage)
+	end
+
+	-- Status effects
+	if weaponData.BurnChance and weaponData.BurnChance > 0 then
+		tool:SetAttribute("BurnChance", weaponData.BurnChance)
+	end
+	if weaponData.SlowChance and weaponData.SlowChance > 0 then
+		tool:SetAttribute("SlowChance", weaponData.SlowChance)
+	end
+	if weaponData.ChainEffect and weaponData.ChainEffect > 0 then
+		tool:SetAttribute("ChainEffect", weaponData.ChainEffect)
+	end
+
+	-- Store part names for UI display
+	if weaponData.Parts then
+		tool:SetAttribute("Part_Stock", weaponData.Parts.Stock.Name)
+		tool:SetAttribute("Part_Body", weaponData.Parts.Body.Name)
+		tool:SetAttribute("Part_Barrel", weaponData.Parts.Barrel.Name)
+		tool:SetAttribute("Part_Magazine", weaponData.Parts.Magazine.Name)
+		tool:SetAttribute("Part_Sight", weaponData.Parts.Sight.Name)
+		tool:SetAttribute("Part_Accessory", weaponData.Parts.Accessory.Name)
+		tool:SetAttribute("Part_Manufacturer", weaponData.Parts.Manufacturer.Name)
+	end
+
+	-- Store full weapon data as JSON (for detailed inspection)
+	local HttpService = game:GetService("HttpService")
+	local weaponDataCopy = {
+		Name = weaponData.Name,
+		Level = weaponData.Level,
+		Rarity = weaponData.Rarity,
+		Manufacturer = weaponData.Manufacturer,
+		Damage = weaponData.Damage,
+		DPS = weaponData.DPS,
+		FireRate = weaponData.FireRate,
+		Capacity = weaponData.Capacity,
+		Accuracy = weaponData.Accuracy,
+		Range = weaponData.Range,
+		ReloadTime = weaponData.ReloadTime
+	}
+	tool:SetAttribute("WeaponDataJSON", HttpService:JSONEncode(weaponDataCopy))
+
+	return tool
+end
+
+-- ============================================================
+-- GIVE WEAPON TO PLAYER
+-- ============================================================
+
+function WeaponToolBuilder:GiveWeaponToPlayer(player, weaponData, autoEquip)
+	local tool = self:CreateWeaponTool(weaponData)
+
+	local backpack = player:FindFirstChild("Backpack")
+	if not backpack then
+		warn("[WeaponToolBuilder] No backpack found for", player.Name)
+		tool:Destroy()
+		return false
+	end
+
+	tool.Parent = backpack
+
+	-- Auto-equip if requested
+	if autoEquip then
+		local character = player.Character
+		local humanoid = character and character:FindFirstChild("Humanoid")
+		if humanoid then
+			task.wait(0.1) -- Small delay for tool to register
+			humanoid:EquipTool(tool)
+		end
+	end
+
+	print(string.format("[WeaponToolBuilder] Gave %s to %s", weaponData.Name, player.Name))
+	return true
+end
+
+-- ============================================================
+-- UTILITY FUNCTIONS
+-- ============================================================
+
+function WeaponToolBuilder:GetWeaponDataFromTool(tool)
+	if not tool:IsA("Tool") then return nil end
+
+	local weaponData = {
+		Name = tool.Name,
+		Level = tool:GetAttribute("Level"),
+		Rarity = tool:GetAttribute("Rarity"),
+		WeaponType = tool:GetAttribute("WeaponType"),
+		Manufacturer = tool:GetAttribute("Manufacturer"),
+		Damage = tool:GetAttribute("Damage"),
+		FireRate = tool:GetAttribute("FireRate"),
+		Capacity = tool:GetAttribute("Capacity"),
+		Accuracy = tool:GetAttribute("Accuracy"),
+		Range = tool:GetAttribute("Range"),
+		ReloadTime = tool:GetAttribute("ReloadTime"),
+		Pellets = tool:GetAttribute("Pellets"),
+		DPS = tool:GetAttribute("DPS"),
+		CritChance = tool:GetAttribute("CritChance") or 0,
+		CritDamage = tool:GetAttribute("CritDamage") or 0,
+		SoulGain = tool:GetAttribute("SoulGain") or 0,
+	}
+
+	return weaponData
+end
+
+function WeaponToolBuilder:IsWeaponTool(tool)
+	return tool:IsA("Tool") and tool:GetAttribute("UniqueID") ~= nil
+end
+
+return WeaponToolBuilder

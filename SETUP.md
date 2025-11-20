@@ -14,6 +14,7 @@ ReplicatedStorage/
     ├── WeaponConfig.lua
     ├── WeaponParts.lua (ENHANCED - All parts in one file)
     ├── WeaponModelBuilder.lua (NEW - Builds 3D weapon models)
+    ├── WeaponToolBuilder.lua (NEW - Creates functional weapon Tools)
     ├── ModularLootGen.lua (NEW - Visual weapon drops)
     ├── Combat.lua (NEW - Damage & combat system)
     ├── DungeonConfig.lua
@@ -57,6 +58,7 @@ Workspace/
    - WeaponConfig.lua
    - WeaponParts.lua (ENHANCED)
    - WeaponModelBuilder.lua (NEW)
+   - WeaponToolBuilder.lua (NEW)
    - ModularLootGen.lua (NEW)
    - Combat.lua (NEW)
    - DungeonConfig.lua

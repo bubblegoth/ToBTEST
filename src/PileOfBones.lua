@@ -89,7 +89,7 @@ local function teleportToDungeon(player)
 		end
 
 		-- Give starting weapon using StartingWeapon module
-		local receivedWeapon, weapon = StartingWeapon.OnFloorEntry(playerStats, 1)
+		local receivedWeapon, weapon = StartingWeapon.OnFloorEntry(player, playerStats, 1)
 
 		if receivedWeapon then
 			print(string.format("[PileOfBones] %s received starting weapon: %s", player.Name, weapon.Name))

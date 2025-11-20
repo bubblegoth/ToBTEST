@@ -12,6 +12,7 @@ local Debris = game:GetService("Debris")
 
 local WeaponGenerator = require(script.Parent.WeaponGenerator)
 local WeaponModelBuilder = require(script.Parent.WeaponModelBuilder)
+local WeaponToolBuilder = require(script.Parent.WeaponToolBuilder)
 
 -- ============================================================
 -- WEAPON LOOT SPAWNING
@@ -181,6 +182,12 @@ function ModularLootGen:PickupWeapon(player, lootDrop, weaponData)
 		print(string.format("[ModularLootGen] Added %s to %s's inventory", weaponData.Name, player.Name))
 	else
 		warn("[ModularLootGen] PlayerStats not found for", player.Name)
+	end
+
+	-- Give player the actual Tool
+	local success = WeaponToolBuilder:GiveWeaponToPlayer(player, weaponData, false)
+	if success then
+		print(string.format("[ModularLootGen] Gave Tool to %s", player.Name))
 	end
 
 	-- Play pickup sound
