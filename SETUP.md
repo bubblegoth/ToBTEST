@@ -21,6 +21,7 @@ ReplicatedStorage/
     ├── DungeonConfig.lua
     ├── DungeonGenerator.lua
     ├── DungeonInstanceManager.lua
+    ├── MazeDungeonGenerator.lua (NEW - Builds 3D dungeon geometry)
     ├── EnemySystem.lua
     ├── LootDropper.lua (UPDATED - Now uses ModularLootGen)
     ├── PlayerStats.lua
@@ -71,6 +72,7 @@ Workspace/
    - DungeonConfig.lua
    - DungeonGenerator.lua
    - DungeonInstanceManager.lua
+   - MazeDungeonGenerator.lua (NEW)
    - EnemySystem.lua
    - LootDropper.lua (UPDATED)
    - PlayerStats.lua
@@ -162,6 +164,9 @@ This game uses **per-player instanced dungeons** - each player gets their own pr
 2. **Floor Generation**
    - Floors are generated on-demand as players progress
    - Uses unique seed per player for deterministic generation
+   - **MazeDungeonGenerator** builds actual 3D geometry (walls, floors, ceilings, lighting)
+   - Uses recursive backtracker algorithm for guaranteed connectivity
+   - Automatically carves rooms into maze for interesting layouts
    - Floors are cached for performance (won't regenerate if player returns)
 
 3. **Teleportation**
@@ -218,9 +223,16 @@ Workspace/
 
 4. **Test teleporter:**
    - Touch/click `Bones_Assortment`
-   - You should teleport to `DungeonSpawn` (Floor 1)
+   - You should teleport to Floor 1 with **actual 3D dungeon geometry**
+   - You should see maze corridors, rooms, walls, floors, and lighting
    - You should receive a Common Level 1 Pistol
-   - Check Output for confirmation messages
+   - Check Output for:
+     ```
+     [MazeDungeon] Generating maze dungeon...
+     [MazeDungeon] ✓ Dungeon complete!
+     [DungeonInstanceManager] ✓ Floor 1 ready for [YourName]
+     [PileOfBones] YourName entered Floor 1 - The Dungeon Begins
+     ```
 
 ---
 
@@ -301,14 +313,17 @@ Uncomment the DataStore code in `PlayerDataManager.lua` (lines with `-- TODO`)
 ### **Create Death Screen UI**
 Hook into `OnPlayerDeath` function in PlayerDataManager
 
-### **Build 3D Dungeon Geometry**
-Create a `DungeonBuilder.lua` module to convert floor data → actual 3D rooms
-
-### **Create Weapon Tools**
-Create a `WeaponBuilder.lua` module to convert weapon data → actual Tool objects
+### **Add Enemy Spawner**
+Create `EnemySpawner.lua` to spawn enemies using NPCGenerator in dungeon rooms
 
 ### **Add Enemy AI**
-Create AI scripts that use EnemySystem and LootDropper for combat/drops
+Create `EnemyAI.lua` to make enemies move, pathfind, and attack player
+
+### **Create Player Health Handler**
+Allow player to take damage from enemies and die/respawn
+
+### **Build HUD/UI**
+Create ScreenGui for health bar, ammo counter, floor number, souls display
 
 ---
 
@@ -329,6 +344,7 @@ Once setup is complete, your game will have:
 - ✅ **Visual weapon drops** (Floating weapons with rarity-colored beams)
 - ✅ **Projectile-based shooting system** (Physical bullets with ballistics)
 - ✅ **Combat system** (Damage calculation, elemental effects, status effects)
+- ✅ **3D dungeon geometry** (Maze-based with rooms, lighting, spawn points)
 - ✅ 666-floor dungeon system
 - ✅ **Per-player instanced dungeons** (single-player experience)
 - ✅ Soul Vendor NPC (auto-generated)
@@ -344,6 +360,8 @@ Once setup is complete, your game will have:
 - 🔫 **Projectile ballistics** (bullet drop, travel time, tracers)
 - ⚔️ Complete combat system with elemental damage
 - 🔥 Status effects (Burn, Freeze, Chain Lightning)
+- 🏰 **3D dungeon generation** (maze algorithm with rooms, full geometry)
+- 🚪 Per-player instanced dungeons (single-player isolation)
 - 📦 Weapon inventory management
 - 🎯 Crit chance, lifesteal, and special effects
 - 🛡️ Anti-cheat protection (rate limiting, damage validation)

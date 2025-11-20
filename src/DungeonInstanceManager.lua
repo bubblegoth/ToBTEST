@@ -15,6 +15,7 @@ local DungeonInstanceManager = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DungeonGenerator = require(ReplicatedStorage.src.DungeonGenerator)
+local MazeDungeonGenerator = require(ReplicatedStorage.src.MazeDungeonGenerator)
 
 -- Store active player instances
 local PlayerInstances = {}
@@ -67,7 +68,8 @@ function DungeonInstanceManager.CreatePlayerInstance(player)
 		Folder = instanceFolder,
 		Player = player,
 		CurrentFloor = nil, -- Will be generated on demand
-		FloorCache = {}, -- Cache generated floors
+		FloorCache = {}, -- Cache generated floors (data)
+		FloorModels = {}, -- Cache generated floor 3D models
 		Seed = tick() + player.UserId -- Unique seed per player
 	}
 
@@ -84,20 +86,20 @@ end
 	Generates or retrieves a floor for a player's instance
 	@param player - The Player object
 	@param floorNumber - Floor number to generate
-	@return floorData - Generated floor data
+	@return floorData, floorModel - Generated floor data and 3D model
 ]]
 function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 	local instance = PlayerInstances[player.UserId]
 
 	if not instance then
 		warn("[DungeonInstanceManager] No instance found for", player.Name)
-		return nil
+		return nil, nil
 	end
 
 	-- Check cache first
-	if instance.FloorCache[floorNumber] then
+	if instance.FloorCache[floorNumber] and instance.FloorModels[floorNumber] then
 		print("[DungeonInstanceManager] Using cached floor", floorNumber, "for", player.Name)
-		return instance.FloorCache[floorNumber]
+		return instance.FloorCache[floorNumber], instance.FloorModels[floorNumber]
 	end
 
 	-- Generate new floor
@@ -106,11 +108,31 @@ function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 	local floorSeed = instance.Seed + floorNumber
 	local floorData = DungeonGenerator.GenerateFloor(floorNumber, floorSeed)
 
+	-- Build 3D dungeon geometry using MazeDungeonGenerator
+	print("[DungeonInstanceManager] Building 3D geometry for floor", floorNumber)
+	local dungeonModel = MazeDungeonGenerator.Generate(floorSeed, instance.Folder)
+
+	if not dungeonModel then
+		warn("[DungeonInstanceManager] Failed to build dungeon geometry for floor", floorNumber)
+		return floorData, nil
+	end
+
+	-- Position the dungeon at the correct offset for this floor
+	local floorOffset = Vector3.new(0, -1000 * floorNumber, 0)
+	dungeonModel:MoveTo(floorOffset)
+
+	-- Store dungeon model reference in floor data
+	floorData.DungeonModel = dungeonModel
+	floorData.Seed = floorSeed
+
 	-- Cache the floor
 	instance.FloorCache[floorNumber] = floorData
+	instance.FloorModels[floorNumber] = dungeonModel
 	instance.CurrentFloor = floorNumber
 
-	return floorData
+	print(string.format("[DungeonInstanceManager] ✓ Floor %d ready for %s", floorNumber, player.Name))
+
+	return floorData, dungeonModel
 end
 
 -- ============================================================
@@ -151,9 +173,9 @@ function DungeonInstanceManager.TeleportToFloor(player, floorNumber)
 	end
 
 	-- Get or generate the floor
-	local floorData = DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
+	local floorData, dungeonModel = DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 
-	if not floorData then
+	if not floorData or not dungeonModel then
 		warn("[DungeonInstanceManager] Failed to generate floor", floorNumber)
 		return false
 	end
@@ -165,18 +187,19 @@ function DungeonInstanceManager.TeleportToFloor(player, floorNumber)
 		return false
 	end
 
-	-- Calculate spawn position in player's instance
-	-- Each floor is offset vertically to prevent collision
-	local floorOffset = Vector3.new(0, -1000 * floorNumber, 0)
+	-- Find the player spawn point in the generated dungeon
+	local spawnsFolder = dungeonModel:FindFirstChild("Spawns")
+	local playerSpawn = spawnsFolder and spawnsFolder:FindFirstChild("PlayerSpawn")
 
-	-- Use DungeonSpawn as base position
-	local dungeonSpawn = workspace:FindFirstChild("DungeonSpawn")
-	local basePosition = dungeonSpawn and dungeonSpawn.Position or Vector3.new(0, -1000, 0)
-
-	local spawnPosition = basePosition + floorOffset + SPAWN_OFFSET
-
-	-- Teleport player
-	humanoidRootPart.CFrame = CFrame.new(spawnPosition)
+	if not playerSpawn then
+		warn("[DungeonInstanceManager] No PlayerSpawn found in dungeon floor", floorNumber)
+		-- Fallback to dungeon center
+		local floorOffset = Vector3.new(0, -1000 * floorNumber, 0)
+		humanoidRootPart.CFrame = CFrame.new(floorOffset + SPAWN_OFFSET)
+	else
+		-- Teleport to actual spawn point
+		humanoidRootPart.CFrame = playerSpawn.CFrame + SPAWN_OFFSET
+	end
 
 	print(string.format(
 		"[DungeonInstanceManager] Teleported %s to Floor %d (Instance: %s)",
@@ -218,10 +241,20 @@ end
 ]]
 function DungeonInstanceManager.ClearFloorCache(player, floorNumber)
 	local instance = PlayerInstances[player.UserId]
-	if instance and instance.FloorCache[floorNumber] then
-		instance.FloorCache[floorNumber] = nil
-		print("[DungeonInstanceManager] Cleared floor cache", floorNumber, "for", player.Name)
+	if not instance then return end
+
+	-- Destroy 3D model if it exists
+	if instance.FloorModels[floorNumber] then
+		instance.FloorModels[floorNumber]:Destroy()
+		instance.FloorModels[floorNumber] = nil
 	end
+
+	-- Clear data cache
+	if instance.FloorCache[floorNumber] then
+		instance.FloorCache[floorNumber] = nil
+	end
+
+	print("[DungeonInstanceManager] Cleared floor cache", floorNumber, "for", player.Name)
 end
 
 --[[
