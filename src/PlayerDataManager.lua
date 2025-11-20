@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Module references
 local PlayerStats = require(ReplicatedStorage.src.PlayerStats)
 local DeathHandler = require(ReplicatedStorage.src.DeathHandler)
+local DungeonInstanceManager = require(ReplicatedStorage.src.DungeonInstanceManager)
 
 print("[PlayerDataManager] Loading...")
 
@@ -65,6 +66,9 @@ Players.PlayerAdded:Connect(function(player)
 	-- if success and savedData then
 	--     playerData:LoadSaveData(savedData)
 	-- end
+
+	-- Create player's dungeon instance
+	DungeonInstanceManager.CreatePlayerInstance(player)
 
 	print("[PlayerDataManager] Player data initialized for", player.Name)
 
@@ -149,6 +153,9 @@ Players.PlayerRemoving:Connect(function(player)
 	-- else
 	--     warn("[PlayerDataManager] Failed to save data for", player.Name, ":", err)
 	-- end
+
+	-- Destroy player's dungeon instance
+	DungeonInstanceManager.DestroyPlayerInstance(player)
 
 	-- Clean up cache
 	PlayerDataCache[player.UserId] = nil

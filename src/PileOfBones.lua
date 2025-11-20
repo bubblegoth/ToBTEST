@@ -17,6 +17,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PlayerStats = require(ReplicatedStorage.src.PlayerStats)
 local WeaponGenerator = require(ReplicatedStorage.src.WeaponGenerator)
 local DungeonGenerator = require(ReplicatedStorage.src.DungeonGenerator)
+local DungeonInstanceManager = require(ReplicatedStorage.src.DungeonInstanceManager)
 local StartingWeapon = require(ReplicatedStorage.src.StartingWeapon)
 
 -- Configuration
@@ -38,18 +39,11 @@ local function teleportToDungeon(player)
 	end
 	cooldowns[player.UserId] = tick()
 
-	-- Get player character
-	local character = player.Character
-	if not character then return end
-
-	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-	if not humanoidRootPart then return end
-
 	-- Get player stats using global function (set by PlayerDataManager)
 	local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
 
 	if not playerStats then
-		warn("PlayerStats not found for", player.Name, "- Is PlayerDataManager running?")
+		warn("[PileOfBones] PlayerStats not found for", player.Name, "- Is PlayerDataManager running?")
 		return
 	end
 
@@ -62,7 +56,7 @@ local function teleportToDungeon(player)
 
 		if nextFloor > 666 then
 			-- Completed all floors
-			print(player.Name, "has completed all 666 floors!")
+			print(string.format("[PileOfBones] %s has completed all 666 floors!", player.Name))
 			return
 		end
 
@@ -74,13 +68,17 @@ local function teleportToDungeon(player)
 			_G.UpdatePlayerValues(player)
 		end
 
-		-- Generate next floor (you'll need to build the 3D geometry here)
-		local floor = DungeonGenerator.GenerateFloor(nextFloor)
+		-- Teleport to next floor in player's dungeon instance
+		local success = DungeonInstanceManager.TeleportToFloor(player, nextFloor)
 
-		-- Teleport to next floor spawn (implement your spawn logic)
-		humanoidRootPart.CFrame = dungeonSpawnLocation.CFrame + Vector3.new(0, nextFloor * 100, 0) -- Example: stack floors vertically
+		if success then
+			print(string.format("[PileOfBones] %s descended to Floor %d", player.Name, nextFloor))
+		else
+			warn("[PileOfBones] Failed to teleport", player.Name, "to Floor", nextFloor)
+		end
 
-		print(player.Name, "descended to Floor", nextFloor)
+		-- TODO: Build Floor geometry from floor data
+		-- You'll need a DungeonBuilder module to convert floor data into 3D maze
 	else
 		-- Player is in Church (Floor 0), entering dungeon for first time
 		playerStats:AdvanceFloor() -- Advances from 0 to 1
@@ -94,21 +92,23 @@ local function teleportToDungeon(player)
 		local receivedWeapon, weapon = StartingWeapon.OnFloorEntry(playerStats, 1)
 
 		if receivedWeapon then
-			print(player.Name, "received starting weapon:", weapon.Name)
+			print(string.format("[PileOfBones] %s received starting weapon: %s", player.Name, weapon.Name))
 			print(StartingWeapon.GetWelcomeMessage(weapon))
 
 			-- TODO: Convert weapon data into actual tool/gun and give to player
 			-- You'll need to create a WeaponBuilder module to turn weapon data into 3D tool
 		else
-			print(player.Name, "already has weapons, no starting weapon given")
+			print(string.format("[PileOfBones] %s already has weapons, no starting weapon given", player.Name))
 		end
 
-		-- Teleport to Floor 1 spawn
-		humanoidRootPart.CFrame = dungeonSpawnLocation.CFrame
+		-- Teleport to Floor 1 in player's dungeon instance
+		local success = DungeonInstanceManager.TeleportToFloor(player, 1)
 
-		-- Generate Floor 1
-		local floor1 = DungeonGenerator.GenerateFloor(1)
-		print(player.Name, "entered Floor 1 - The Dungeon Begins")
+		if success then
+			print(string.format("[PileOfBones] %s entered Floor 1 - The Dungeon Begins", player.Name))
+		else
+			warn("[PileOfBones] Failed to teleport", player.Name, "to Floor 1")
+		end
 
 		-- TODO: Build Floor 1 geometry from floor data
 		-- You'll need a DungeonBuilder module to convert floor data into 3D maze

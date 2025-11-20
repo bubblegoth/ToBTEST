@@ -15,6 +15,7 @@ ReplicatedStorage/
     ├── WeaponParts.lua
     ├── DungeonConfig.lua
     ├── DungeonGenerator.lua
+    ├── DungeonInstanceManager.lua
     ├── EnemySystem.lua
     ├── LootDropper.lua
     ├── PlayerStats.lua
@@ -54,6 +55,7 @@ Workspace/
    - WeaponParts.lua
    - DungeonConfig.lua
    - DungeonGenerator.lua
+   - DungeonInstanceManager.lua
    - EnemySystem.lua
    - LootDropper.lua
    - PlayerStats.lua
@@ -112,7 +114,50 @@ Workspace/
 
 ---
 
-### **Step 4: Test the Setup**
+### **Step 4: Instanced Dungeon System**
+
+This game uses **per-player instanced dungeons** - each player gets their own private dungeon separate from other players.
+
+#### **How It Works:**
+
+1. **Automatic Instance Creation**
+   - When a player joins, `PlayerDataManager` automatically creates a dungeon instance for them
+   - Instance is stored in `workspace.DungeonInstances.DungeonInstance_[UserId]`
+   - Each player's dungeon is completely isolated from other players
+
+2. **Floor Generation**
+   - Floors are generated on-demand as players progress
+   - Uses unique seed per player for deterministic generation
+   - Floors are cached for performance (won't regenerate if player returns)
+
+3. **Teleportation**
+   - `PileOfBones` uses `DungeonInstanceManager.TeleportToFloor(player, floorNumber)`
+   - Floor 0 (Church) is shared by all players
+   - Floors 1-666 are private to each player
+
+4. **Cleanup**
+   - When a player leaves, their dungeon instance is automatically destroyed
+   - Prevents memory leaks and clutter in workspace
+
+#### **Instance Folder Structure:**
+
+```
+Workspace/
+├── Church (Shared)
+├── ChurchSpawn (Shared)
+├── Bones_Assortment (Shared)
+├── SoulVendor (Shared)
+└── DungeonInstances/ (Auto-created)
+    ├── DungeonInstance_123456 (Player 1's dungeon)
+    ├── DungeonInstance_789012 (Player 2's dungeon)
+    └── ...
+```
+
+**Note:** You don't need to create the `DungeonInstances` folder - it's created automatically by `DungeonInstanceManager`.
+
+---
+
+### **Step 5: Test the Setup**
 
 1. Click **Play** in Studio
 2. **Check Output for**:
@@ -123,6 +168,11 @@ Workspace/
    [ServerInit] Game initialization complete!
    [PlayerDataManager] Loading...
    [PlayerDataManager] Ready!
+   [DungeonInstanceManager] Created DungeonInstances folder in workspace
+   [PlayerDataManager] Player joined: [YourName]
+   [DungeonInstanceManager] Creating dungeon instance for [YourName]
+   [DungeonInstanceManager] Instance created: DungeonInstance_[UserId]
+   [PlayerDataManager] Player data initialized for [YourName]
    ```
 
 3. When you spawn, you should:
@@ -240,10 +290,12 @@ Create AI scripts that use EnemySystem and LootDropper for combat/drops
 Once setup is complete, your game will have:
 - ✅ Procedural weapon generation (Borderlands-style)
 - ✅ 666-floor dungeon system
+- ✅ **Per-player instanced dungeons** (single-player experience)
 - ✅ Soul Vendor NPC (auto-generated)
 - ✅ Player progression (Souls, upgrades)
 - ✅ Death mechanics (roguelite)
 - ✅ Church hub (Floor 0)
 - ✅ Dungeon entry teleporter
+- ✅ Automatic instance creation/cleanup
 
 **Everything works together automatically!**
