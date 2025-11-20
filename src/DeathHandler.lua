@@ -144,13 +144,13 @@ function DeathHandler.Respawn(playerStats)
 		return false
 	end
 
-	-- Ensure player is at Church (Floor 1)
-	if playerStats:GetCurrentFloor() ~= 1 then
+	-- Ensure player is at Church (Floor 0)
+	if playerStats:GetCurrentFloor() ~= 0 then
 		playerStats:ResetToChurch()
 	end
 
 	-- Player is ready to start new run
-	return true, "Respawned at the Church (Floor 1). Ready to begin new descent."
+	return true, "Respawned at the Church (Floor 0). Ready to begin new descent."
 end
 
 -- ============================================================
@@ -226,7 +226,7 @@ function DeathHandler.GetDeathScreenData(playerStats)
 
 		-- Options
 		CanRespawn = true,
-		RespawnLocation = "The Church (Floor 1)",
+		RespawnLocation = "The Church (Floor 0)",
 	}
 end
 

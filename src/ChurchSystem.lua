@@ -1,6 +1,6 @@
 --[[
 	ChurchSystem.lua
-	Church hub system for purchasing permanent upgrades with Souls (Floor 1 only)
+	Church hub system for purchasing permanent upgrades with Souls (Floor 0 only)
 	Accessible only after death or run completion
 	Part of the Gothic FPS Roguelite Dungeon System
 ]]
@@ -241,15 +241,15 @@ end
 -- ============================================================
 
 function ChurchSystem.IsChurchAccessible(currentFloor)
-	-- Church is only on Floor 1
-	return currentFloor == 1
+	-- Church is only on Floor 0
+	return currentFloor == 0
 end
 
 function ChurchSystem.GetChurchMessage(currentFloor)
 	if ChurchSystem.IsChurchAccessible(currentFloor) then
 		return "Welcome to the Church. Spend your Souls on permanent upgrades."
 	else
-		return "The Church is only accessible from Floor 1 (after death or run completion)."
+		return "The Church is only accessible from Floor 0 (after death or run completion)."
 	end
 end
 

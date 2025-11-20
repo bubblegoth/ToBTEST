@@ -33,8 +33,8 @@ function DungeonGenerator.GenerateFloor(floorNumber, seed)
 		rng = Random.new(seed)
 	end
 
-	-- Floor 1 is always the Church (safe hub)
-	if floorNumber == 1 then
+	-- Floor 0 is always the Church (safe hub)
+	if floorNumber == 0 then
 		return DungeonGenerator.GenerateChurchFloor()
 	end
 
@@ -79,12 +79,12 @@ function DungeonGenerator.GenerateFloor(floorNumber, seed)
 end
 
 -- ============================================================
--- CHURCH FLOOR (FLOOR 1)
+-- CHURCH FLOOR (FLOOR 0)
 -- ============================================================
 
 function DungeonGenerator.GenerateChurchFloor()
 	return {
-		FloorNumber = 1,
+		FloorNumber = 0,
 		IsBossFloor = false,
 		RoomCount = 1,
 		Rooms = {
@@ -93,12 +93,13 @@ function DungeonGenerator.GenerateChurchFloor()
 				Type = "Church",
 				IsLootEnabled = false,
 				IsSafeZone = true,
+				WeaponUsageDisabled = true, -- No weapon usage in Church
 				Enemies = {},
-				Description = "Safe hub for purchasing upgrades with Souls",
+				Description = "Safe hub for purchasing upgrades with Souls (Floor 0)",
 			}
 		},
 		RareEnemyChance = 0,
-		EnemyLevel = 1,
+		EnemyLevel = 0,
 	}
 end
 
@@ -166,7 +167,7 @@ end
 -- ============================================================
 
 function DungeonGenerator.IsChurchFloor(floorNumber)
-	return floorNumber == 1
+	return floorNumber == 0
 end
 
 function DungeonGenerator.IsBossFloor(floorNumber)
@@ -182,7 +183,7 @@ end
 -- ============================================================
 
 function DungeonGenerator.IsValidFloor(floorNumber)
-	return floorNumber >= 1 and floorNumber <= DungeonConfig.MAX_FLOORS
+	return floorNumber >= 0 and floorNumber <= DungeonConfig.MAX_FLOORS
 end
 
 -- ============================================================

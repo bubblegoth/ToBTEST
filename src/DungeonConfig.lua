@@ -11,7 +11,7 @@ local DungeonConfig = {}
 -- ============================================================
 
 DungeonConfig.MAX_FLOORS = 666 -- Maximum dungeon depth (very Gothic!)
-DungeonConfig.STARTING_FLOOR = 1 -- Church/Hub floor (no enemies, no loot)
+DungeonConfig.STARTING_FLOOR = 0 -- Church/Hub floor (Floor 0 - no combat, no loot)
 
 -- Floor difficulty scaling (linear)
 DungeonConfig.DIFFICULTY_SCALING = {
@@ -33,11 +33,12 @@ DungeonConfig.BOSS_FLOOR_INTERVAL = 10 -- Boss floor every 10 floors (10, 20, 30
 DungeonConfig.RoomTypes = {
 	CHURCH = {
 		ID = "Church",
-		Description = "Safe hub for purchasing upgrades with Souls (Floor 1 only)",
-		AllowedFloors = {1}, -- Only on Floor 1
+		Description = "Safe hub for purchasing upgrades with Souls (Floor 0 only)",
+		AllowedFloors = {0}, -- Only on Floor 0
 		IsLootEnabled = false,
 		IsSpawnEnabled = false,
 		IsSafeZone = true,
+		WeaponUsageDisabled = true, -- No weapon usage in Church
 	},
 
 	COMBAT = {
@@ -133,8 +134,8 @@ DungeonConfig.RARE_ENEMY_VARIANCE = {
 -- ============================================================
 
 DungeonConfig.LootRules = {
-	-- No loot on Floor 1 (Church/Tutorial)
-	WeaponDropsStartFloor = 2,
+	-- No loot on Floor 0 (Church) or Floor 1 (player gets starting pistol)
+	WeaponDropsStartFloor = 2, -- Weapon drops from enemies start on Floor 2+
 
 	-- Weapon drop level = floor number
 	WeaponLevelMatchesFloor = true,
@@ -309,9 +310,9 @@ end
 -- ============================================================
 
 DungeonConfig.PlayerDefaults = {
-	StartingFloor = 1, -- Always start in the Church
+	StartingFloor = 0, -- Always start in the Church (Floor 0)
 	StartingSouls = 0,
-	StartingWeapons = {}, -- No weapons on death/start
+	StartingWeapons = {}, -- No weapons until Floor 1 (given Common Lv1 Pistol)
 
 	BaseStats = {
 		MaxHealth = 100,
