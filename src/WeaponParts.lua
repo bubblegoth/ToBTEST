@@ -1,1039 +1,639 @@
 --[[
 	WeaponParts.lua
-	Combined weapon parts module - all parts in one file
-	Part of the Gothic FPS Weapon Generation System
+	Enhanced weapon parts module with full Borderlands-style part system
+	Gothic FPS Roguelite - Part of 666 Floor Dungeon System
 ]]
 
 local WeaponParts = {}
 
 -- ============================================================
--- BODIES
+-- MANUFACTURERS (Grips) - Gothic Themed
 -- ============================================================
 
-WeaponParts.Bodies = {
-	-- PISTOL BODIES
+WeaponParts.Manufacturers = {
 	{
-		Id = "BODY_PISTOL_REVENANT",
-		Name = "Revenant Frame",
-		Type = "Pistol",
-		StatModifiers = {
-			Damage = 1.1,
-			FireRate = 0.9,
-			Accuracy = 1.05,
-			ReloadTime = 1.0,
-			MagazineSize = 0.8
-		},
-		MinLevel = 1,
-		Description = "A ghostly frame that hits harder but fires slower"
+		Name = "Sanctum Armory",
+		Bonus = "Precision and reliability",
+		Color = Color3.fromRGB(220, 220, 220),
+		Modifiers = {DamageBonus = 0, CritChance = 5, Accuracy = 10}
 	},
 	{
-		Id = "BODY_PISTOL_QUICKSILVER",
-		Name = "Quicksilver Frame",
-		Type = "Pistol",
-		StatModifiers = {
-			Damage = 0.9,
-			FireRate = 1.3,
-			Accuracy = 0.95,
-			ReloadTime = 0.85,
-			MagazineSize = 1.1
-		},
-		MinLevel = 5,
-		Description = "Fast and fluid, sacrifices power for speed"
+		Name = "Bone & Iron Works",
+		Bonus = "Raw destructive power",
+		Color = Color3.fromRGB(80, 60, 50),
+		Modifiers = {DamageBonus = 0.15, Recoil = 10}
 	},
+	{
+		Name = "Crypt Forges",
+		Bonus = "Ancient craftsmanship",
+		Color = Color3.fromRGB(100, 100, 120),
+		Modifiers = {DamageBonus = 0.05, Durability = 20}
+	},
+	{
+		Name = "Reaper Industries",
+		Bonus = "Speed and lethality",
+		Color = Color3.fromRGB(40, 40, 40),
+		Modifiers = {FireRateBonus = 0.2, Damage = -5}
+	},
+	{
+		Name = "Wraith Manufacturing",
+		Bonus = "Spectral efficiency",
+		Color = Color3.fromRGB(150, 180, 200),
+		Modifiers = {ReloadSpeed = 20, EquipSpeed = 15}
+	},
+	{
+		Name = "Cathedral Arms",
+		Bonus = "Divine judgment",
+		Color = Color3.fromRGB(255, 215, 0),
+		Modifiers = {CritDamage = 25, Accuracy = 15}
+	},
+	{
+		Name = "Tomb Makers",
+		Bonus = "Eternal darkness",
+		Color = Color3.fromRGB(60, 0, 60),
+		Modifiers = {DamageBonus = 0.10, MagazineCapacity = 15}
+	}
+}
 
-	-- RIFLE BODIES
+-- ============================================================
+-- WEAPON BASE TYPES (Chassis)
+-- ============================================================
+
+WeaponParts.BaseTypes = {
 	{
-		Id = "BODY_RIFLE_INQUISITOR",
-		Name = "Inquisitor Frame",
-		Type = "Rifle",
-		StatModifiers = {
-			Damage = 1.05,
-			FireRate = 1.0,
-			Accuracy = 1.15,
-			ReloadTime = 1.0,
-			MagazineSize = 1.0
-		},
-		MinLevel = 1,
-		Description = "Precise and judgmental, delivers holy justice"
+		Name = "Pistol",
+		BaseStats = {
+			Damage = 20,
+			FireRate = 0.3,
+			Capacity = 12,
+			Accuracy = 70,
+			Range = 300,
+			ReloadTime = 1.5,
+			Pellets = 1
+		}
 	},
 	{
-		Id = "BODY_RIFLE_DAMNATION",
-		Name = "Damnation Frame",
-		Type = "Rifle",
-		StatModifiers = {
-			Damage = 1.25,
+		Name = "Revolver",
+		BaseStats = {
+			Damage = 45,
+			FireRate = 0.6,
+			Capacity = 6,
+			Accuracy = 85,
+			Range = 400,
+			ReloadTime = 2.5,
+			Pellets = 1
+		}
+	},
+	{
+		Name = "SMG",
+		BaseStats = {
+			Damage = 12,
+			FireRate = 0.08,
+			Capacity = 30,
+			Accuracy = 50,
+			Range = 200,
+			ReloadTime = 1.8,
+			Pellets = 1
+		}
+	},
+	{
+		Name = "Assault Rifle",
+		BaseStats = {
+			Damage = 25,
+			FireRate = 0.15,
+			Capacity = 30,
+			Accuracy = 65,
+			Range = 500,
+			ReloadTime = 2.0,
+			Pellets = 1
+		}
+	},
+	{
+		Name = "Shotgun",
+		BaseStats = {
+			Damage = 60,
 			FireRate = 0.8,
-			Accuracy = 0.9,
-			ReloadTime = 1.15,
-			MagazineSize = 0.9
-		},
-		MinLevel = 10,
-		Description = "Devastating power at the cost of fire rate"
-	},
-
-	-- SHOTGUN BODIES
-	{
-		Id = "BODY_SHOTGUN_REAPER",
-		Name = "Reaper Frame",
-		Type = "Shotgun",
-		StatModifiers = {
-			Damage = 1.2,
-			FireRate = 0.85,
-			Accuracy = 0.9,
-			ReloadTime = 1.1,
-			MagazineSize = 0.75,
-			PelletCount = 1.2
-		},
-		MinLevel = 1,
-		Description = "Harvests souls with devastating spread"
+			Capacity = 8,
+			Accuracy = 30,
+			Range = 150,
+			ReloadTime = 3.0,
+			Pellets = 8
+		}
 	},
 	{
-		Id = "BODY_SHOTGUN_CRUSADER",
-		Name = "Crusader Frame",
-		Type = "Shotgun",
-		StatModifiers = {
-			Damage = 1.0,
-			FireRate = 1.1,
-			Accuracy = 1.1,
-			ReloadTime = 0.9,
-			MagazineSize = 1.2,
-			PelletCount = 0.9
-		},
-		MinLevel = 8,
-		Description = "Balanced holy weapon for righteous combat"
-	},
-
-	-- SMG BODIES
-	{
-		Id = "BODY_SMG_SPECTRE",
-		Name = "Spectre Frame",
-		Type = "SMG",
-		StatModifiers = {
-			Damage = 0.95,
-			FireRate = 1.25,
-			Accuracy = 0.85,
-			ReloadTime = 0.8,
-			MagazineSize = 1.3
-		},
-		MinLevel = 1,
-		Description = "Ethereal and rapid, like a ghost in combat"
-	},
-	{
-		Id = "BODY_SMG_VORTEX",
-		Name = "Vortex Frame",
-		Type = "SMG",
-		StatModifiers = {
-			Damage = 0.85,
-			FireRate = 1.5,
-			Accuracy = 0.8,
-			ReloadTime = 0.75,
-			MagazineSize = 1.5
-		},
-		MinLevel = 12,
-		Description = "Spiraling chaos, maximum fire rate"
-	},
-
-	-- SNIPER BODIES
-	{
-		Id = "BODY_SNIPER_HARBINGER",
-		Name = "Harbinger Frame",
-		Type = "Sniper",
-		StatModifiers = {
-			Damage = 1.3,
-			FireRate = 0.9,
-			Accuracy = 1.1,
-			ReloadTime = 1.0,
-			MagazineSize = 0.8
-		},
-		MinLevel = 1,
-		Description = "Announces death from afar"
-	},
-	{
-		Id = "BODY_SNIPER_ECLIPSE",
-		Name = "Eclipse Frame",
-		Type = "Sniper",
-		StatModifiers = {
-			Damage = 1.5,
-			FireRate = 0.7,
-			Accuracy = 1.2,
-			ReloadTime = 1.2,
-			MagazineSize = 0.6
-		},
-		MinLevel = 15,
-		Description = "Darkens the sky with devastating precision"
+		Name = "Sniper Rifle",
+		BaseStats = {
+			Damage = 100,
+			FireRate = 1.2,
+			Capacity = 5,
+			Accuracy = 95,
+			Range = 1000,
+			ReloadTime = 2.5,
+			Pellets = 1
+		}
 	}
-
-
 }
 
 -- ============================================================
--- BARRELS
--- ============================================================
-
-WeaponParts.Barrels = {
-	{
-		Id = "BARREL_SHORT_PROFANE",
-		Name = "Profane Short Barrel",
-		StatModifiers = {
-			Damage = 0.9,
-			Accuracy = 0.85,
-			Range = 0.7,
-			FireRate = 1.1
-		},
-		MinLevel = 1,
-		Description = "Unholy compact barrel, mobile but imprecise"
-	},
-	{
-		Id = "BARREL_STANDARD_SANCTIFIED",
-		Name = "Sanctified Barrel",
-		StatModifiers = {
-			Damage = 1.0,
-			Accuracy = 1.0,
-			Range = 1.0,
-			FireRate = 1.0
-		},
-		MinLevel = 1,
-		Description = "Blessed standard barrel, balanced in all aspects"
-	},
-	{
-		Id = "BARREL_LONG_CATHEDRAL",
-		Name = "Cathedral Long Barrel",
-		StatModifiers = {
-			Damage = 1.15,
-			Accuracy = 1.2,
-			Range = 1.4,
-			FireRate = 0.9
-		},
-		MinLevel = 5,
-		Description = "Elongated holy barrel, precise but slower"
-	},
-	{
-		Id = "BARREL_RIFLED_CRYPT",
-		Name = "Crypt Rifled Barrel",
-		StatModifiers = {
-			Damage = 1.1,
-			Accuracy = 1.3,
-			Range = 1.2,
-			FireRate = 0.95
-		},
-		MinLevel = 8,
-		Description = "Spiraling grooves from the crypts, extremely accurate"
-	},
-	{
-		Id = "BARREL_HEAVY_DREADNOUGHT",
-		Name = "Dreadnought Heavy Barrel",
-		StatModifiers = {
-			Damage = 1.3,
-			Accuracy = 1.1,
-			Range = 1.1,
-			FireRate = 0.8,
-			ReloadTime = 1.1
-		},
-		MinLevel = 10,
-		Description = "Massive barrel for devastating impact"
-	},
-	{
-		Id = "BARREL_FLUTED_PHANTOM",
-		Name = "Phantom Fluted Barrel",
-		StatModifiers = {
-			Damage = 0.95,
-			Accuracy = 1.15,
-			Range = 1.1,
-			FireRate = 1.15,
-			ReloadTime = 0.95
-		},
-		MinLevel = 12,
-		Description = "Lightweight ghostly barrel with fluting"
-	},
-	{
-		Id = "BARREL_HELLFIRE",
-		Name = "Hellfire Scorched Barrel",
-		StatModifiers = {
-			Damage = 1.25,
-			Accuracy = 0.9,
-			Range = 0.95,
-			FireRate = 1.0,
-			CritChance = 0.05
-		},
-		MinLevel = 15,
-		Description = "Burned by infernal flames, adds critical strike chance"
-	},
-	{
-		Id = "BARREL_FROZEN_SOUL",
-		Name = "Frozen Soul Barrel",
-		StatModifiers = {
-			Damage = 1.05,
-			Accuracy = 1.25,
-			Range = 1.3,
-			FireRate = 0.85,
-			CritDamage = 0.15
-		},
-		MinLevel = 18,
-		Description = "Frozen by restless spirits, enhances critical damage"
-	}
-
-
-}
-
--- ============================================================
--- GRIPS
--- ============================================================
-
-WeaponParts.Grips = {
-	{
-		Id = "GRIP_WOODEN_COFFIN",
-		Name = "Coffin Wood Grip",
-		StatModifiers = {
-			Accuracy = 0.95,
-			RecoilControl = 0.9,
-			AimSpeed = 1.0
-		},
-		MinLevel = 1,
-		Description = "Carved from ancient coffins, crude but effective"
-	},
-	{
-		Id = "GRIP_BONE_CARVED",
-		Name = "Bone-Carved Grip",
-		StatModifiers = {
-			Accuracy = 1.0,
-			RecoilControl = 1.0,
-			AimSpeed = 1.05
-		},
-		MinLevel = 1,
-		Description = "Crafted from consecrated bones"
-	},
-	{
-		Id = "GRIP_LEATHER_WRAPPED",
-		Name = "Leather-Wrapped Grip",
-		StatModifiers = {
-			Accuracy = 1.1,
-			RecoilControl = 1.15,
-			AimSpeed = 0.95
-		},
-		MinLevel = 5,
-		Description = "Bound in holy leather for superior control"
-	},
-	{
-		Id = "GRIP_IRON_MAIDEN",
-		Name = "Iron Maiden Grip",
-		StatModifiers = {
-			Accuracy = 1.05,
-			RecoilControl = 1.25,
-			AimSpeed = 0.85,
-			Damage = 1.05
-		},
-		MinLevel = 10,
-		Description = "Spiked iron grip, painful but effective"
-	},
-	{
-		Id = "GRIP_ETHEREAL",
-		Name = "Ethereal Grip",
-		StatModifiers = {
-			Accuracy = 1.15,
-			RecoilControl = 1.05,
-			AimSpeed = 1.2,
-			ReloadTime = 0.95
-		},
-		MinLevel = 12,
-		Description = "Nearly weightless, feels like holding air"
-	},
-	{
-		Id = "GRIP_GARGOYLE",
-		Name = "Gargoyle Stone Grip",
-		StatModifiers = {
-			Accuracy = 0.9,
-			RecoilControl = 1.4,
-			AimSpeed = 0.75,
-			Damage = 1.1
-		},
-		MinLevel = 15,
-		Description = "Heavy stone grip, immovable when firing"
-	},
-	{
-		Id = "GRIP_VELVET_CRIMSON",
-		Name = "Crimson Velvet Grip",
-		StatModifiers = {
-			Accuracy = 1.2,
-			RecoilControl = 1.1,
-			AimSpeed = 1.1,
-			CritChance = 0.03
-		},
-		MinLevel = 18,
-		Description = "Luxurious velvet soaked in ancient blood"
-	},
-	{
-		Id = "GRIP_WRAITH_TOUCH",
-		Name = "Wraith's Touch Grip",
-		StatModifiers = {
-			Accuracy = 1.25,
-			RecoilControl = 0.95,
-			AimSpeed = 1.3,
-			MovementSpeed = 1.1
-		},
-		MinLevel = 20,
-		Description = "Touched by wraiths, enhances agility"
-	}
-
-
-}
-
--- ============================================================
--- STOCKS
+-- STOCKS - Stability and Handling
 -- ============================================================
 
 WeaponParts.Stocks = {
 	{
-		Id = "STOCK_NONE",
+		Name = "Heavy Stock",
+		Rarity = "Common",
+		Modifiers = {
+			Stability = 30,
+			Accuracy = 20,
+			RecoilReduction = 25,
+			ReloadSpeed = -15,
+			EquipSpeed = -20
+		},
+		Description = "Solid and stable, but slow"
+	},
+	{
+		Name = "Standard Stock",
+		Rarity = "Common",
+		Modifiers = {
+			Stability = 15,
+			Accuracy = 10,
+			RecoilReduction = 10
+		},
+		Description = "Balanced performance"
+	},
+	{
+		Name = "Light Stock",
+		Rarity = "Uncommon",
+		Modifiers = {
+			Stability = 5,
+			ReloadSpeed = 15,
+			EquipSpeed = 20
+		},
+		Description = "Fast handling, less control"
+	},
+	{
+		Name = "Skeleton Stock",
+		Rarity = "Rare",
+		Modifiers = {
+			Stability = -5,
+			Accuracy = -10,
+			ReloadSpeed = 30,
+			EquipSpeed = 35
+		},
+		Description = "Lightning fast, minimal stability"
+	},
+	{
 		Name = "No Stock",
-		StatModifiers = {
-			RecoilControl = 0.7,
-			Accuracy = 0.85,
-			AimSpeed = 1.3,
-			MovementSpeed = 1.15
+		Rarity = "Epic",
+		Modifiers = {
+			Stability = -20,
+			Accuracy = -20,
+			RecoilReduction = -25,
+			ReloadSpeed = 50,
+			EquipSpeed = 60,
+			MobilityBonus = 10
 		},
-		MinLevel = 1,
-		Description = "No stock, maximum mobility"
+		Description = "Maximum speed, chaotic accuracy"
 	},
 	{
-		Id = "STOCK_FOLDING_RAVEN",
-		Name = "Raven Folding Stock",
-		StatModifiers = {
-			RecoilControl = 0.9,
-			Accuracy = 0.95,
-			AimSpeed = 1.15,
-			MovementSpeed = 1.05
+		Name = "Cursed Bone Stock",
+		Rarity = "Legendary",
+		Modifiers = {
+			Stability = 40,
+			Accuracy = 30,
+			RecoilReduction = 35,
+			CritChance = 10
 		},
-		MinLevel = 1,
-		Description = "Collapsible stock with raven motifs"
-	},
-	{
-		Id = "STOCK_FIXED_CATHEDRAL",
-		Name = "Cathedral Fixed Stock",
-		StatModifiers = {
-			RecoilControl = 1.15,
-			Accuracy = 1.1,
-			AimSpeed = 0.95,
-			MovementSpeed = 0.95
-		},
-		MinLevel = 5,
-		Description = "Solid stock carved with holy architecture"
-	},
-	{
-		Id = "STOCK_HEAVY_TOMBSTONE",
-		Name = "Tombstone Heavy Stock",
-		StatModifiers = {
-			RecoilControl = 1.35,
-			Accuracy = 1.2,
-			AimSpeed = 0.8,
-			MovementSpeed = 0.85,
-			Damage = 1.05
-		},
-		MinLevel = 10,
-		Description = "Weighted with tombstone marble, very stable"
-	},
-	{
-		Id = "STOCK_SKELETAL",
-		Name = "Skeletal Stock",
-		StatModifiers = {
-			RecoilControl = 1.05,
-			Accuracy = 1.05,
-			AimSpeed = 1.1,
-			MovementSpeed = 1.1,
-			ReloadTime = 0.95
-		},
-		MinLevel = 12,
-		Description = "Lightweight bone framework"
-	},
-	{
-		Id = "STOCK_PRECISION_SAINT",
-		Name = "Saint's Precision Stock",
-		StatModifiers = {
-			RecoilControl = 1.25,
-			Accuracy = 1.3,
-			AimSpeed = 0.9,
-			MovementSpeed = 0.9,
-			CritDamage = 0.1
-		},
-		MinLevel = 15,
-		Description = "Blessed stock for righteous accuracy"
-	},
-	{
-		Id = "STOCK_DAMNED_COMPOSITE",
-		Name = "Damned Composite Stock",
-		StatModifiers = {
-			RecoilControl = 1.1,
-			Accuracy = 1.15,
-			AimSpeed = 1.05,
-			MovementSpeed = 1.05,
-			FireRate = 1.05
-		},
-		MinLevel = 18,
-		Description = "Composite materials from the damned"
+		Description = "Ancient bones whisper of precision"
 	}
-
-
 }
 
 -- ============================================================
--- MAGAZINES
+-- BODIES - Fire Rate and Damage
+-- ============================================================
+
+WeaponParts.Bodies = {
+	{
+		Name = "Heavy Frame",
+		Rarity = "Common",
+		Modifiers = {
+			Damage = 30,
+			FireRate = -25,
+			Weight = 20
+		},
+		Description = "Hits like a battering ram"
+	},
+	{
+		Name = "Standard Frame",
+		Rarity = "Common",
+		Modifiers = {
+			Damage = 10,
+			FireRate = 0,
+			Weight = 0
+		},
+		Description = "Reliable and consistent"
+	},
+	{
+		Name = "Lightweight Frame",
+		Rarity = "Uncommon",
+		Modifiers = {
+			Damage = -10,
+			FireRate = 25,
+			Weight = -15,
+			Mobility = 10
+		},
+		Description = "Rapid fire, lower impact"
+	},
+	{
+		Name = "Reinforced Frame",
+		Rarity = "Rare",
+		Modifiers = {
+			Damage = 40,
+			FireRate = -15,
+			Durability = 30,
+			Weight = 15
+		},
+		Description = "Built to endure and punish"
+	},
+	{
+		Name = "Revenant Frame",
+		Rarity = "Epic",
+		Modifiers = {
+			Damage = 50,
+			FireRate = 10,
+			CritChance = 10,
+			SoulGain = 2
+		},
+		Description = "Forged from spectral essence"
+	},
+	{
+		Name = "Cathedral Frame",
+		Rarity = "Legendary",
+		Modifiers = {
+			Damage = 60,
+			Accuracy = 25,
+			CritDamage = 50,
+			Range = 30
+		},
+		Description = "Divine craftsmanship incarnate"
+	}
+}
+
+-- ============================================================
+-- BARRELS - Damage, Accuracy, Range
+-- ============================================================
+
+WeaponParts.Barrels = {
+	{
+		Name = "Long Barrel",
+		Rarity = "Common",
+		Modifiers = {
+			Damage = 20,
+			Accuracy = 30,
+			Range = 40,
+			FireRate = -10
+		},
+		Description = "Precision at distance"
+	},
+	{
+		Name = "Standard Barrel",
+		Rarity = "Common",
+		Modifiers = {
+			Damage = 10,
+			Accuracy = 10,
+			Range = 15
+		},
+		Description = "Balanced performance"
+	},
+	{
+		Name = "Short Barrel",
+		Rarity = "Uncommon",
+		Modifiers = {
+			Damage = 0,
+			Accuracy = -15,
+			Range = -20,
+			FireRate = 20,
+			Mobility = 15
+		},
+		Description = "Close quarters combat"
+	},
+	{
+		Name = "Rifled Barrel",
+		Rarity = "Rare",
+		Modifiers = {
+			Damage = 15,
+			Accuracy = 50,
+			Range = 30,
+			CritChance = 10
+		},
+		Description = "Surgical precision"
+	},
+	{
+		Name = "Vented Barrel",
+		Rarity = "Epic",
+		Modifiers = {
+			Damage = 25,
+			Accuracy = 20,
+			FireRate = 15,
+			RecoilReduction = 20
+		},
+		Description = "Sustained high performance"
+	},
+	{
+		Name = "Sanctified Barrel",
+		Rarity = "Legendary",
+		Modifiers = {
+			Damage = 50,
+			Accuracy = 40,
+			Range = 50,
+			CritDamage = 30
+		},
+		Description = "Blessed by forgotten rites"
+	},
+	{
+		Name = "Void Barrel",
+		Rarity = "Mythic",
+		Modifiers = {
+			Damage = 75,
+			Accuracy = 60,
+			Range = 80,
+			PenetrationChance = 50
+		},
+		Description = "Pierces the veil of reality"
+	}
+}
+
+-- ============================================================
+-- MAGAZINES - Capacity, Reload Speed
 -- ============================================================
 
 WeaponParts.Magazines = {
 	{
-		Id = "MAG_COMPACT_CRYPT",
-		Name = "Crypt Compact Magazine",
-		StatModifiers = {
-			MagazineSize = 0.7,
-			ReloadTime = 0.8,
-			MovementSpeed = 1.1,
-			AimSpeed = 1.05
+		Name = "Drum Magazine",
+		Rarity = "Common",
+		Modifiers = {
+			Capacity = 100,
+			ReloadSpeed = -40,
+			EquipSpeed = -30,
+			Weight = 25
 		},
-		MinLevel = 1,
-		Description = "Small capacity, quick reloads"
+		Description = "Never-ending firepower"
 	},
 	{
-		Id = "MAG_STANDARD_SANCTUM",
-		Name = "Sanctum Standard Magazine",
-		StatModifiers = {
-			MagazineSize = 1.0,
-			ReloadTime = 1.0,
-			MovementSpeed = 1.0,
-			AimSpeed = 1.0
+		Name = "Extended Magazine",
+		Rarity = "Common",
+		Modifiers = {
+			Capacity = 50,
+			ReloadSpeed = -20,
+			EquipSpeed = -15,
+			Weight = 10
 		},
-		MinLevel = 1,
-		Description = "Balanced holy magazine"
+		Description = "More ammo, slower handling"
 	},
 	{
-		Id = "MAG_EXTENDED_OSSUARY",
-		Name = "Ossuary Extended Magazine",
-		StatModifiers = {
-			MagazineSize = 1.5,
-			ReloadTime = 1.2,
-			MovementSpeed = 0.95,
-			AimSpeed = 0.95
+		Name = "Standard Magazine",
+		Rarity = "Common",
+		Modifiers = {
+			Capacity = 0,
+			ReloadSpeed = 0,
+			EquipSpeed = 0
 		},
-		MinLevel = 5,
-		Description = "Holds more souls at a cost"
+		Description = "Balanced capacity"
 	},
 	{
-		Id = "MAG_DRUM_CHARNEL",
-		Name = "Charnel House Drum",
-		StatModifiers = {
-			MagazineSize = 2.0,
-			ReloadTime = 1.5,
-			MovementSpeed = 0.85,
-			AimSpeed = 0.85,
-			FireRate = 0.95
+		Name = "Compact Magazine",
+		Rarity = "Uncommon",
+		Modifiers = {
+			Capacity = -30,
+			ReloadSpeed = 25,
+			EquipSpeed = 20,
+			Damage = 10
 		},
-		MinLevel = 10,
-		Description = "Massive capacity, heavy and slow"
+		Description = "Quick handling, less rounds"
 	},
 	{
-		Id = "MAG_QUICKDRAW_PHANTOM",
-		Name = "Phantom Quickdraw Magazine",
-		StatModifiers = {
-			MagazineSize = 0.9,
-			ReloadTime = 0.6,
-			MovementSpeed = 1.05,
-			AimSpeed = 1.1,
-			FireRate = 1.1
+		Name = "Speed Loader",
+		Rarity = "Rare",
+		Modifiers = {
+			Capacity = -20,
+			ReloadSpeed = 50,
+			EquipSpeed = 30,
+			Damage = 15
 		},
-		MinLevel = 12,
-		Description = "Ghostly fast reloads and handling"
+		Description = "Lightning fast reloads"
 	},
 	{
-		Id = "MAG_BLESSED_CAPACITY",
-		Name = "Blessed High-Capacity Magazine",
-		StatModifiers = {
-			MagazineSize = 1.8,
-			ReloadTime = 1.0,
-			MovementSpeed = 0.95,
-			AimSpeed = 0.95
+		Name = "Soul Reservoir",
+		Rarity = "Epic",
+		Modifiers = {
+			Capacity = 80,
+			ReloadSpeed = 20,
+			SoulGain = 5
 		},
-		MinLevel = 15,
-		Description = "Divinely efficient capacity without penalty"
+		Description = "Draws power from fallen enemies"
 	},
 	{
-		Id = "MAG_CURSED_INFINITE",
-		Name = "Cursed Void Magazine",
-		StatModifiers = {
-			MagazineSize = 1.3,
-			ReloadTime = 0.85,
-			MovementSpeed = 1.0,
-			FireRate = 1.05,
-			CritChance = 0.05
+		Name = "Infinite Coil",
+		Rarity = "Legendary",
+		Modifiers = {
+			Capacity = 150,
+			ReloadSpeed = 40,
+			NoReloadChance = 25
 		},
-		MinLevel = 18,
-		Description = "Touched by the void, mysteriously efficient"
-	},
-	{
-		Id = "MAG_HELLFORGE",
-		Name = "Hellforge Magazine",
-		StatModifiers = {
-			MagazineSize = 1.2,
-			ReloadTime = 0.9,
-			FireRate = 1.15,
-			Damage = 1.05
-		},
-		MinLevel = 20,
-		Description = "Forged in hell, feeds rounds with supernatural speed"
+		Description = "The magazine that never empties"
 	}
-
-
 }
 
 -- ============================================================
--- SIGHTS
+-- SIGHTS - Zoom, Accuracy, Critical
 -- ============================================================
 
 WeaponParts.Sights = {
 	{
-		Id = "SIGHT_IRON_GRAVESTONE",
-		Name = "Gravestone Iron Sights",
-		StatModifiers = {
-			Accuracy = 1.0,
-			AimSpeed = 1.1,
-			ZoomLevel = 1.0
-		},
-		MinLevel = 1,
-		Description = "Simple iron sights shaped like gravestones"
-	},
-	{
-		Id = "SIGHT_REFLEX_SPIRIT",
-		Name = "Spirit Reflex Sight",
-		StatModifiers = {
-			Accuracy = 1.1,
-			AimSpeed = 1.15,
+		Name = "Iron Sights",
+		Rarity = "Common",
+		Modifiers = {
 			ZoomLevel = 1.2,
-			CritChance = 0.02
+			AimAccuracy = 10,
+			FOVReduction = 10
 		},
-		MinLevel = 5,
-		Description = "Ethereal reflex sight with ghostly reticle"
+		Description = "Basic targeting"
 	},
 	{
-		Id = "SIGHT_HOLO_CATHEDRAL",
-		Name = "Cathedral Holographic Sight",
-		StatModifiers = {
-			Accuracy = 1.15,
-			AimSpeed = 1.05,
-			ZoomLevel = 1.3,
-			Range = 1.1
+		Name = "Red Dot Sight",
+		Rarity = "Uncommon",
+		Modifiers = {
+			ZoomLevel = 1.5,
+			AimAccuracy = 20,
+			FOVReduction = 15,
+			TargetAcquisition = 15
 		},
-		MinLevel = 8,
-		Description = "Projects holy symbols as targeting reticle"
+		Description = "Fast target acquisition"
 	},
 	{
-		Id = "SIGHT_SCOPE_ORACLE",
-		Name = "Oracle's Scope",
-		StatModifiers = {
-			Accuracy = 1.3,
-			AimSpeed = 0.8,
-			ZoomLevel = 2.5,
-			Range = 1.4,
-			CritDamage = 0.15
-		},
-		MinLevel = 10,
-		Description = "Sees the future, predicts enemy movement"
-	},
-	{
-		Id = "SIGHT_THERMAL_WRAITH",
-		Name = "Wraith Thermal Sight",
-		StatModifiers = {
-			Accuracy = 1.2,
-			AimSpeed = 0.95,
+		Name = "Holographic Sight",
+		Rarity = "Rare",
+		Modifiers = {
 			ZoomLevel = 1.8,
-			Range = 1.2
+			AimAccuracy = 30,
+			FOVReduction = 20,
+			TargetTracking = 10
 		},
-		MinLevel = 12,
-		Description = "Sees the heat signatures of the living"
+		Description = "Clear sight picture"
 	},
 	{
-		Id = "SIGHT_SNIPER_REAPER",
-		Name = "Reaper's Precision Scope",
-		StatModifiers = {
-			Accuracy = 1.5,
-			AimSpeed = 0.7,
+		Name = "4x Scope",
+		Rarity = "Rare",
+		Modifiers = {
 			ZoomLevel = 4.0,
-			Range = 1.8,
-			CritChance = 0.1,
-			CritDamage = 0.25
+			AimAccuracy = 50,
+			FOVReduction = 50,
+			CritDamage = 15
 		},
-		MinLevel = 15,
-		Description = "Death sees all from afar"
+		Description = "Medium range precision"
 	},
 	{
-		Id = "SIGHT_QUICKDOT_HELLFIRE",
-		Name = "Hellfire Quick Dot",
-		StatModifiers = {
-			Accuracy = 1.05,
-			AimSpeed = 1.3,
-			ZoomLevel = 1.1,
-			FireRate = 1.1,
-			CritChance = 0.05
+		Name = "8x Sniper Scope",
+		Rarity = "Epic",
+		Modifiers = {
+			ZoomLevel = 8.0,
+			AimAccuracy = 80,
+			FOVReduction = 70,
+			CritDamage = 30,
+			HeadshotBonus = 50
 		},
-		MinLevel = 18,
-		Description = "Blazing fast target acquisition"
+		Description = "Long range domination"
 	},
 	{
-		Id = "SIGHT_ARCANE_LENS",
-		Name = "Arcane Lens Sight",
-		StatModifiers = {
-			Accuracy = 1.25,
-			AimSpeed = 1.0,
-			ZoomLevel = 2.0,
-			Range = 1.3,
-			Damage = 1.1
+		Name = "Specter Sight",
+		Rarity = "Legendary",
+		Modifiers = {
+			ZoomLevel = 3.0,
+			AimAccuracy = 60,
+			FOVReduction = 40,
+			EnemyHighlight = true,
+			WeakpointVision = true,
+			CritChance = 15
 		},
-		MinLevel = 20,
-		Description = "Magical lens that enhances bullet lethality"
+		Description = "See through the darkness"
+	},
+	{
+		Name = "God's Eye",
+		Rarity = "Mythic",
+		Modifiers = {
+			ZoomLevel = 10.0,
+			AimAccuracy = 100,
+			FOVReduction = 80,
+			CritDamage = 100,
+			AutoAim = true,
+			TimeSlowOnADS = true
+		},
+		Description = "The all-seeing divine lens"
 	}
-
-
 }
 
 -- ============================================================
--- ACCESSORIES
+-- ACCESSORIES - Special Effects
 -- ============================================================
 
 WeaponParts.Accessories = {
-	-- UNIVERSAL ACCESSORIES (all weapon types)
 	{
-		Id = "ACC_BAYONET_CURSED",
-		Name = "Cursed Bayonet",
-		Prefix = "Impaling",
-		ApplicableTypes = {"Rifle", "Shotgun", "SMG"},
-		MinLevel = 1,
-		StatModifiers = {
-			MeleeDamage = 2.5,
-			Damage = 1.05
-		},
-		Description = "Wicked blade for close encounters"
+		Name = "None",
+		Rarity = "Common",
+		Modifiers = {},
+		Description = "No accessory"
 	},
-
 	{
-		Id = "ACC_FOREGRIP_TOMBSTONE",
-		Name = "Tombstone Foregrip",
-		Prefix = "Stabilized",
-		ApplicableTypes = {"Rifle", "SMG", "Sniper"},
-		MinLevel = 1,
-		StatModifiers = {
-			Accuracy = 1.2,
-			RecoilControl = 1.3,
-			AimSpeed = 0.95
+		Name = "Foregrip",
+		Rarity = "Uncommon",
+		Modifiers = {
+			Stability = 20,
+			RecoilReduction = 15,
+			AimSpeed = 10
 		},
-		Description = "Stone grip for maximum stability"
+		Description = "Better weapon control"
 	},
-
 	{
-		Id = "ACC_SCOPE_ORACLE",
-		Name = "Oracle's Magnifier",
-		Prefix = "Prescient",
-		ApplicableTypes = {"Rifle", "Sniper"},
-		MinLevel = 5,
-		StatModifiers = {
-			Accuracy = 1.15,
-			ZoomLevel = 1.8,
-			CritDamage = 0.2
+		Name = "Laser Sight",
+		Rarity = "Uncommon",
+		Modifiers = {
+			HipfireAccuracy = 40,
+			TargetAcquisition = 20
 		},
-		Description = "See the future trajectory"
+		Description = "Accurate from the hip"
 	},
-
 	{
-		Id = "ACC_STOCK_GARGOYLE",
-		Name = "Gargoyle Brace",
-		Prefix = "Anchored",
-		ApplicableTypes = {"Rifle", "Shotgun", "Sniper"},
-		MinLevel = 3,
-		StatModifiers = {
-			RecoilControl = 1.4,
-			Accuracy = 1.1,
-			MovementSpeed = 0.9
+		Name = "Skull Bayonet",
+		Rarity = "Rare",
+		Modifiers = {
+			MeleeDamage = 50,
+			MeleeRange = 2,
+			Intimidation = 10
 		},
-		Description = "Stone-carved stock that won't budge"
+		Description = "Gothic melee attachment"
 	},
-
 	{
-		Id = "ACC_LASER_SIGHT_WRAITH",
-		Name = "Wraith Marker",
-		Prefix = "Phantom",
-		ApplicableTypes = {"Pistol", "SMG", "Rifle"},
-		MinLevel = 8,
-		StatModifiers = {
-			Accuracy = 1.25,
-			AimSpeed = 1.2,
-			CritChance = 0.05
+		Name = "Soul Siphon",
+		Rarity = "Rare",
+		Modifiers = {
+			SoulGain = 15,
+			Damage = 10,
+			KillHeal = 5
 		},
-		Description = "Ethereal laser marks your prey"
+		Description = "Harvest souls with each kill"
 	},
-
-	-- DRUM MAGAZINES (high capacity)
 	{
-		Id = "ACC_DRUM_CHARNEL",
-		Name = "Charnel Drum",
-		Prefix = "Relentless",
-		ApplicableTypes = {"Rifle", "SMG", "Shotgun"},
-		MinLevel = 10,
-		StatModifiers = {
-			MagazineSize = 2.0,
-			ReloadTime = 1.4,
-			MovementSpeed = 0.9
+		Name = "Fire Converter",
+		Rarity = "Epic",
+		Modifiers = {
+			FireDamage = 25,
+			BurnChance = 30,
+			MagazineCapacity = -20
 		},
-		Description = "Massive capacity, heavy burden"
+		Description = "Sets enemies ablaze"
 	},
-
-	-- EXTENDED BARRELS
 	{
-		Id = "ACC_BARREL_CATHEDRAL",
-		Name = "Cathedral Extension",
-		Prefix = "Holy",
-		ApplicableTypes = {"Pistol", "Rifle", "Sniper"},
-		MinLevel = 5,
-		StatModifiers = {
-			Damage = 1.2,
-			Accuracy = 1.15,
-			Range = 1.5,
-			FireRate = 0.9
+		Name = "Frost Coil",
+		Rarity = "Epic",
+		Modifiers = {
+			FrostDamage = 20,
+			SlowChance = 40,
+			FireRate = -10
 		},
-		Description = "Elongated blessed barrel"
+		Description = "Freezes targets"
 	},
-
-	-- MUZZLE BRAKES / COMPENSATORS
 	{
-		Id = "ACC_COMPENSATOR_REAPER",
-		Name = "Reaper's Brake",
-		Prefix = "Controlled",
-		ApplicableTypes = {"Pistol", "Rifle", "SMG"},
-		MinLevel = 7,
-		StatModifiers = {
-			RecoilControl = 1.5,
-			Accuracy = 1.2,
-			Damage = 0.95
+		Name = "Shadow Catalyst",
+		Rarity = "Legendary",
+		Modifiers = {
+			ShadowDamage = 30,
+			ChainEffect = 3,
+			Damage = 20
 		},
-		Description = "Tames the wildest recoil"
+		Description = "Spreads darkness to nearby foes"
 	},
-
-	-- ELEMENTAL AMPLIFIERS
 	{
-		Id = "ACC_HELLFIRE_CORE",
-		Name = "Hellfire Core",
-		Prefix = "Scorching",
-		ApplicableTypes = {"All"},
-		MinLevel = 12,
-		RequiresElement = "Hellfire",
-		StatModifiers = {
-			ElementalDamage = 1.4,
-			DOTDamage = 1.3,
-			ProcChance = 0.1
+		Name = "Divine Amplifier",
+		Rarity = "Legendary",
+		Modifiers = {
+			LightDamage = 40,
+			DamageVsUndead = 50,
+			Healing = 10,
+			CritChance = 10
 		},
-		Description = "Amplifies infernal power"
+		Description = "Channels divine light"
 	},
-
 	{
-		Id = "ACC_STORM_CAPACITOR",
-		Name = "Storm Capacitor",
-		Prefix = "Electrified",
-		ApplicableTypes = {"All"},
-		MinLevel = 12,
-		RequiresElement = "Stormwrath",
-		StatModifiers = {
-			ElementalDamage = 1.4,
-			DOTDamage = 1.3,
-			ProcChance = 0.12,
-			ShieldMultiplier = 0.2
+		Name = "Void Resonator",
+		Rarity = "Mythic",
+		Modifiers = {
+			VoidDamage = 50,
+			ChainLightning = 5,
+			CritDamage = 40,
+			ExplosionOnKill = true
 		},
-		Description = "Overcharges shock damage"
-	},
-
-	{
-		Id = "ACC_PLAGUE_INJECTOR",
-		Name = "Plague Injector",
-		Prefix = "Virulent",
-		ApplicableTypes = {"All"},
-		MinLevel = 12,
-		RequiresElement = "Plague",
-		StatModifiers = {
-			ElementalDamage = 1.4,
-			DOTDuration = 1.5,
-			ProcChance = 0.1,
-			ArmorMultiplier = 0.2
-		},
-		Description = "Spreads corruption faster"
-	},
-
-	-- EXPLOSIVE ENHANCEMENTS
-	{
-		Id = "ACC_APOCALYPSE_CORE",
-		Name = "Doomsday Core",
-		Prefix = "Cataclysmic",
-		ApplicableTypes = {"All"},
-		MinLevel = 15,
-		RequiresElement = "Apocalyptic",
-		StatModifiers = {
-			Damage = 1.3,
-			SplashRadius = 1.5,
-			SplashDamage = 1.3
-		},
-		Description = "Maximize explosive devastation"
-	},
-
-	-- CRITICAL HIT ACCESSORIES
-	{
-		Id = "ACC_EXECUTIONERS_MARK",
-		Name = "Executioner's Mark",
-		Prefix = "Lethal",
-		ApplicableTypes = {"Pistol", "Rifle", "Sniper"},
-		MinLevel = 10,
-		StatModifiers = {
-			CritChance = 0.15,
-			CritDamage = 0.3,
-			Damage = 0.95
-		},
-		Description = "Marks vital points with precision"
-	},
-
-	-- FIRE RATE BOOSTERS
-	{
-		Id = "ACC_RAPID_MECHANISM",
-		Name = "Spectral Mechanism",
-		Prefix = "Rapid",
-		ApplicableTypes = {"Pistol", "SMG", "Rifle"},
-		MinLevel = 8,
-		StatModifiers = {
-			FireRate = 1.4,
-			Accuracy = 0.9,
-			RecoilControl = 0.85
-		},
-		Description = "Ghostly fast cycling"
-	},
-
-	-- DAMAGE BOOSTERS
-	{
-		Id = "ACC_GRIM_HARVESTER",
-		Name = "Grim Harvester",
-		Prefix = "Devastating",
-		ApplicableTypes = {"Shotgun", "Sniper", "Rifle"},
-		MinLevel = 12,
-		StatModifiers = {
-			Damage = 1.35,
-			FireRate = 0.85,
-			MagazineSize = 0.9
-		},
-		Description = "Raw killing power"
-	},
-
-	-- UNIQUE LEGENDARY ACCESSORIES
-	{
-		Id = "ACC_LEGENDARY_SOULREAPER",
-		Name = "Soul Reaper Mechanism",
-		Prefix = "Soul-Reaping",
-		ApplicableTypes = {"All"},
-		MinLevel = 20,
-		MinRarity = "Legendary",
-		StatModifiers = {
-			Damage = 1.3,
-			CritChance = 0.1,
-			CritDamage = 0.5,
-			FireRate = 1.15,
-			LifeSteal = 0.05 -- 5% life steal
-		},
-		Description = "Harvests souls with every kill"
-	},
-
-	{
-		Id = "ACC_LEGENDARY_APOCALYPSE",
-		Name = "Apocalypse Engine",
-		Prefix = "Apocalyptic",
-		ApplicableTypes = {"All"},
-		MinLevel = 20,
-		MinRarity = "Legendary",
-		StatModifiers = {
-			Damage = 1.5,
-			SplashDamage = 2.0,
-			SplashRadius = 2.0,
-			FireRate = 0.7,
-			MagazineSize = 0.6
-		},
-		Description = "Brings the end times"
-	},
-
-	{
-		Id = "ACC_LEGENDARY_DIVINE_FURY",
-		Name = "Divine Fury Core",
-		Prefix = "Furious",
-		ApplicableTypes = {"All"},
-		MinLevel = 20,
-		MinRarity = "Legendary",
-		StatModifiers = {
-			FireRate = 1.8,
-			Damage = 1.2,
-			Accuracy = 1.2,
-			MagazineSize = 1.3,
-			ReloadTime = 0.7
-		},
-		Description = "Holy wrath incarnate"
-	},
-
-	-- SHOTGUN-SPECIFIC
-	{
-		Id = "ACC_SHOT_SPREADER_WRAITH",
-		Name = "Wraith Spreader",
-		Prefix = "Scattered",
-		ApplicableTypes = {"Shotgun"},
-		MinLevel = 5,
-		StatModifiers = {
-			PelletCount = 1.5,
-			Damage = 0.85,
-			Accuracy = 0.8
-		},
-		Description = "More pellets, wider spread"
-	},
-
-	{
-		Id = "ACC_SHOT_CHOKE_STONE",
-		Name = "Tombstone Choke",
-		Prefix = "Focused",
-		ApplicableTypes = {"Shotgun"},
-		MinLevel = 7,
-		StatModifiers = {
-			Accuracy = 1.5,
-			Range = 1.4,
-			PelletCount = 0.75
-		},
-		Description = "Tighter spread, longer range"
-	},
-
-	-- SNIPER-SPECIFIC
-	{
-		Id = "ACC_SNIPER_ORACLE_LENS",
-		Name = "Oracle's Perfect Lens",
-		Prefix = "Omniscient",
-		ApplicableTypes = {"Sniper"},
-		MinLevel = 10,
-		StatModifiers = {
-			Accuracy = 1.3,
-			CritDamage = 0.5,
-			ZoomLevel = 2.0,
-			AimSpeed = 0.8
-		},
-		Description = "See and destroy from impossible distances"
-	},
-
-	-- PISTOL-SPECIFIC
-	{
-		Id = "ACC_PISTOL_DUAL_HAMMER",
-		Name = "Dual-Strike Hammer",
-		Prefix = "Double-Tap",
-		ApplicableTypes = {"Pistol"},
-		MinLevel = 8,
-		StatModifiers = {
-			FireRate = 1.5,
-			Damage = 1.1,
-			Accuracy = 0.9
-		},
-		Description = "Fires twice per trigger pull"
+		Description = "Tears through reality"
 	}
-
-
 }
 
 return WeaponParts

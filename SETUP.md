@@ -9,15 +9,18 @@ Complete step-by-step guide for setting up the game in Roblox Studio.
 ```
 ReplicatedStorage/
 └── src/
-    ├── WeaponGenerator.lua
+    ├── WeaponGenerator.lua (ENHANCED)
     ├── WeaponStats.lua
     ├── WeaponConfig.lua
-    ├── WeaponParts.lua
+    ├── WeaponParts.lua (ENHANCED - All parts in one file)
+    ├── WeaponModelBuilder.lua (NEW - Builds 3D weapon models)
+    ├── ModularLootGen.lua (NEW - Visual weapon drops)
+    ├── Combat.lua (NEW - Damage & combat system)
     ├── DungeonConfig.lua
     ├── DungeonGenerator.lua
     ├── DungeonInstanceManager.lua
     ├── EnemySystem.lua
-    ├── LootDropper.lua
+    ├── LootDropper.lua (UPDATED - Now uses ModularLootGen)
     ├── PlayerStats.lua
     ├── ChurchSystem.lua
     ├── DeathHandler.lua
@@ -49,15 +52,18 @@ Workspace/
 1. Open Roblox Studio
 2. Create a folder in **ReplicatedStorage** named `src`
 3. Copy all files from `/src/` into `ReplicatedStorage.src/`:
-   - WeaponGenerator.lua
+   - WeaponGenerator.lua (ENHANCED)
    - WeaponStats.lua
    - WeaponConfig.lua
-   - WeaponParts.lua
+   - WeaponParts.lua (ENHANCED)
+   - WeaponModelBuilder.lua (NEW)
+   - ModularLootGen.lua (NEW)
+   - Combat.lua (NEW)
    - DungeonConfig.lua
    - DungeonGenerator.lua
    - DungeonInstanceManager.lua
    - EnemySystem.lua
-   - LootDropper.lua
+   - LootDropper.lua (UPDATED)
    - PlayerStats.lua
    - ChurchSystem.lua
    - DeathHandler.lua
@@ -288,14 +294,25 @@ Create AI scripts that use EnemySystem and LootDropper for combat/drops
 ## ✅ Summary
 
 Once setup is complete, your game will have:
-- ✅ Procedural weapon generation (Borderlands-style)
+- ✅ **Enhanced procedural weapon generation** (Borderlands-style with 7 part types)
+- ✅ **3D weapon models** (Auto-built from weapon data with manufacturer theming)
+- ✅ **Visual weapon drops** (Floating weapons with rarity-colored beams)
+- ✅ **Combat system** (Damage calculation, elemental effects, status effects)
 - ✅ 666-floor dungeon system
 - ✅ **Per-player instanced dungeons** (single-player experience)
 - ✅ Soul Vendor NPC (auto-generated)
-- ✅ Player progression (Souls, upgrades)
+- ✅ Player progression (Souls, upgrades, weapon inventory)
 - ✅ Death mechanics (roguelite)
 - ✅ Church hub (Floor 0)
 - ✅ Dungeon entry teleporter
 - ✅ Automatic instance creation/cleanup
+
+**New Features Added:**
+- 🎨 Procedural 3D weapon models with gothic theming
+- 💎 Rarity-based loot drops with visual effects
+- ⚔️ Complete combat system with elemental damage
+- 🔥 Status effects (Burn, Freeze, Chain Lightning)
+- 📦 Weapon inventory management
+- 🎯 Crit chance, lifesteal, and special effects
 
 **Everything works together automatically!**

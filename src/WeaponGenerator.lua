@@ -1,470 +1,439 @@
 --[[
 	WeaponGenerator.lua
-	BL2-Accurate Weapon Generation System with Gothic Theming
-
-	Generation Order (BL2-accurate):
-	1. Roll for Rarity (determines body/material and accessory chance)
-	2. Choose Manufacturer (affects all stats and mechanics)
-	3. Choose Weapon Type
-	4. Select Parts (based on rarity, manufacturer, level)
-	5. Roll for Accessory (based on rarity rules)
-	6. Choose Element (based on manufacturer and rarity)
-	7. Calculate final stats with level scaling (1.13× per level)
-	8. Generate prefix from parts (highest priority wins)
-
-	Usage:
-		local WeaponGenerator = require(ReplicatedStorage.WeaponSystem.WeaponGenerator)
-
-		-- Generate random weapon
-		local weapon = WeaponGenerator.GenerateWeapon(10) -- Level 10
-
-		-- Generate specific manufacturer + type
-		local weapon = WeaponGenerator.GenerateWeapon(15, "Rifle", "Hellforge")
-
-		-- Generate with forced rarity
-		local legendary = WeaponGenerator.GenerateWeapon(20, nil, nil, "Legendary")
+	Enhanced Borderlands-style weapon generation for Gothic FPS Roguelite
+	Generates procedural weapons from modular parts with full stat calculation
 ]]
 
 local WeaponGenerator = {}
 
--- Import dependencies
-local WeaponConfig = require(script.Parent.WeaponConfig)
-local WeaponStats = require(script.Parent.WeaponStats)
-
--- Import part libraries (combined into single file)
 local WeaponParts = require(script.Parent.WeaponParts)
-local Bodies = WeaponParts.Bodies
-local Barrels = WeaponParts.Barrels
-local Grips = WeaponParts.Grips
-local Stocks = WeaponParts.Stocks
-local Magazines = WeaponParts.Magazines
-local Sights = WeaponParts.Sights
-local Accessories = WeaponParts.Accessories
+
+-- ============================================================
+-- RARITY SYSTEM
+-- ============================================================
+
+-- Rarity weights for loot drops
+local RarityWeights = {
+	Common = 50,
+	Uncommon = 30,
+	Rare = 15,
+	Epic = 4,
+	Legendary = 0.9,
+	Mythic = 0.1
+}
+
+-- Rarity color codes
+local RarityColors = {
+	Common = Color3.fromRGB(200, 200, 200),
+	Uncommon = Color3.fromRGB(50, 205, 50),
+	Rare = Color3.fromRGB(30, 144, 255),
+	Epic = Color3.fromRGB(138, 43, 226),
+	Legendary = Color3.fromRGB(255, 215, 0),
+	Mythic = Color3.fromRGB(255, 50, 50)
+}
 
 -- Random number generator
 local rng = Random.new()
 
---[[
-	Set a seed for deterministic weapon generation
-]]
+-- ============================================================
+-- UTILITY FUNCTIONS
+-- ============================================================
+
 function WeaponGenerator.SetSeed(seed)
 	rng = Random.new(seed)
 end
 
---[[
-	STEP 1: Select a random rarity based on drop weights (BL2: This is FIRST)
-]]
-local function SelectRarity(forcedRarity)
-	if forcedRarity then
-		return WeaponConfig.Rarities[forcedRarity]
-	end
+function WeaponGenerator:RollRarity(luckModifier)
+	luckModifier = luckModifier or 0
 
 	local totalWeight = 0
-	for _, rarity in pairs(WeaponConfig.Rarities) do
-		totalWeight = totalWeight + rarity.DropWeight
+	for _, weight in pairs(RarityWeights) do
+		totalWeight = totalWeight + weight
 	end
 
-	local roll = rng:NextNumber(0, totalWeight)
-	local currentWeight = 0
+	local roll = rng:NextNumber() * totalWeight * (1 + luckModifier)
 
-	for _, rarity in pairs(WeaponConfig.Rarities) do
-		currentWeight = currentWeight + rarity.DropWeight
-		if roll <= currentWeight then
+	local cumulative = 0
+	for rarity, weight in pairs(RarityWeights) do
+		cumulative = cumulative + weight
+		if roll <= cumulative then
 			return rarity
 		end
 	end
 
-	return WeaponConfig.Rarities.Common
+	return "Common"
 end
 
---[[
-	STEP 2: Select a random manufacturer
-]]
-local function SelectManufacturer(forcedManufacturer)
-	if forcedManufacturer then
-		return WeaponConfig.Manufacturers[forcedManufacturer]
-	end
-
-	-- Equal weight for all manufacturers
-	local manufacturerList = {}
-	for _, manufacturer in pairs(WeaponConfig.Manufacturers) do
-		table.insert(manufacturerList, manufacturer)
-	end
-
-	local index = rng:NextInteger(1, #manufacturerList)
-	return manufacturerList[index]
+function WeaponGenerator:RarityValue(rarity)
+	local values = {
+		Common = 1,
+		Uncommon = 2,
+		Rare = 3,
+		Epic = 4,
+		Legendary = 5,
+		Mythic = 6
+	}
+	return values[rarity] or 1
 end
 
---[[
-	STEP 3: Select weapon type
-]]
-local function SelectWeaponType(forcedType)
-	if forcedType then
-		return forcedType
-	end
+function WeaponGenerator:GetRandomPart(partType, maxRarity)
+	local parts = WeaponParts[partType]
+	if not parts then return nil end
 
-	local types = {"Pistol", "Rifle", "Shotgun", "SMG", "Sniper"}
-	local index = rng:NextInteger(1, #types)
-	return types[index]
-end
-
---[[
-	STEP 4: Select parts based on level and filters
-]]
-local function FilterPartsByLevel(parts, level)
-	local filtered = {}
+	-- Filter by rarity
+	local validParts = {}
 	for _, part in ipairs(parts) do
-		if part.MinLevel <= level then
-			table.insert(filtered, part)
-		end
-	end
-	return #filtered > 0 and filtered or parts
-end
-
-local function FilterPartsByType(parts, weaponType)
-	local filtered = {}
-	for _, part in ipairs(parts) do
-		if part.Type == weaponType then
-			table.insert(filtered, part)
-		end
-	end
-	return #filtered > 0 and filtered or nil
-end
-
-local function SelectRandomPart(parts)
-	if not parts or #parts == 0 then return nil end
-	return parts[rng:NextInteger(1, #parts)]
-end
-
---[[
-	STEP 5: Roll for accessory (BL2 rarity rules)
-	- Common: NEVER
-	- Uncommon: 30% chance
-	- Rare: 50% chance
-	- Epic+: ALWAYS
-]]
-local function RollForAccessory(rarity, weaponType, element, level)
-	-- Check if accessory is allowed
-	if rarity.HasAccessory == false then
-		return nil
-	end
-
-	-- Check probability
-	if rarity.HasAccessory == "chance" then
-		if rng:NextNumber() > rarity.AccessoryChance then
-			return nil
+		if self:RarityValue(part.Rarity or "Common") <= self:RarityValue(maxRarity) then
+			table.insert(validParts, part)
 		end
 	end
 
-	-- Filter accessories
-	local available = {}
-	for _, acc in ipairs(Accessories) do
-		-- Check level
-		if acc.MinLevel > level then continue end
+	if #validParts == 0 then return parts[1] end
 
-		-- Check rarity requirement
-		if acc.MinRarity then
-			local rarityOrder = {Common=1, Uncommon=2, Rare=3, Epic=4, Legendary=5, Mythic=6}
-			if rarityOrder[rarity.Name] < rarityOrder[acc.MinRarity] then
-				continue
+	return validParts[rng:NextInteger(1, #validParts)]
+end
+
+function WeaponGenerator:GetWeaponRarity(parts)
+	local highestValue = 0
+	local highestRarity = "Common"
+
+	for _, part in pairs(parts) do
+		if part and part.Rarity then
+			local value = self:RarityValue(part.Rarity)
+			if value > highestValue then
+				highestValue = value
+				highestRarity = part.Rarity
 			end
 		end
+	end
 
-		-- Check weapon type applicability
-		local applicable = false
-		for _, applicableType in ipairs(acc.ApplicableTypes) do
-			if applicableType == "All" or applicableType == weaponType then
-				applicable = true
+	return highestRarity
+end
+
+-- ============================================================
+-- WEAPON GENERATION
+-- ============================================================
+
+function WeaponGenerator:GenerateWeapon(level, baseTypeName, forcedRarity)
+	level = level or 1
+
+	-- Determine overall rarity
+	local maxRarity = forcedRarity or self:RollRarity(level / 100)
+
+	-- Select base weapon type
+	local baseTypes = WeaponParts.BaseTypes
+	local base
+	if baseTypeName then
+		for _, bt in ipairs(baseTypes) do
+			if bt.Name == baseTypeName then
+				base = bt
 				break
 			end
 		end
-		if not applicable then continue end
-
-		-- Check element requirement
-		if acc.RequiresElement and (not element or element.Name ~= acc.RequiresElement) then
-			continue
-		end
-
-		table.insert(available, acc)
+	end
+	if not base then
+		base = baseTypes[rng:NextInteger(1, #baseTypes)]
 	end
 
-	return SelectRandomPart(available)
-end
-
---[[
-	STEP 6: Choose element based on manufacturer and rarity
-]]
-local function ChooseElement(manufacturer, rarity)
-	-- Jakobs NEVER has elements
-	if manufacturer.Mechanics.Type == "Jakobs" then
-		return nil
-	end
-
-	-- Torgue is ALWAYS explosive
-	if manufacturer.Mechanics.AlwaysExplosive then
-		return WeaponConfig.Elements.Apocalyptic
-	end
-
-	-- Maliwan is ALWAYS elemental
-	if manufacturer.Mechanics.AlwaysElemental then
-		local elements = {"Hellfire", "Stormwrath", "Plague", "Curse"}
-		local elementName = elements[rng:NextInteger(1, #elements)]
-		return WeaponConfig.Elements[elementName]
-	end
-
-	-- Legendary+ guaranteed element
-	if rarity.GuaranteedElement then
-		local elements = {"Hellfire", "Stormwrath", "Plague", "Curse"}
-		local elementName = elements[rng:NextInteger(1, #elements)]
-		return WeaponConfig.Elements[elementName]
-	end
-
-	-- Roll for element based on manufacturer chance
-	if rng:NextNumber() < manufacturer.ElementalChance then
-		local elements = {"Hellfire", "Stormwrath", "Plague", "Curse"}
-		local elementName = elements[rng:NextInteger(1, #elements)]
-		return WeaponConfig.Elements[elementName]
-	end
-
-	return nil
-end
-
---[[
-	STEP 8: Generate prefix from parts (highest priority wins)
-	Priority: Accessory > Element > Grip > Barrel
-]]
-local function GeneratePrefix(accessory, element, grip, barrel)
-	-- Accessory prefix has highest priority
-	if accessory and accessory.Prefix then
-		return accessory.Prefix
-	end
-
-	-- Element prefix
-	if element and element.Name then
-		return element.Name
-	end
-
-	-- Grip prefix (if it has one)
-	if grip and grip.Prefix then
-		return grip.Prefix
-	end
-
-	-- Barrel prefix
-	if barrel and barrel.Prefix then
-		return barrel.Prefix
-	end
-
-	-- No prefix
-	return nil
-end
-
---[[
-	Generate weapon name with prefix
-]]
-local function GenerateName(prefix, manufacturer, weaponType)
-	local name = ""
-
-	-- Add prefix if exists
-	if prefix then
-		name = prefix .. " "
-	end
-
-	-- Add manufacturer
-	name = name .. manufacturer.ShortName .. " "
-
-	-- Add weapon type
-	name = name .. weaponType
-
-	return name
-end
-
---[[
-	Main weapon generation function (BL2-accurate)
-
-	@param level - Weapon level (1-80+)
-	@param weaponType - Optional: Force weapon type
-	@param manufacturerName - Optional: Force manufacturer
-	@param rarityName - Optional: Force rarity
-	@return weapon - Complete weapon data
-]]
-function WeaponGenerator.GenerateWeapon(level, weaponType, manufacturerName, rarityName)
-	level = level or 1
-
-	-- STEP 1: Choose rarity FIRST (like BL2)
-	local rarity = SelectRarity(rarityName)
-
-	-- STEP 2: Choose manufacturer
-	local manufacturer = SelectManufacturer(manufacturerName)
-
-	-- STEP 3: Choose weapon type
-	local chosenType = SelectWeaponType(weaponType)
-
-	-- STEP 4: Select parts
-	local bodyParts = FilterPartsByType(Bodies, chosenType)
-	if not bodyParts then
-		warn("No body parts found for type:", chosenType)
-		return nil
-	end
-	local body = SelectRandomPart(FilterPartsByLevel(bodyParts, level))
-
-	local barrel = SelectRandomPart(FilterPartsByLevel(Barrels, level))
-	local grip = SelectRandomPart(FilterPartsByLevel(Grips, level))
-	local stock = SelectRandomPart(FilterPartsByLevel(Stocks, level))
-	local magazine = SelectRandomPart(FilterPartsByLevel(Magazines, level))
-	local sight = SelectRandomPart(FilterPartsByLevel(Sights, level))
-
-	-- STEP 6: Choose element
-	local element = ChooseElement(manufacturer, rarity)
-
-	-- STEP 5: Roll for accessory (must be after element for element-based accessories)
-	local accessory = RollForAccessory(rarity, chosenType, element, level)
-
-	-- STEP 7: Calculate final stats with BL2 level scaling
-	local stats = WeaponStats.CalculateStats(
-		body, barrel, grip, stock, magazine, sight, accessory,
-		manufacturer, rarity, element, level
-	)
-
-	-- STEP 8: Generate prefix and name
-	local prefix = GeneratePrefix(accessory, element, grip, barrel)
-	local name = GenerateName(prefix, manufacturer, chosenType)
-
-	-- Build complete weapon data
-	local weapon = {
-		-- Identity
-		Name = name,
-		Prefix = prefix,
-		Type = chosenType,
-		Rarity = rarity,
-		Manufacturer = manufacturer,
-		Level = level,
-
-		-- Element
-		Element = element,
-
-		-- Parts (for visual representation and mechanics)
-		Parts = {
-			Body = body,
-			Barrel = barrel,
-			Grip = grip,
-			Stock = stock,
-			Magazine = magazine,
-			Sight = sight,
-			Accessory = accessory
-		},
-
-		-- Final stats
-		Stats = stats,
-
-		-- Calculated values
-		DPS = WeaponStats.CalculateDPS(stats),
-
-		-- Manufacturer mechanics (for gameplay implementation)
-		Mechanics = manufacturer.Mechanics,
-
-		-- Generation metadata
-		GeneratedAt = os.time(),
-		Seed = nil -- Will be set if generated from seed
+	-- Select parts
+	local parts = {
+		Base = base,
+		Manufacturer = WeaponParts.Manufacturers[rng:NextInteger(1, #WeaponParts.Manufacturers)],
+		Stock = self:GetRandomPart("Stocks", maxRarity),
+		Body = self:GetRandomPart("Bodies", maxRarity),
+		Barrel = self:GetRandomPart("Barrels", maxRarity),
+		Magazine = self:GetRandomPart("Magazines", maxRarity),
+		Sight = self:GetRandomPart("Sights", maxRarity),
+		Accessory = self:GetRandomPart("Accessories", maxRarity)
 	}
+
+	-- Build weapon stats
+	local weapon = self:BuildWeaponStats(parts, level)
+	weapon.Parts = parts
+	weapon.Level = level
+	weapon.Rarity = self:GetWeaponRarity(parts)
+	weapon.Manufacturer = parts.Manufacturer.Name
+
+	-- Generate weapon name
+	weapon.Name = self:GenerateWeaponName(parts)
 
 	return weapon
 end
 
---[[
-	Generate multiple weapons at once
-]]
-function WeaponGenerator.GenerateWeapons(count, level, weaponType, manufacturerName, rarityName)
+-- ============================================================
+-- STAT CALCULATION
+-- ============================================================
+
+function WeaponGenerator:BuildWeaponStats(parts, level)
+	local base = parts.Base.BaseStats
+
+	-- Start with base stats
+	local stats = {
+		-- Core stats
+		Damage = base.Damage,
+		FireRate = base.FireRate,
+		Capacity = base.Capacity,
+		Accuracy = base.Accuracy,
+		Range = base.Range,
+		ReloadTime = base.ReloadTime,
+		Pellets = base.Pellets or 1,
+
+		-- Handling stats
+		Stability = 0,
+		RecoilReduction = 0,
+		EquipSpeed = 0,
+		ReloadSpeed = 0,
+		AimSpeed = 0,
+
+		-- Critical stats
+		CritChance = 0,
+		CritDamage = 0,
+		HeadshotBonus = 0,
+
+		-- Special stats
+		SoulGain = 0,
+		KillHeal = 0,
+
+		-- Elemental damage
+		FireDamage = 0,
+		FrostDamage = 0,
+		ShadowDamage = 0,
+		LightDamage = 0,
+		VoidDamage = 0,
+
+		-- Status effects
+		BurnChance = 0,
+		SlowChance = 0,
+		ChainEffect = 0,
+		PenetrationChance = 0,
+
+		-- Misc
+		Weight = 0,
+		Durability = 0,
+		Mobility = 0
+	}
+
+	-- Apply all part modifiers
+	for partName, part in pairs(parts) do
+		if part and part.Modifiers then
+			for statName, value in pairs(part.Modifiers) do
+				if stats[statName] ~= nil then
+					-- Percentage modifiers (DamageBonus, FireRateBonus, etc.)
+					if statName:find("Bonus") then
+						local baseStat = statName:gsub("Bonus", "")
+						if stats[baseStat] then
+							stats[baseStat] = stats[baseStat] * (1 + value)
+						end
+					-- Capacity modifiers (percentage if not integer)
+					elseif statName == "Capacity" and type(value) == "number" and math.abs(value) >= 10 then
+						stats.Capacity = stats.Capacity + value
+					-- Additive modifiers
+					else
+						stats[statName] = stats[statName] + value
+					end
+				else
+					-- New stat (special effects)
+					stats[statName] = value
+				end
+			end
+		end
+	end
+
+	-- Apply level scaling (1.05× per level = 5% increase)
+	local levelMod = 1 + (level * 0.05)
+	stats.Damage = math.floor(stats.Damage * levelMod)
+
+	-- Apply manufacturer bonuses
+	if parts.Manufacturer and parts.Manufacturer.Modifiers then
+		for statName, value in pairs(parts.Manufacturer.Modifiers) do
+			if type(value) == "number" then
+				if statName:find("Bonus") then
+					local baseStat = statName:gsub("Bonus", "")
+					if stats[baseStat] then
+						stats[baseStat] = stats[baseStat] * (1 + value)
+					end
+				else
+					stats[statName] = (stats[statName] or 0) + value
+				end
+			else
+				stats[statName] = value
+			end
+		end
+	end
+
+	-- Clamp values to reasonable ranges
+	stats.Accuracy = math.clamp(stats.Accuracy, 0, 100)
+	stats.FireRate = math.max(0.05, stats.FireRate)
+	stats.Capacity = math.max(1, math.floor(stats.Capacity))
+	stats.ReloadTime = math.max(0.5, stats.ReloadTime)
+	stats.Pellets = math.max(1, math.floor(stats.Pellets))
+
+	-- Calculate DPS
+	stats.DPS = math.floor((stats.Damage * stats.Pellets) / stats.FireRate)
+
+	return stats
+end
+
+-- ============================================================
+-- WEAPON NAMING
+-- ============================================================
+
+function WeaponGenerator:GenerateWeaponName(parts)
+	local manufacturer = parts.Manufacturer.Name
+	local baseName = parts.Base.Name
+
+	-- Get most unique part for flavor
+	local flavorPart = parts.Accessory
+	if not flavorPart or flavorPart.Name == "None" then
+		flavorPart = parts.Barrel
+	end
+
+	-- Name formats
+	local formats = {
+		manufacturer .. " " .. baseName,
+		baseName .. " (" .. manufacturer .. ")",
+		"The " .. flavorPart.Name:gsub(" ", " ") .. " " .. baseName,
+		manufacturer .. "'s " .. baseName
+	}
+
+	return formats[rng:NextInteger(1, #formats)]
+end
+
+-- ============================================================
+-- WEAPON DESCRIPTION
+-- ============================================================
+
+function WeaponGenerator:GenerateDescription(weapon)
+	local parts = weapon.Parts
+	local lines = {
+		"Level " .. weapon.Level .. " " .. weapon.Rarity .. " " .. parts.Base.Name,
+		"",
+		"Manufacturer: " .. parts.Manufacturer.Name,
+		"  " .. parts.Manufacturer.Bonus,
+		"",
+		"Parts:",
+		"  Stock: " .. parts.Stock.Name .. " - " .. parts.Stock.Description,
+		"  Body: " .. parts.Body.Name .. " - " .. parts.Body.Description,
+		"  Barrel: " .. parts.Barrel.Name .. " - " .. parts.Barrel.Description,
+		"  Magazine: " .. parts.Magazine.Name .. " - " .. parts.Magazine.Description,
+		"  Sight: " .. parts.Sight.Name .. " - " .. parts.Sight.Description,
+		"  Accessory: " .. parts.Accessory.Name .. " - " .. parts.Accessory.Description,
+		"",
+		"Stats:",
+		string.format("  Damage: %.0f x%d", weapon.Damage, weapon.Pellets),
+		string.format("  DPS: %.0f", weapon.DPS),
+		string.format("  Fire Rate: %.2f shots/s", 1/weapon.FireRate),
+		string.format("  Accuracy: %.0f%%", weapon.Accuracy),
+		string.format("  Magazine: %d rounds", weapon.Capacity),
+		string.format("  Range: %.0f studs", weapon.Range),
+		string.format("  Reload: %.1fs", weapon.ReloadTime)
+	}
+
+	-- Add special stats if they exist
+	if weapon.CritChance > 0 then
+		table.insert(lines, string.format("  Crit Chance: +%.0f%%", weapon.CritChance))
+	end
+	if weapon.CritDamage > 0 then
+		table.insert(lines, string.format("  Crit Damage: +%.0f%%", weapon.CritDamage))
+	end
+	if weapon.SoulGain > 0 then
+		table.insert(lines, string.format("  Soul Gain: +%.0f", weapon.SoulGain))
+	end
+	if weapon.KillHeal > 0 then
+		table.insert(lines, string.format("  Heal on Kill: +%.0f", weapon.KillHeal))
+	end
+
+	-- Add elemental damage
+	if weapon.FireDamage > 0 then
+		table.insert(lines, string.format("  Fire Damage: +%.0f%%", weapon.FireDamage))
+	end
+	if weapon.FrostDamage > 0 then
+		table.insert(lines, string.format("  Frost Damage: +%.0f%%", weapon.FrostDamage))
+	end
+	if weapon.ShadowDamage > 0 then
+		table.insert(lines, string.format("  Shadow Damage: +%.0f%%", weapon.ShadowDamage))
+	end
+	if weapon.LightDamage > 0 then
+		table.insert(lines, string.format("  Light Damage: +%.0f%%", weapon.LightDamage))
+	end
+	if weapon.VoidDamage > 0 then
+		table.insert(lines, string.format("  Void Damage: +%.0f%%", weapon.VoidDamage))
+	end
+
+	return table.concat(lines, "\n")
+end
+
+-- ============================================================
+-- WEAPON CARD (UI DATA)
+-- ============================================================
+
+function WeaponGenerator:GetWeaponCard(weapon)
+	return {
+		Name = weapon.Name,
+		Level = weapon.Level,
+		Rarity = weapon.Rarity,
+		Color = RarityColors[weapon.Rarity],
+		Type = weapon.Parts.Base.Name,
+		Manufacturer = weapon.Parts.Manufacturer.Name,
+		ManufacturerColor = weapon.Parts.Manufacturer.Color,
+		Description = self:GenerateDescription(weapon),
+		Stats = {
+			Damage = weapon.Damage,
+			DPS = weapon.DPS,
+			FireRate = 1 / weapon.FireRate,
+			Accuracy = weapon.Accuracy,
+			Capacity = weapon.Capacity,
+			Range = weapon.Range,
+			ReloadTime = weapon.ReloadTime
+		}
+	}
+end
+
+-- ============================================================
+-- WEAPON COMPARISON
+-- ============================================================
+
+function WeaponGenerator:CompareWeapons(weapon1, weapon2)
+	local comparison = {}
+
+	local stats = {"Damage", "DPS", "FireRate", "Accuracy", "Capacity", "Range", "ReloadTime"}
+
+	for _, stat in ipairs(stats) do
+		local val1 = weapon1[stat] or 0
+		local val2 = weapon2[stat] or 0
+		local diff = val2 - val1
+
+		-- For FireRate and ReloadTime, lower is better
+		local better = diff > 0
+		if stat == "FireRate" or stat == "ReloadTime" then
+			better = diff < 0
+		end
+
+		comparison[stat] = {
+			Current = val1,
+			New = val2,
+			Difference = diff,
+			Better = better
+		}
+	end
+
+	return comparison
+end
+
+-- ============================================================
+-- BATCH GENERATION (TESTING)
+-- ============================================================
+
+function WeaponGenerator:GenerateMultiple(count, level)
 	local weapons = {}
 	for i = 1, count do
-		local weapon = WeaponGenerator.GenerateWeapon(level, weaponType, manufacturerName, rarityName)
-		if weapon then
-			table.insert(weapons, weapon)
-		end
+		table.insert(weapons, self:GenerateWeapon(level))
 	end
 	return weapons
 end
 
---[[
-	Generate a weapon from a seed (deterministic)
-]]
-function WeaponGenerator.GenerateWeaponFromSeed(seed, level, weaponType, manufacturerName, rarityName)
-	local oldRng = rng
-	rng = Random.new(seed)
-	local weapon = WeaponGenerator.GenerateWeapon(level, weaponType, manufacturerName, rarityName)
-	if weapon then
-		weapon.Seed = seed
-	end
-	rng = oldRng
-	return weapon
-end
-
---[[
-	Get a formatted weapon description
-]]
-function WeaponGenerator.GetWeaponDescription(weapon)
-	local elementText = weapon.Element and string.format(
-		"\n  Element: %s %s",
-		weapon.Element.Icon,
-		weapon.Element.Name
-	) or ""
-
-	local accessoryText = weapon.Parts.Accessory and string.format(
-		"\n  Accessory: %s",
-		weapon.Parts.Accessory.Name
-	) or "\n  Accessory: None"
-
-	local mechanicsText = string.format(
-		"\nManufacturer Trait:\n  %s",
-		weapon.Manufacturer.Mechanics.Description
-	)
-
-	local desc = string.format(
-		"=== %s ===\n" ..
-		"Manufacturer: %s | Type: %s | Rarity: %s | Level: %d\n" ..
-		"%s" ..
-		"%s" ..
-		"\nStats:\n" ..
-		"  Damage: %d\n" ..
-		"  Fire Rate: %.1f rounds/sec\n" ..
-		"  DPS: %.1f\n" ..
-		"  Accuracy: %.0f%%\n" ..
-		"  Magazine: %d rounds\n" ..
-		"  Reload Time: %.2fs\n" ..
-		"  Crit Chance: %.1f%%\n" ..
-		"  Crit Multiplier: %.1fx\n" ..
-		"%s" ..
-		"\nParts:\n" ..
-		"  Body: %s\n" ..
-		"  Barrel: %s\n" ..
-		"  Grip: %s\n" ..
-		"  Stock: %s\n" ..
-		"  Magazine: %s\n" ..
-		"  Sight: %s%s",
-		weapon.Name,
-		weapon.Manufacturer.Name,
-		weapon.Type,
-		weapon.Rarity.Name,
-		weapon.Level,
-		elementText,
-		mechanicsText,
-		weapon.Stats.Damage,
-		weapon.Stats.FireRate,
-		weapon.DPS,
-		weapon.Stats.Accuracy * 100,
-		weapon.Stats.MagazineSize,
-		weapon.Stats.ReloadTime,
-		weapon.Stats.CritChance * 100,
-		weapon.Stats.CritMultiplier,
-		"",
-		weapon.Parts.Body.Name,
-		weapon.Parts.Barrel.Name,
-		weapon.Parts.Grip.Name,
-		weapon.Parts.Stock.Name,
-		weapon.Parts.Magazine.Name,
-		weapon.Parts.Sight.Name,
-		accessoryText
-	)
-	return desc
+function WeaponGenerator:GenerateByRarity(rarity, level)
+	return self:GenerateWeapon(level, nil, rarity)
 end
 
 return WeaponGenerator

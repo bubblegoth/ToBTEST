@@ -1,13 +1,14 @@
 --[[
 	LootDropper.lua
 	Handles loot drops from enemies (Weapons Floor 2+, Souls from Rare/Boss)
-	Integrates EnemySystem with WeaponGenerator
+	Now delegates to ModularLootGen for visual weapon drops
 	Part of the Gothic FPS Roguelite Dungeon System
 ]]
 
 local DungeonConfig = require(script.Parent.DungeonConfig)
 local EnemySystem = require(script.Parent.EnemySystem)
 local WeaponGenerator = require(script.Parent.WeaponGenerator)
+local ModularLootGen = require(script.Parent.ModularLootGen)
 
 local LootDropper = {}
 
@@ -250,6 +251,29 @@ function LootDropper.PrintSimulationResults(results)
 		results.WeaponDropRate,
 		results.TotalWeapons
 	))
+end
+
+-- ============================================================
+-- MODULAR LOOT GEN INTEGRATION (VISUAL DROPS)
+-- ============================================================
+
+--[[
+	Spawns a visual weapon drop in the world using ModularLootGen
+	This creates floating 3D weapon models that players can pick up
+]]
+function LootDropper.SpawnVisualWeaponDrop(position, level, floorNumber, forcedRarity)
+	return ModularLootGen:SpawnWeaponLoot(position, level, forcedRarity)
+end
+
+--[[
+	Handles enemy death with visual loot spawning
+	Use this when an enemy dies to spawn loot in the world
+]]
+function LootDropper.HandleEnemyDeathWithLoot(enemy, playerLevel, floorNumber)
+	if not enemy or not enemy.PrimaryPart then return end
+
+	-- Use ModularLootGen to handle enemy loot spawning
+	ModularLootGen:SpawnLootFromEnemy(enemy, playerLevel, floorNumber)
 end
 
 return LootDropper
