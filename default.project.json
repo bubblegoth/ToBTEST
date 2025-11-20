@@ -1,0 +1,12 @@
+{
+  "name": "GothicFPSWeaponSystem",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "WeaponSystem": {
+        "$path": "src"
+      }
+    }
+  }
+}
