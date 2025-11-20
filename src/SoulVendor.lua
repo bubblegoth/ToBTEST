@@ -62,16 +62,16 @@ setupNameTag()
 -- ============================================================
 
 local function openUpgradeShop(player)
-	-- Get player stats (server-side, you'll need to implement this)
-	local playerStats = player:FindFirstChild("PlayerStats") -- Adjust based on your implementation
+	-- Get player stats using global function (set by PlayerDataManager)
+	local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
 
 	if not playerStats then
-		warn("PlayerStats not found for", player.Name)
+		warn("PlayerStats not found for", player.Name, "- Is PlayerDataManager running?")
 		return
 	end
 
 	-- Check if player is on Floor 0 (Church)
-	local currentFloor = playerStats.CurrentFloor.Value
+	local currentFloor = playerStats:GetCurrentFloor()
 
 	if not ChurchSystem.IsChurchAccessible(currentFloor) then
 		-- Player tried to access shop from dungeon
@@ -80,7 +80,7 @@ local function openUpgradeShop(player)
 	end
 
 	-- Get player's Soul count
-	local souls = playerStats.Souls.Value
+	local souls = playerStats:GetSouls()
 
 	-- Display greeting
 	print(string.format("[%s] %s", vendorName, vendorDialogue.Greeting))
@@ -169,19 +169,24 @@ setupProximityPrompt()
 -- ============================================================
 
 function SoulVendor.PurchaseUpgrade(player, upgradeID)
-	local playerStats = player:FindFirstChild("PlayerStats")
+	local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
 
 	if not playerStats then
 		return false, "Player stats not found"
 	end
 
 	-- Check if in Church
-	if not ChurchSystem.IsChurchAccessible(playerStats.CurrentFloor.Value) then
+	if not ChurchSystem.IsChurchAccessible(playerStats:GetCurrentFloor()) then
 		return false, "Can only purchase upgrades in the Church"
 	end
 
 	-- Attempt purchase
 	local success, message = ChurchSystem.PurchaseUpgrade(playerStats, upgradeID)
+
+	-- Update player values after purchase
+	if success and _G.UpdatePlayerValues then
+		_G.UpdatePlayerValues(player)
+	end
 
 	if success then
 		print(string.format("[%s] %s", vendorName, vendorDialogue.PurchaseSuccess))

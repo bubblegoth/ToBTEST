@@ -45,16 +45,16 @@ local function teleportToDungeon(player)
 	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
 	if not humanoidRootPart then return end
 
-	-- Get or initialize player stats (server-side)
-	local playerStats = player:FindFirstChild("PlayerStats") -- Assuming you store this in player object
+	-- Get player stats using global function (set by PlayerDataManager)
+	local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
 
 	if not playerStats then
-		warn("PlayerStats not found for", player.Name)
+		warn("PlayerStats not found for", player.Name, "- Is PlayerDataManager running?")
 		return
 	end
 
 	-- Check if player is currently on Floor 0 (Church)
-	local currentFloor = playerStats.CurrentFloor.Value
+	local currentFloor = playerStats:GetCurrentFloor()
 
 	if currentFloor ~= 0 then
 		-- Player is already in dungeon, teleport to next floor
@@ -67,7 +67,12 @@ local function teleportToDungeon(player)
 		end
 
 		-- Advance to next floor
-		playerStats.CurrentFloor.Value = nextFloor
+		playerStats:AdvanceFloor()
+
+		-- Update player values (syncs with Value objects)
+		if _G.UpdatePlayerValues then
+			_G.UpdatePlayerValues(player)
+		end
 
 		-- Generate next floor (you'll need to build the 3D geometry here)
 		local floor = DungeonGenerator.GenerateFloor(nextFloor)
@@ -78,7 +83,12 @@ local function teleportToDungeon(player)
 		print(player.Name, "descended to Floor", nextFloor)
 	else
 		-- Player is in Church (Floor 0), entering dungeon for first time
-		playerStats.CurrentFloor.Value = 1
+		playerStats:AdvanceFloor() -- Advances from 0 to 1
+
+		-- Update player values (syncs with Value objects)
+		if _G.UpdatePlayerValues then
+			_G.UpdatePlayerValues(player)
+		end
 
 		-- Give starting weapon using StartingWeapon module
 		local receivedWeapon, weapon = StartingWeapon.OnFloorEntry(playerStats, 1)
