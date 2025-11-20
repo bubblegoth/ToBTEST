@@ -14,11 +14,11 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Module references (adjust paths as needed)
-local PlayerStats = require(ReplicatedStorage.src.PlayerStats)
-local WeaponGenerator = require(ReplicatedStorage.src.WeaponGenerator)
-local DungeonGenerator = require(ReplicatedStorage.src.DungeonGenerator)
-local DungeonInstanceManager = require(ReplicatedStorage.src.DungeonInstanceManager)
-local StartingWeapon = require(ReplicatedStorage.src.StartingWeapon)
+local PlayerStats = require(ReplicatedStorage.Modules.PlayerStats)
+local WeaponGenerator = require(ReplicatedStorage.Modules.WeaponGenerator)
+local DungeonGenerator = require(ReplicatedStorage.Modules.DungeonGenerator)
+local DungeonInstanceManager = require(ReplicatedStorage.Modules.DungeonInstanceManager)
+local StartingWeapon = require(ReplicatedStorage.Modules.StartingWeapon)
 
 -- Configuration
 local pileOfBones = script.Parent -- The part/model the player clicks

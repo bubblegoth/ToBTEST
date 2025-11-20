@@ -14,9 +14,9 @@
 local DungeonInstanceManager = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local DungeonGenerator = require(ReplicatedStorage.src.DungeonGenerator)
-local MazeDungeonGenerator = require(ReplicatedStorage.src.MazeDungeonGenerator)
-local EnemySpawner = require(ReplicatedStorage.src.EnemySpawner)
+local DungeonGenerator = require(ReplicatedStorage.Modules.DungeonGenerator)
+local MazeDungeonGenerator = require(ReplicatedStorage.Modules.MazeDungeonGenerator)
+local EnemySpawner = require(ReplicatedStorage.Modules.EnemySpawner)
 
 -- Store active player instances
 local PlayerInstances = {}

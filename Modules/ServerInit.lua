@@ -10,7 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Wait for modules to load
-local NPCGenerator = require(ReplicatedStorage.src.NPCGenerator)
+local NPCGenerator = require(ReplicatedStorage.Modules.NPCGenerator)
 local SoulVendorScript = script.Parent:FindFirstChild("SoulVendor") -- Assumes SoulVendor.lua is in ServerScriptService
 
 print("[ServerInit] Initializing game systems...")

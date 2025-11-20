@@ -137,7 +137,7 @@ function Combat:HandleDeath(killer, enemy, weaponData)
 	end
 
 	-- Spawn loot
-	local ModularLootGen = require(ReplicatedStorage.src.ModularLootGen)
+	local ModularLootGen = require(ReplicatedStorage.Modules.ModularLootGen)
 	if playerStats then
 		local currentFloor = playerStats:GetCurrentFloor()
 		local playerLevel = killer:GetAttribute("Level") or 1

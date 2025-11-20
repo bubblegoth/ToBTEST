@@ -30,7 +30,7 @@ local PlayerHealthHandler = {}
 -- Try to load PlayerStats (for equipped shield data)
 local PlayerStats = nil
 pcall(function()
-	PlayerStats = require(ReplicatedStorage.src.PlayerStats)
+	PlayerStats = require(ReplicatedStorage.Modules.PlayerStats)
 end)
 
 -- ════════════════════════════════════════════════════════════════════════════

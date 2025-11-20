@@ -1,7 +1,7 @@
 --[[
 ════════════════════════════════════════════════════════════════════════════════
 Module: ShieldGenerator
-Location: ReplicatedStorage/src/
+Location: ReplicatedStorage/Modules/
 Description: Procedurally generates shields from 4 parts with 7 manufacturers each.
              Calculates stats, rarity, and special effects.
 Version: 1.0
@@ -9,7 +9,7 @@ Last Updated: 2025-11-20
 ════════════════════════════════════════════════════════════════════════════════
 
 Usage:
-    local ShieldGenerator = require(ReplicatedStorage.src.ShieldGenerator)
+    local ShieldGenerator = require(ReplicatedStorage.Modules.ShieldGenerator)
 
     -- Generate random shield for level 10
     local shieldData = ShieldGenerator.Generate(10)

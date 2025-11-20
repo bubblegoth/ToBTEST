@@ -251,7 +251,7 @@ end
 ToBTEST/
 ├── default.project.json          # Rojo project configuration
 ├── README.md                      # This file
-├── src/
+├── Modules/
 │   ├── WeaponGenerator.lua        # Main generator module
 │   ├── WeaponStats.lua            # Stat calculation system
 │   ├── WeaponConfig.lua           # Configuration and rarities

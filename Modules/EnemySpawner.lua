@@ -1,7 +1,7 @@
 --[[
 ════════════════════════════════════════════════════════════════════════════════
 Module: EnemySpawner
-Location: ReplicatedStorage/src/
+Location: ReplicatedStorage/Modules/
 Description: Spawns enemies in per-player dungeon instances.
              Works with MazeDungeonGenerator spawn markers.
              Integrates MobGenerator and EnemyDeathHandler.

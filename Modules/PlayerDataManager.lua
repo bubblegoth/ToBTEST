@@ -14,9 +14,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Module references
-local PlayerStats = require(ReplicatedStorage.src.PlayerStats)
-local DeathHandler = require(ReplicatedStorage.src.DeathHandler)
-local DungeonInstanceManager = require(ReplicatedStorage.src.DungeonInstanceManager)
+local PlayerStats = require(ReplicatedStorage.Modules.PlayerStats)
+local DeathHandler = require(ReplicatedStorage.Modules.DeathHandler)
+local DungeonInstanceManager = require(ReplicatedStorage.Modules.DungeonInstanceManager)
 
 print("[PlayerDataManager] Loading...")
 

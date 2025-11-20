@@ -6,7 +6,7 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Combat = require(ReplicatedStorage.src.Combat)
+local Combat = require(ReplicatedStorage.Modules.Combat)
 
 -- ============================================================
 -- REMOTE EVENT SETUP

@@ -1,7 +1,7 @@
 --[[
 ════════════════════════════════════════════════════════════════════════════════
 Module: EnemyDeathHandler
-Location: ReplicatedStorage/src/
+Location: ReplicatedStorage/Modules/
 Type: ModuleScript
 Description: Handles enemy death - cleanup, loot drops, XP rewards.
              Cleans up damage numbers, spawns weapon drops based on level.

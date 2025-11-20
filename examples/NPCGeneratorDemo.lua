@@ -5,7 +5,7 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local NPCGenerator = require(ReplicatedStorage.src.NPCGenerator)
+local NPCGenerator = require(ReplicatedStorage.Modules.NPCGenerator)
 
 print("\n" .. string.rep("=", 60))
 print("NPC GENERATOR DEMONSTRATION")
@@ -135,7 +135,7 @@ local vendorModel = NPCGenerator.BuildNPCModel(vendor, workspace.Church)
 vendorModel:SetPrimaryPartCFrame(workspace.Church.VendorSpawn.CFrame)
 
 -- Attach SoulVendor.lua script to the model
-local vendorScript = ReplicatedStorage.src.SoulVendor:Clone()
+local vendorScript = ReplicatedStorage.Modules.SoulVendor:Clone()
 vendorScript.Parent = vendorModel
 
 -- 2. Spawn enemies in dungeon floor

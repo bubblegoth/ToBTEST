@@ -44,28 +44,28 @@ Roguelite dungeon crawler with:
 
 | Module | Location | Controls |
 |--------|----------|----------|
-| **WeaponGenerator.lua** | `/src/` | Weapon generation orchestration, 8-step BL2 process |
-| **WeaponStats.lua** | `/src/` | Stat calculation, DPS, level scaling, weapon comparison |
-| **WeaponConfig.lua** | `/src/` | Rarities, manufacturers, elements, weapon types, constants |
-| **Bodies.lua** | `/src/WeaponParts/` | Weapon type determination (Pistol/Rifle/etc) |
-| **Barrels.lua** | `/src/WeaponParts/` | Damage, accuracy, range, fire rate |
-| **Grips.lua** | `/src/WeaponParts/` | Recoil control, handling, aiming |
-| **Stocks.lua** | `/src/WeaponParts/` | Stability, accuracy, movement trade-offs |
-| **Magazines.lua** | `/src/WeaponParts/` | Capacity, reload speed, mobility penalties |
-| **Sights.lua** | `/src/WeaponParts/` | Accuracy, zoom, critical hit bonuses |
-| **Accessories.lua** | `/src/WeaponParts/` | Optional attachments (rarity-dependent) |
+| **WeaponGenerator.lua** | `/Modules/` | Weapon generation orchestration, 8-step BL2 process |
+| **WeaponStats.lua** | `/Modules/` | Stat calculation, DPS, level scaling, weapon comparison |
+| **WeaponConfig.lua** | `/Modules/` | Rarities, manufacturers, elements, weapon types, constants |
+| **Bodies.lua** | `/Modules/WeaponParts/` | Weapon type determination (Pistol/Rifle/etc) |
+| **Barrels.lua** | `/Modules/WeaponParts/` | Damage, accuracy, range, fire rate |
+| **Grips.lua** | `/Modules/WeaponParts/` | Recoil control, handling, aiming |
+| **Stocks.lua** | `/Modules/WeaponParts/` | Stability, accuracy, movement trade-offs |
+| **Magazines.lua** | `/Modules/WeaponParts/` | Capacity, reload speed, mobility penalties |
+| **Sights.lua** | `/Modules/WeaponParts/` | Accuracy, zoom, critical hit bonuses |
+| **Accessories.lua** | `/Modules/WeaponParts/` | Optional attachments (rarity-dependent) |
 
 ### **Dungeon & Progression System** (7 modules)
 
 | Module | Location | Controls |
 |--------|----------|----------|
-| **DungeonConfig.lua** | `/src/` | Floor rules, room types, enemy types, upgrade definitions |
-| **DungeonGenerator.lua** | `/src/` | Procedural floor generation (666 floors) |
-| **EnemySystem.lua** | `/src/` | Enemy spawning, stats, types (Normal/Rare/Boss) |
-| **LootDropper.lua** | `/src/` | Loot drop logic, weapon generation integration |
-| **PlayerStats.lua** | `/src/` | Persistent progression (Souls, upgrades, run stats) |
-| **ChurchSystem.lua** | `/src/` | Upgrade shop, Soul spending, stat overview |
-| **DeathHandler.lua** | `/src/` | Death mechanics, run completion, persistence |
+| **DungeonConfig.lua** | `/Modules/` | Floor rules, room types, enemy types, upgrade definitions |
+| **DungeonGenerator.lua** | `/Modules/` | Procedural floor generation (666 floors) |
+| **EnemySystem.lua** | `/Modules/` | Enemy spawning, stats, types (Normal/Rare/Boss) |
+| **LootDropper.lua** | `/Modules/` | Loot drop logic, weapon generation integration |
+| **PlayerStats.lua** | `/Modules/` | Persistent progression (Souls, upgrades, run stats) |
+| **ChurchSystem.lua** | `/Modules/` | Upgrade shop, Soul spending, stat overview |
+| **DeathHandler.lua** | `/Modules/` | Death mechanics, run completion, persistence |
 
 ### **Examples & Documentation** (5 files)
 

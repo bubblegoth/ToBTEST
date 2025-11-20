@@ -15,8 +15,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Module references (adjust paths as needed)
-local ChurchSystem = require(ReplicatedStorage.src.ChurchSystem)
-local DungeonConfig = require(ReplicatedStorage.src.DungeonConfig)
+local ChurchSystem = require(ReplicatedStorage.Modules.ChurchSystem)
+local DungeonConfig = require(ReplicatedStorage.Modules.DungeonConfig)
 
 -- NPC Configuration
 local vendor = script.Parent -- The NPC model

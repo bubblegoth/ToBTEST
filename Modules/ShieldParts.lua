@@ -1,7 +1,7 @@
 --[[
 ════════════════════════════════════════════════════════════════════════════════
 Module: ShieldParts
-Location: ReplicatedStorage/src/
+Location: ReplicatedStorage/Modules/
 Description: Defines all shield part manufacturers and their stat modifiers.
              4 part types (Capacitor, Generator, Regulator, Projector)
              7 manufacturers per part type

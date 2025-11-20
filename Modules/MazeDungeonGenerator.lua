@@ -1,7 +1,7 @@
 --[[
 ════════════════════════════════════════════════════════════════════════════════
 Module: MazeDungeonGenerator
-Location: ReplicatedStorage/src/
+Location: ReplicatedStorage/Modules/
 Description: Generates dungeons using maze algorithms (Recursive Backtracker).
              Creates guaranteed-connected layouts with rooms carved into the maze.
 Version: 1.0

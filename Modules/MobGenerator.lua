@@ -1,7 +1,7 @@
 --[[
 ════════════════════════════════════════════════════════════════════════════════
 Module: MobGenerator
-Location: ReplicatedStorage/src/
+Location: ReplicatedStorage/Modules/
 Description: Generates randomized mobs by assembling different body parts.
              Creates variety through mix-and-match limbs, torsos, and heads.
 Version: 1.0

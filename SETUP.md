@@ -8,7 +8,7 @@ Complete step-by-step guide for setting up the game in Roblox Studio.
 
 ```
 ReplicatedStorage/
-└── src/
+└── Modules/
     ├── WeaponGenerator.lua (ENHANCED)
     ├── WeaponStats.lua
     ├── WeaponConfig.lua
@@ -66,8 +66,8 @@ Workspace/
 ### **Step 1: Import Modules to ReplicatedStorage**
 
 1. Open Roblox Studio
-2. Create a folder in **ReplicatedStorage** named `src`
-3. Copy all files from `/src/` into `ReplicatedStorage.src/`:
+2. Create a folder in **ReplicatedStorage** named `Modules`
+3. Copy all files from `/Modules/` into `ReplicatedStorage.Modules/`:
    - WeaponGenerator.lua (ENHANCED)
    - WeaponStats.lua
    - WeaponConfig.lua
@@ -313,7 +313,7 @@ Workspace/
 **Cause:** Modules not in correct location
 
 **Fix:**
-1. All modules must be in `ReplicatedStorage.src/`
+1. All modules must be in `ReplicatedStorage.Modules/`
 2. Check spelling and capitalization (Lua is case-sensitive)
 3. Verify folder structure matches Step 1
 

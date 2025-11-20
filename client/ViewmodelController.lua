@@ -1,7 +1,7 @@
 --[[
 ════════════════════════════════════════════════════════════════════════════════
 Module: ViewmodelController
-Location: ReplicatedStorage/src/ (LocalScript in StarterPlayer/StarterPlayerScripts)
+Location: ReplicatedStorage/Modules/ (LocalScript in StarterPlayer/StarterPlayerScripts)
 Description: First-person weapon viewmodel with procedural model building,
              sway, bobbing, and animation support.
 
@@ -18,7 +18,7 @@ local Workspace = game:GetService("Workspace")
 -- Try to load WeaponModelBuilder (optional dependency)
 local WeaponModelBuilder
 pcall(function()
-	WeaponModelBuilder = require(ReplicatedStorage.src.WeaponModelBuilder)
+	WeaponModelBuilder = require(ReplicatedStorage.Modules.WeaponModelBuilder)
 end)
 
 -- Viewmodel constants (fallback if WeaponConstants not available)

@@ -5,7 +5,7 @@
 	Part of the Gothic FPS Roguelite Dungeon System
 
 	Usage:
-		local NPCGenerator = require(ReplicatedStorage.src.NPCGenerator)
+		local NPCGenerator = require(ReplicatedStorage.Modules.NPCGenerator)
 
 		-- Generate Soul Vendor
 		local vendor = NPCGenerator.GenerateNPC("SoulVendor")
