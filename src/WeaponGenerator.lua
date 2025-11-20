@@ -31,15 +31,15 @@ local WeaponGenerator = {}
 local WeaponConfig = require(script.Parent.WeaponConfig)
 local WeaponStats = require(script.Parent.WeaponStats)
 
--- Import part libraries
-local WeaponParts = script.Parent.WeaponParts
-local Bodies = require(WeaponParts.Bodies)
-local Barrels = require(WeaponParts.Barrels)
-local Grips = require(WeaponParts.Grips)
-local Stocks = require(WeaponParts.Stocks)
-local Magazines = require(WeaponParts.Magazines)
-local Sights = require(WeaponParts.Sights)
-local Accessories = require(WeaponParts.Accessories)
+-- Import part libraries (combined into single file)
+local WeaponParts = require(script.Parent.WeaponParts)
+local Bodies = WeaponParts.Bodies
+local Barrels = WeaponParts.Barrels
+local Grips = WeaponParts.Grips
+local Stocks = WeaponParts.Stocks
+local Magazines = WeaponParts.Magazines
+local Sights = WeaponParts.Sights
+local Accessories = WeaponParts.Accessories
 
 -- Random number generator
 local rng = Random.new()
