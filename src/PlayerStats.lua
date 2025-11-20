@@ -27,6 +27,7 @@ function PlayerStats.new()
 	self.CurrentFloor = DungeonConfig.PlayerDefaults.StartingFloor
 	self.CurrentWeapons = {} -- Array of weapon objects
 	self.EquippedWeaponIndex = 1
+	self.CurrentShield = nil -- Currently equipped shield (single slot)
 	self.RunSoulsEarned = 0
 	self.RunKills = 0
 
@@ -184,6 +185,33 @@ function PlayerStats:ClearWeapons()
 end
 
 -- ============================================================
+-- SHIELD EQUIPMENT
+-- ============================================================
+
+function PlayerStats:EquipShield(shieldData)
+	if not shieldData then
+		warn("[PlayerStats] Cannot equip nil shield")
+		return false
+	end
+
+	self.CurrentShield = shieldData
+	print(string.format("[PlayerStats] Equipped shield: %s", shieldData.Name or "Unknown"))
+	return true
+end
+
+function PlayerStats:GetEquippedShield()
+	return self.CurrentShield
+end
+
+function PlayerStats:HasShield()
+	return self.CurrentShield ~= nil
+end
+
+function PlayerStats:ClearShield()
+	self.CurrentShield = nil
+end
+
+-- ============================================================
 -- FLOOR PROGRESSION
 -- ============================================================
 
@@ -210,6 +238,7 @@ end
 function PlayerStats:OnDeath()
 	-- Clear current run data
 	self:ClearWeapons()
+	self:ClearShield()
 	self.RunSoulsEarned = 0
 	self.RunKills = 0
 	self:ResetToChurch()
@@ -241,6 +270,8 @@ function PlayerStats:GetRunStats()
 		SoulsEarned = self.RunSoulsEarned,
 		Kills = self.RunKills,
 		WeaponsFound = #self.CurrentWeapons,
+		HasShield = self:HasShield(),
+		ShieldName = self.CurrentShield and self.CurrentShield.Name or "None",
 	}
 end
 

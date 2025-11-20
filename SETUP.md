@@ -25,6 +25,8 @@ ReplicatedStorage/
     ├── MobGenerator.lua (NEW - Procedural enemy generation)
     ├── EnemySpawner.lua (NEW - Spawns enemies in instances)
     ├── EnemyDeathHandler.lua (NEW - Death/loot/cleanup)
+    ├── ShieldParts.lua (NEW - Shield part manufacturers)
+    ├── ShieldGenerator.lua (NEW - Procedural shield generation)
     ├── EnemySystem.lua
     ├── LootDropper.lua (UPDATED - Now uses ModularLootGen)
     ├── PlayerStats.lua
@@ -36,11 +38,14 @@ ReplicatedStorage/
     └── NPCParts.lua
 
 ServerScriptService/
-├── ServerInit (Script)
-├── PlayerDataManager (Script)
-├── ServerDamageHandler (Script)
-├── PileOfBones (Script) - Place in Bones_Assortment model
-└── SoulVendor (Script) - Auto-created by ServerInit
+└── server/
+    ├── ServerInit (Script)
+    ├── PlayerDataManager (Script)
+    ├── ServerDamageHandler (Script)
+    ├── PlayerHealthHandler (Script) - NEW - Shield & health management
+    ├── EnemyAIManager (Script) - NEW - DOOM-style AI system
+    ├── PileOfBones (Script) - Place in Bones_Assortment model
+    └── SoulVendor (Script) - Auto-created by ServerInit
 
 StarterPlayer/
 └── StarterCharacterScripts/
@@ -79,6 +84,8 @@ Workspace/
    - MobGenerator.lua (NEW)
    - EnemySpawner.lua (NEW)
    - EnemyDeathHandler.lua (NEW)
+   - ShieldParts.lua (NEW)
+   - ShieldGenerator.lua (NEW)
    - EnemySystem.lua
    - LootDropper.lua (UPDATED)
    - PlayerStats.lua
@@ -93,12 +100,14 @@ Workspace/
 
 ### **Step 2: Set Up Server Scripts**
 
-1. In **ServerScriptService**, create a **Script** (not LocalScript) named `ServerInit`
-2. Paste contents of `src/ServerInit.lua` into it
-3. Create another **Script** named `PlayerDataManager`
-4. Paste contents of `src/PlayerDataManager.lua` into it
-5. Create another **Script** named `ServerDamageHandler`
-6. Paste contents of `src/ServerDamageHandler.lua` into it
+1. In **ServerScriptService**, create a folder named `server`
+2. Copy all files from `/server/` into `ServerScriptService.server/`:
+   - ServerInit.lua (Script)
+   - PlayerDataManager.lua (Script)
+   - ServerDamageHandler.lua (Script)
+   - PlayerHealthHandler.lua (Script) - Shield & health management
+   - EnemyAIManager.lua (Script) - DOOM-style AI for enemies
+   - PileOfBones.lua (Script) - Place in Bones_Assortment model
 
 **Important:** These must be regular **Scripts**, not **LocalScripts** or **ModuleScripts**.
 
@@ -330,12 +339,11 @@ Uncomment the DataStore code in `PlayerDataManager.lua` (lines with `-- TODO`)
 ### **Create Death Screen UI**
 Hook into `OnPlayerDeath` function in PlayerDataManager
 
-### **Add Enemy AI**
-Create `EnemyAI.lua` to make enemies move, pathfind, and attack player
-**Note:** Enemies spawn and can be killed, but they don't move or attack yet!
+### **Integrate Enemy AI with Damage System**
+Connect EnemyAI attacks to PlayerHealthHandler for player damage
 
-### **Create Player Health Handler**
-Allow player to take damage from enemies and die/respawn
+### **Create HUD for Shields**
+Add shield bar to UI showing current shield HP and recharge status
 
 ### **Build HUD/UI**
 Create ScreenGui for health bar, ammo counter, floor number, souls display
@@ -366,6 +374,9 @@ Once setup is complete, your game will have:
 - ✅ **Procedural enemy generation** (Mix-and-match body parts, varied stats)
 - ✅ **Automatic enemy spawning** (Per-player instances, scaled by floor)
 - ✅ **Enemy death handling** (Loot drops, fade effects, cleanup)
+- ✅ **DOOM-style enemy AI** (Attack tokens, optimal positioning, flanking)
+- ✅ **Procedural shield generation** (4 parts, 7 manufacturers, special effects)
+- ✅ **Shield system** (Recharge mechanics, break effects, visual feedback)
 - ✅ 666-floor dungeon system
 - ✅ **Per-player instanced dungeons** (single-player experience)
 - ✅ Soul Vendor NPC (auto-generated)
@@ -386,6 +397,10 @@ Once setup is complete, your game will have:
 - 🎯 **Enemy variety** (625+ unique combinations, stat-based variations)
 - ⚡ **Automatic spawning & scaling** (enemies scale with floor number)
 - 💀 **Death handling** (40% loot drop, fade effects, auto-cleanup)
+- 🤖 **DOOM-style AI** (max 3 simultaneous attackers, optimal range positioning, flanking)
+- 🛡️ **Procedural shields** (4 parts: Capacitor, Generator, Regulator, Projector)
+- ⚡ **Shield break effects** (Nova explosion, Frost slow, Fire DOT, Teleport, etc.)
+- 🔋 **Shield recharge** (configurable delay and rate per shield)
 - 🚪 Per-player instanced dungeons (single-player isolation)
 - 📦 Weapon inventory management
 - 🎯 Crit chance, lifesteal, and special effects
