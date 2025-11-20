@@ -19,7 +19,7 @@ NPCParts.Heads = {
 		MeshId = "rbxassetid://0", -- Replace with actual mesh ID
 		Scale = Vector3.new(1, 1, 1),
 		Color = Color3.fromRGB(220, 220, 220),
-		Material = Enum.Material.Bone,
+		Material = Enum.Material.Limestone,
 		Description = "A bare skull, all flesh long rotted away"
 	},
 	{
@@ -80,7 +80,7 @@ NPCParts.Torsos = {
 		MeshId = "rbxassetid://0",
 		Scale = Vector3.new(1, 1, 1),
 		Color = Color3.fromRGB(220, 220, 220),
-		Material = Enum.Material.Bone,
+		Material = Enum.Material.Limestone,
 		Description = "Bare bones with no flesh remaining"
 	},
 	{
@@ -123,7 +123,7 @@ NPCParts.Arms = {
 		MeshId = "rbxassetid://0",
 		Scale = Vector3.new(1, 1, 1),
 		Color = Color3.fromRGB(220, 220, 220),
-		Material = Enum.Material.Bone,
+		Material = Enum.Material.Limestone,
 		Description = "Skeletal arms with exposed joints"
 	},
 	{
@@ -166,7 +166,7 @@ NPCParts.Legs = {
 		MeshId = "rbxassetid://0",
 		Scale = Vector3.new(1, 1, 1),
 		Color = Color3.fromRGB(220, 220, 220),
-		Material = Enum.Material.Bone,
+		Material = Enum.Material.Limestone,
 		Description = "Skeletal legs with exposed femurs"
 	},
 	{
