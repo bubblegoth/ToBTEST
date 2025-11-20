@@ -17,6 +17,7 @@ ReplicatedStorage/
     ├── WeaponToolBuilder.lua (NEW - Creates functional weapon Tools)
     ├── ModularLootGen.lua (NEW - Visual weapon drops)
     ├── Combat.lua (NEW - Damage & combat system)
+    ├── ServerDamageHandler.lua (NEW - Server damage processing)
     ├── DungeonConfig.lua
     ├── DungeonGenerator.lua
     ├── DungeonInstanceManager.lua
@@ -33,8 +34,13 @@ ReplicatedStorage/
 ServerScriptService/
 ├── ServerInit (Script)
 ├── PlayerDataManager (Script)
+├── ServerDamageHandler (Script)
 ├── PileOfBones (Script) - Place in Bones_Assortment model
 └── SoulVendor (Script) - Auto-created by ServerInit
+
+StarterPlayer/
+└── StarterCharacterScripts/
+    └── ProjectileShooter (LocalScript) - Handles weapon shooting
 
 Workspace/
 ├── Church (Model) - Your existing Church model
@@ -61,6 +67,7 @@ Workspace/
    - WeaponToolBuilder.lua (NEW)
    - ModularLootGen.lua (NEW)
    - Combat.lua (NEW)
+   - ServerDamageHandler.lua (NEW)
    - DungeonConfig.lua
    - DungeonGenerator.lua
    - DungeonInstanceManager.lua
@@ -82,12 +89,31 @@ Workspace/
 2. Paste contents of `src/ServerInit.lua` into it
 3. Create another **Script** named `PlayerDataManager`
 4. Paste contents of `src/PlayerDataManager.lua` into it
+5. Create another **Script** named `ServerDamageHandler`
+6. Paste contents of `src/ServerDamageHandler.lua` into it
 
 **Important:** These must be regular **Scripts**, not **LocalScripts** or **ModuleScripts**.
 
 ---
 
-### **Step 3: Set Up Workspace Objects**
+### **Step 3: Set Up Client Scripts**
+
+1. In **StarterPlayer**, expand **StarterCharacterScripts**
+2. Create a **LocalScript** (not Script) named `ProjectileShooter`
+3. Paste contents of `client/ProjectileShooter.lua` into it
+
+**Important:** This must be a **LocalScript** in **StarterCharacterScripts** so it runs for each player.
+
+**What this does:**
+- Handles weapon shooting with projectile ballistics
+- Creates physical bullets with travel time and bullet drop
+- Reads weapon stats from equipped Tools
+- Manages ammo and reloading
+- Sends hit detection to server
+
+---
+
+### **Step 4: Set Up Workspace Objects**
 
 #### **A. Church (Your existing model)**
 - Should already exist in workspace
@@ -122,7 +148,7 @@ Workspace/
 
 ---
 
-### **Step 4: Instanced Dungeon System**
+### **Step 5: Instanced Dungeon System**
 
 This game uses **per-player instanced dungeons** - each player gets their own private dungeon separate from other players.
 
@@ -165,7 +191,7 @@ Workspace/
 
 ---
 
-### **Step 5: Test the Setup**
+### **Step 6: Test the Setup**
 
 1. Click **Play** in Studio
 2. **Check Output for**:
@@ -181,6 +207,8 @@ Workspace/
    [DungeonInstanceManager] Creating dungeon instance for [YourName]
    [DungeonInstanceManager] Instance created: DungeonInstance_[UserId]
    [PlayerDataManager] Player data initialized for [YourName]
+   [ServerDamageHandler] Initialized
+   [ProjectileShooter] Initialized - Ready to shoot!
    ```
 
 3. When you spawn, you should:
@@ -299,6 +327,7 @@ Once setup is complete, your game will have:
 - ✅ **Enhanced procedural weapon generation** (Borderlands-style with 7 part types)
 - ✅ **3D weapon models** (Auto-built from weapon data with manufacturer theming)
 - ✅ **Visual weapon drops** (Floating weapons with rarity-colored beams)
+- ✅ **Projectile-based shooting system** (Physical bullets with ballistics)
 - ✅ **Combat system** (Damage calculation, elemental effects, status effects)
 - ✅ 666-floor dungeon system
 - ✅ **Per-player instanced dungeons** (single-player experience)
@@ -309,12 +338,15 @@ Once setup is complete, your game will have:
 - ✅ Dungeon entry teleporter
 - ✅ Automatic instance creation/cleanup
 
-**New Features Added:**
+**Core Features:**
 - 🎨 Procedural 3D weapon models with gothic theming
 - 💎 Rarity-based loot drops with visual effects
+- 🔫 **Projectile ballistics** (bullet drop, travel time, tracers)
 - ⚔️ Complete combat system with elemental damage
 - 🔥 Status effects (Burn, Freeze, Chain Lightning)
 - 📦 Weapon inventory management
 - 🎯 Crit chance, lifesteal, and special effects
+- 🛡️ Anti-cheat protection (rate limiting, damage validation)
+- 🎮 Ammo system with reloading
 
 **Everything works together automatically!**
