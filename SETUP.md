@@ -20,8 +20,11 @@ ReplicatedStorage/
     ├── ServerDamageHandler.lua (NEW - Server damage processing)
     ├── DungeonConfig.lua
     ├── DungeonGenerator.lua
-    ├── DungeonInstanceManager.lua
+    ├── DungeonInstanceManager.lua (UPDATED - Enemy spawning)
     ├── MazeDungeonGenerator.lua (NEW - Builds 3D dungeon geometry)
+    ├── MobGenerator.lua (NEW - Procedural enemy generation)
+    ├── EnemySpawner.lua (NEW - Spawns enemies in instances)
+    ├── EnemyDeathHandler.lua (NEW - Death/loot/cleanup)
     ├── EnemySystem.lua
     ├── LootDropper.lua (UPDATED - Now uses ModularLootGen)
     ├── PlayerStats.lua
@@ -71,8 +74,11 @@ Workspace/
    - ServerDamageHandler.lua (NEW)
    - DungeonConfig.lua
    - DungeonGenerator.lua
-   - DungeonInstanceManager.lua
+   - DungeonInstanceManager.lua (UPDATED)
    - MazeDungeonGenerator.lua (NEW)
+   - MobGenerator.lua (NEW)
+   - EnemySpawner.lua (NEW)
+   - EnemyDeathHandler.lua (NEW)
    - EnemySystem.lua
    - LootDropper.lua (UPDATED)
    - PlayerStats.lua
@@ -225,14 +231,25 @@ Workspace/
    - Touch/click `Bones_Assortment`
    - You should teleport to Floor 1 with **actual 3D dungeon geometry**
    - You should see maze corridors, rooms, walls, floors, and lighting
+   - You should see **procedurally generated enemies** spawned in rooms!
    - You should receive a Common Level 1 Pistol
    - Check Output for:
      ```
      [MazeDungeon] Generating maze dungeon...
      [MazeDungeon] ✓ Dungeon complete!
-     [DungeonInstanceManager] ✓ Floor 1 ready for [YourName]
+     [EnemySpawner] Spawning enemies for floor 1...
+     [MobGenerator] Created 'Dark Fiend Lv.1': HP=115, SPD=16, DMG=12...
+     [EnemySpawner] ✓ Spawned 8 enemies (0 bosses) for floor 1
+     [DungeonInstanceManager] ✓ Floor 1 ready for [YourName] (8 enemies spawned)
      [PileOfBones] YourName entered Floor 1 - The Dungeon Begins
      ```
+
+5. **Test shooting enemies:**
+   - Left-click to shoot (hold for automatic)
+   - Enemies will have varied appearances (different body parts)
+   - When enemy dies, you'll see fade-out effect
+   - 40% chance to drop a weapon (glowing pickup)
+   - Check Output for death messages
 
 ---
 
@@ -313,17 +330,18 @@ Uncomment the DataStore code in `PlayerDataManager.lua` (lines with `-- TODO`)
 ### **Create Death Screen UI**
 Hook into `OnPlayerDeath` function in PlayerDataManager
 
-### **Add Enemy Spawner**
-Create `EnemySpawner.lua` to spawn enemies using NPCGenerator in dungeon rooms
-
 ### **Add Enemy AI**
 Create `EnemyAI.lua` to make enemies move, pathfind, and attack player
+**Note:** Enemies spawn and can be killed, but they don't move or attack yet!
 
 ### **Create Player Health Handler**
 Allow player to take damage from enemies and die/respawn
 
 ### **Build HUD/UI**
 Create ScreenGui for health bar, ammo counter, floor number, souls display
+
+### **Floor Progression System**
+Add way to advance floors (portal after clearing all enemies?)
 
 ---
 
@@ -345,6 +363,9 @@ Once setup is complete, your game will have:
 - ✅ **Projectile-based shooting system** (Physical bullets with ballistics)
 - ✅ **Combat system** (Damage calculation, elemental effects, status effects)
 - ✅ **3D dungeon geometry** (Maze-based with rooms, lighting, spawn points)
+- ✅ **Procedural enemy generation** (Mix-and-match body parts, varied stats)
+- ✅ **Automatic enemy spawning** (Per-player instances, scaled by floor)
+- ✅ **Enemy death handling** (Loot drops, fade effects, cleanup)
 - ✅ 666-floor dungeon system
 - ✅ **Per-player instanced dungeons** (single-player experience)
 - ✅ Soul Vendor NPC (auto-generated)
@@ -361,6 +382,10 @@ Once setup is complete, your game will have:
 - ⚔️ Complete combat system with elemental damage
 - 🔥 Status effects (Burn, Freeze, Chain Lightning)
 - 🏰 **3D dungeon generation** (maze algorithm with rooms, full geometry)
+- 👹 **Procedural enemy generation** (5 head types, 5 torso types, 5 arm types, 5 leg types)
+- 🎯 **Enemy variety** (625+ unique combinations, stat-based variations)
+- ⚡ **Automatic spawning & scaling** (enemies scale with floor number)
+- 💀 **Death handling** (40% loot drop, fade effects, auto-cleanup)
 - 🚪 Per-player instanced dungeons (single-player isolation)
 - 📦 Weapon inventory management
 - 🎯 Crit chance, lifesteal, and special effects

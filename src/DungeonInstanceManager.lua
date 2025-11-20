@@ -16,6 +16,7 @@ local DungeonInstanceManager = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DungeonGenerator = require(ReplicatedStorage.src.DungeonGenerator)
 local MazeDungeonGenerator = require(ReplicatedStorage.src.MazeDungeonGenerator)
+local EnemySpawner = require(ReplicatedStorage.src.EnemySpawner)
 
 -- Store active player instances
 local PlayerInstances = {}
@@ -121,8 +122,13 @@ function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 	local floorOffset = Vector3.new(0, -1000 * floorNumber, 0)
 	dungeonModel:MoveTo(floorOffset)
 
+	-- Spawn enemies in the dungeon
+	print("[DungeonInstanceManager] Spawning enemies for floor", floorNumber)
+	local enemies, enemyCount = EnemySpawner.SpawnEnemiesInDungeon(dungeonModel, floorNumber, player)
+
 	-- Store dungeon model reference in floor data
 	floorData.DungeonModel = dungeonModel
+	floorData.Enemies = enemies
 	floorData.Seed = floorSeed
 
 	-- Cache the floor
@@ -130,7 +136,8 @@ function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 	instance.FloorModels[floorNumber] = dungeonModel
 	instance.CurrentFloor = floorNumber
 
-	print(string.format("[DungeonInstanceManager] ✓ Floor %d ready for %s", floorNumber, player.Name))
+	print(string.format("[DungeonInstanceManager] ✓ Floor %d ready for %s (%d enemies spawned)",
+		floorNumber, player.Name, enemyCount))
 
 	return floorData, dungeonModel
 end
