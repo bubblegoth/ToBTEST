@@ -100,7 +100,7 @@ DungeonConfig.EnemyTypes = {
 		HealthMultiplier = 1.0,
 		DamageMultiplier = 1.0,
 		SoulDropChance = 0.0, -- Normal enemies don't drop Souls
-		WeaponDropChance = 0.25, -- 25% chance to drop weapon (Floor 2+)
+		WeaponDropChance = 0.08, -- 8% chance to drop weapon (Floor 2+) - Reduced from 25%
 	},
 
 	RARE = {
@@ -112,7 +112,7 @@ DungeonConfig.EnemyTypes = {
 		SoulDropChance = 0.0, -- No souls (only bosses drop souls)
 		SoulDropMin = 0,
 		SoulDropMax = 0,
-		WeaponDropChance = 0.50, -- 50% chance to drop weapon (Floor 2+)
+		WeaponDropChance = 0.20, -- 20% chance to drop weapon (Floor 2+) - Reduced from 50%
 		WeaponRarityBonus = 1, -- +1 rarity tier
 	},
 

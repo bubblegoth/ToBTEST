@@ -152,16 +152,9 @@ function PortalSystem:CreateFloorPortals(dungeonModel, currentFloor, spawnPositi
 		return nil, nil
 	end
 
-	-- Entrance portal (goes back to previous floor)
+	-- Entrance portal DISABLED - This is a roguelite, no going back!
+	-- Once you descend, you must keep moving forward or die trying
 	local entrancePortal = nil
-	if currentFloor > 1 then
-		local entrancePos = spawnPosition or (spawnsFolder:FindFirstChild("PlayerSpawn") and spawnsFolder.PlayerSpawn.CFrame)
-		if entrancePos then
-			-- Place entrance portal behind spawn point
-			local backOffset = entrancePos * CFrame.new(0, 0, 10)
-			entrancePortal = self:CreatePortal(backOffset, "Entrance", currentFloor - 1, dungeonModel)
-		end
-	end
 
 	-- Exit portal (goes to next floor) - place at furthest point from spawn
 	local exitPos = self:FindFurthestSpawn(spawnsFolder, spawnPosition)
