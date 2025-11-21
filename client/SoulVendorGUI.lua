@@ -271,52 +271,70 @@ local isGUIOpen = false
 local unlockConnection = nil
 
 local function showVendorGUI(upgradeOptions, playerSouls)
-	local dialogFrame = vendorGUI.DialogFrame
-	local optionsContainer = dialogFrame.OptionsContainer
-	local soulsLabel = dialogFrame.SoulsLabel
+	print("[SoulVendorGUI] showVendorGUI called with", #upgradeOptions, "options and", playerSouls, "souls")
 
-	-- Update souls display
-	soulsLabel.Text = string.format("Your Souls: %d", playerSouls)
+	local success, err = pcall(function()
+		local dialogFrame = vendorGUI.DialogFrame
+		local optionsContainer = dialogFrame.OptionsContainer
+		local soulsLabel = dialogFrame.SoulsLabel
 
-	-- Clear existing options
-	for _, child in ipairs(optionsContainer:GetChildren()) do
-		child:Destroy()
-	end
+		print("[SoulVendorGUI] Found GUI elements, updating souls display")
+		-- Update souls display
+		soulsLabel.Text = string.format("Your Souls: %d", playerSouls)
 
-	-- Create new options
-	for i, upgrade in ipairs(upgradeOptions) do
-		createUpgradeOption(upgrade, i, optionsContainer)
-	end
-
-	-- Save current state
-	previousMouseBehavior = UserInputService.MouseBehavior
-	previousCameraMode = Player.CameraMode
-
-	-- Unlock mouse and camera for GUI interaction
-	local function forceUnlock()
-		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-		UserInputService.MouseIconEnabled = true
-		Camera.CameraMode = Enum.CameraMode.Classic
-		Player.CameraMode = Enum.CameraMode.Classic
-	end
-
-	-- Force unlock immediately
-	forceUnlock()
-
-	-- Continuously enforce unlock while GUI is open (in case something tries to re-lock)
-	isGUIOpen = true
-	if unlockConnection then
-		unlockConnection:Disconnect()
-	end
-	unlockConnection = game:GetService("RunService").RenderStepped:Connect(function()
-		if isGUIOpen then
-			forceUnlock()
+		print("[SoulVendorGUI] Clearing existing options")
+		-- Clear existing options
+		for _, child in ipairs(optionsContainer:GetChildren()) do
+			child:Destroy()
 		end
+
+		print("[SoulVendorGUI] Creating", #upgradeOptions, "upgrade options")
+		-- Create new options
+		for i, upgrade in ipairs(upgradeOptions) do
+			print(string.format("  Creating option %d: %s", i, upgrade.Name))
+			createUpgradeOption(upgrade, i, optionsContainer)
+		end
+
+		-- Save current state
+		previousMouseBehavior = UserInputService.MouseBehavior
+		previousCameraMode = Player.CameraMode
+
+		print("[SoulVendorGUI] Setting up mouse/camera unlock")
+		-- Unlock mouse and camera for GUI interaction
+		local function forceUnlock()
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+			UserInputService.MouseIconEnabled = true
+			Camera.CameraMode = Enum.CameraMode.Classic
+			Player.CameraMode = Enum.CameraMode.Classic
+		end
+
+		-- Force unlock immediately
+		forceUnlock()
+
+		-- Continuously enforce unlock while GUI is open (in case something tries to re-lock)
+		isGUIOpen = true
+		if unlockConnection then
+			unlockConnection:Disconnect()
+		end
+		unlockConnection = game:GetService("RunService").RenderStepped:Connect(function()
+			if isGUIOpen then
+				forceUnlock()
+			end
+		end)
+
+		print("[SoulVendorGUI] Enabling GUI (vendorGUI.Enabled = true)")
+		-- Show GUI
+		vendorGUI.Enabled = true
+
+		print("[SoulVendorGUI] ✓ GUI opened successfully - mouse unlocked, GUI visible")
+		print("  Camera.CameraMode:", Camera.CameraMode)
+		print("  Player.CameraMode:", Player.CameraMode)
+		print("  vendorGUI.Enabled:", vendorGUI.Enabled)
 	end)
 
-	-- Show GUI
-	vendorGUI.Enabled = true
-	print("[SoulVendorGUI] GUI opened - FORCING mouse unlock, camera mode:", Camera.CameraMode, Player.CameraMode)
+	if not success then
+		warn("[SoulVendorGUI] ERROR in showVendorGUI:", err)
+	end
 end
 
 local function hideVendorGUI()
