@@ -28,10 +28,9 @@ StartingWeapon.Config = {
 
 function StartingWeapon.Generate()
 	-- Generate a Common Level 1 Pistol
-	local weapon = WeaponGenerator.GenerateWeapon(
+	local weapon = WeaponGenerator:GenerateWeapon(
 		StartingWeapon.Config.Level,
 		StartingWeapon.Config.Type,
-		StartingWeapon.Config.Manufacturer,
 		StartingWeapon.Config.Rarity
 	)
 
