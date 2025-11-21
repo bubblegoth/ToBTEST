@@ -55,9 +55,12 @@ local canFire = true
 -- REMOTE EVENTS
 -- ============================================================
 
-local damageEvent = ReplicatedStorage:FindFirstChild("DealDamage")
+-- Wait for the DealDamage RemoteEvent (created by ServerDamageHandler)
+local damageEvent = ReplicatedStorage:WaitForChild("DealDamage", 10)
 if not damageEvent then
-	warn("[ProjectileShooter] DealDamage RemoteEvent not found!")
+	warn("[ProjectileShooter] ✗ DealDamage RemoteEvent not found after 10 second wait!")
+else
+	print("[ProjectileShooter] ✓ DealDamage RemoteEvent connected")
 end
 
 -- ============================================================
@@ -200,8 +203,17 @@ local function setupProjectileHitDetection(projectile, damage, weaponData)
 
 		-- Check if hit an enemy
 		local hitModel = hit.Parent
-		if hitModel and hitModel:FindFirstChild("Humanoid") and hitModel:GetAttribute("IsEnemy") then
+		local humanoid = hitModel and hitModel:FindFirstChild("Humanoid")
+		local isEnemy = hitModel and hitModel:GetAttribute("IsEnemy")
+
+		-- Debug: Log what we hit
+		if hitModel and humanoid then
+			print(string.format("[ProjectileShooter] Hit %s - IsEnemy: %s", hitModel.Name, tostring(isEnemy)))
+		end
+
+		if hitModel and humanoid and isEnemy then
 			hasHit = true
+			print(string.format("[ProjectileShooter] ✓ HIT ENEMY: %s - Sending %d damage", hitModel.Name, damage))
 
 			-- Determine damage type
 			local damageType = "Physical"
@@ -216,6 +228,8 @@ local function setupProjectileHitDetection(projectile, damage, weaponData)
 			-- Send damage to server
 			if damageEvent then
 				damageEvent:FireServer(hitModel, damage, damageType, weaponData)
+			else
+				warn("[ProjectileShooter] ✗ Cannot send damage - damageEvent is nil!")
 			end
 
 			-- Visual impact effect

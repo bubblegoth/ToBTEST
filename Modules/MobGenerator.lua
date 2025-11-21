@@ -740,6 +740,7 @@ function MobGenerator.Generate(options)
 	mobModel.PrimaryPart = torso
 
 	-- Store attributes
+	mobModel:SetAttribute("IsEnemy", true)  -- CRITICAL: Required for projectile hit detection
 	mobModel:SetAttribute("Health", stats.health)
 	mobModel:SetAttribute("MaxHealth", stats.health)
 	mobModel:SetAttribute("Speed", stats.speed)
