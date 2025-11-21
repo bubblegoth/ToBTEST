@@ -18,9 +18,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ChurchSystem = require(ReplicatedStorage.Modules.ChurchSystem)
 local DungeonConfig = require(ReplicatedStorage.Modules.DungeonConfig)
 
--- Script module table (for potential RemoteEvent callbacks)
-local SoulVendor = {}
-
 -- NPC Configuration
 -- Wait for script to be properly parented to the vendor model
 repeat task.wait() until script.Parent and script.Parent:IsA("Model")
@@ -174,7 +171,7 @@ setupProximityPrompt()
 -- PURCHASE FUNCTION (Called from GUI or RemoteEvent)
 -- ============================================================
 
-function SoulVendor.PurchaseUpgrade(player, upgradeID)
+local function PurchaseUpgrade(player, upgradeID)
 	local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
 
 	if not playerStats then
@@ -222,7 +219,7 @@ vendorRemote.OnServerEvent:Connect(function(player, action, upgradeID)
 	if action == "OpenShop" then
 		openUpgradeShop(player)
 	elseif action == "Purchase" then
-		local success, message = SoulVendor.PurchaseUpgrade(player, upgradeID)
+		local success, message = PurchaseUpgrade(player, upgradeID)
 		vendorRemote:FireClient(player, "PurchaseResult", success, message)
 	elseif action == "GetUpgrades" then
 		local playerStats = player:FindFirstChild("PlayerStats")
