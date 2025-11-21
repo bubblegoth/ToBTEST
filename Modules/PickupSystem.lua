@@ -4,15 +4,15 @@ Module: PickupSystem
 Location: ReplicatedStorage/Modules/
 Type: ModuleScript
 Description: Health and ammo pickup system from enemy drops.
-             15% health drop chance, 25% ammo drop chance.
-             Gothic visual style with floating neon orbs and animations.
-Version: 1.0
+             Shiny spheres that fall to ground, auto-pickup or vacuum to player.
+Version: 2.0
 Last Updated: 2025-11-21
 ════════════════════════════════════════════════════════════════════════════════
 --]]
 
 local RunService = game:GetService("RunService")
 local Debris = game:GetService("Debris")
+local Players = game:GetService("Players")
 
 local PickupSystem = {}
 
@@ -30,131 +30,165 @@ local Config = {
 	AmmoRestoreAmount = 30,   -- Ammo restored per ammo pickup
 
 	-- Visual
-	PickupSize = Vector3.new(1.5, 1.5, 1.5),
-	FloatHeight = 2,
-	FloatSpeed = 2,
-	FloatAmplitude = 0.5,
-	RotationSpeed = 1,
+	PickupSize = Vector3.new(1.2, 1.2, 1.2),
+
+	-- Physics
+	DropHeight = 3, -- Initial spawn height above ground
+	VacuumSpeed = 25, -- Speed at which pickups fly to player
+	VacuumRange = 15, -- Range to vacuum pickups when out of combat
+	AutoPickupRange = 3, -- Range to auto-pickup when walking over
+	CombatCooldown = 3, -- Seconds after damage before out of combat
 
 	-- Despawn
 	DespawnTime = 30, -- Seconds before pickup despawns
 
 	-- Colors
-	HealthColor = Color3.fromRGB(180, 50, 50),   -- Dark red
-	AmmoColor = Color3.fromRGB(200, 150, 50),    -- Brass/gold
+	HealthColor = Color3.fromRGB(200, 50, 50),   -- Bright red
+	AmmoColor = Color3.fromRGB(220, 180, 60),    -- Bright gold
 }
+
+-- Track player combat state
+local playerLastDamageTime = {}
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- COMBAT STATE
+-- ════════════════════════════════════════════════════════════════════════════
+
+function PickupSystem.MarkPlayerInCombat(player)
+	playerLastDamageTime[player.UserId] = tick()
+end
+
+local function isPlayerInCombat(player)
+	local lastDamage = playerLastDamageTime[player.UserId]
+	if not lastDamage then return false end
+	return (tick() - lastDamage) < Config.CombatCooldown
+end
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- PICKUP CREATION
 -- ════════════════════════════════════════════════════════════════════════════
 
-local function createPickupModel(pickupType, position)
+local function createPickupSphere(pickupType, position)
 	local color = pickupType == "Health" and Config.HealthColor or Config.AmmoColor
-	local icon = pickupType == "Health" and "+" or "●"
 
-	-- Create container
-	local model = Instance.new("Model")
-	model.Name = pickupType .. "Pickup"
+	-- Main pickup sphere
+	local sphere = Instance.new("Part")
+	sphere.Name = pickupType .. "Pickup"
+	sphere.Shape = Enum.PartType.Ball
+	sphere.Size = Config.PickupSize
+	sphere.Position = position + Vector3.new(0, Config.DropHeight, 0)
+	sphere.Color = color
+	sphere.Material = Enum.Material.Neon
+	sphere.CanCollide = false -- No collision
+	sphere.Anchored = false -- Let it fall
+	sphere.CastShadow = false
+	sphere:SetAttribute("PickupType", pickupType)
+	sphere:SetAttribute("IsGrounded", false)
 
-	-- Main pickup part (invisible collision)
-	local part = Instance.new("Part")
-	part.Name = "PickupPart"
-	part.Size = Config.PickupSize
-	part.Position = position + Vector3.new(0, Config.FloatHeight, 0)
-	part.Anchored = true
-	part.CanCollide = false
-	part.Transparency = 1
-	part:SetAttribute("PickupType", pickupType)
-	part.Parent = model
-
-	-- Visual crystal/orb
-	local visual = Instance.new("Part")
-	visual.Name = "Visual"
-	visual.Shape = Enum.PartType.Ball
-	visual.Size = Config.PickupSize * 0.8
-	visual.Position = part.Position
-	visual.Anchored = true
-	visual.CanCollide = false
-	visual.Color = color
-	visual.Material = Enum.Material.Neon
-	visual.CastShadow = false
-	visual.Parent = model
-
-	-- Inner glow
-	local innerGlow = Instance.new("Part")
-	innerGlow.Name = "InnerGlow"
-	innerGlow.Shape = Enum.PartType.Ball
-	innerGlow.Size = Config.PickupSize * 0.5
-	innerGlow.Position = part.Position
-	innerGlow.Anchored = true
-	innerGlow.CanCollide = false
-	innerGlow.Color = Color3.new(1, 1, 1)
-	innerGlow.Material = Enum.Material.Neon
-	innerGlow.Transparency = 0.3
-	innerGlow.CastShadow = false
-	innerGlow.Parent = model
-
-	-- Point light
+	-- Point light for glow
 	local light = Instance.new("PointLight")
 	light.Color = color
-	light.Brightness = 3
-	light.Range = 15
-	light.Parent = visual
+	light.Brightness = 4
+	light.Range = 20
+	light.Parent = sphere
 
-	-- Billboard GUI
-	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.new(0, 100, 0, 100)
-	billboard.StudsOffset = Vector3.new(0, 2, 0)
-	billboard.AlwaysOnTop = true
-	billboard.Parent = part
+	-- Add BodyVelocity to control fall (prevent bouncing/rolling)
+	local bodyVel = Instance.new("BodyVelocity")
+	bodyVel.MaxForce = Vector3.new(0, 0, 0) -- Initially no force
+	bodyVel.Velocity = Vector3.new(0, 0, 0)
+	bodyVel.Parent = sphere
 
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 1, 0)
-	label.BackgroundTransparency = 1
-	label.Text = icon
-	label.TextColor3 = color
-	label.TextScaled = true
-	label.Font = Enum.Font.GothamBold
-	label.TextStrokeTransparency = 0.5
-	label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	label.Parent = billboard
-
-	model.PrimaryPart = part
-	return model, part, visual, innerGlow
+	return sphere, bodyVel
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
--- FLOATING ANIMATION
+-- PICKUP PHYSICS & ANIMATION
 -- ════════════════════════════════════════════════════════════════════════════
 
-local function animatePickup(model, part, visual, innerGlow, basePosition)
+local function animatePickup(sphere, bodyVel)
 	local startTime = tick()
+	local vacuumTarget = nil
 
 	local connection
 	connection = RunService.Heartbeat:Connect(function()
-		if not part.Parent or not model.Parent then
+		if not sphere.Parent then
 			if connection then connection:Disconnect() end
 			return
 		end
 
 		local elapsed = tick() - startTime
 
-		-- Floating motion
-		local floatOffset = math.sin(elapsed * Config.FloatSpeed) * Config.FloatAmplitude
-		local newY = basePosition.Y + Config.FloatHeight + floatOffset
-
-		-- Rotation
-		local rotation = CFrame.Angles(0, elapsed * Config.RotationSpeed, 0)
-
-		local newPos = Vector3.new(basePosition.X, newY, basePosition.Z)
-		part.Position = newPos
-		visual.CFrame = CFrame.new(newPos) * rotation
-		innerGlow.CFrame = CFrame.new(newPos) * rotation * CFrame.Angles(math.rad(45), 0, 0)
-
-		-- Pulsing light
-		local light = visual:FindFirstChildOfClass("PointLight")
+		-- Pulsing light effect
+		local light = sphere:FindFirstChildOfClass("PointLight")
 		if light then
-			light.Brightness = 3 + math.sin(elapsed * 3) * 1
+			light.Brightness = 4 + math.sin(elapsed * 4) * 1.5
+		end
+
+		-- Check if grounded (raycast down)
+		if not sphere:GetAttribute("IsGrounded") then
+			local ray = Ray.new(sphere.Position, Vector3.new(0, -2, 0))
+			local hit, hitPos = workspace:FindPartOnRay(ray, sphere)
+			if hit then
+				-- Hit ground, anchor it
+				sphere.Anchored = true
+				sphere.Position = hitPos + Vector3.new(0, sphere.Size.Y/2, 0)
+				sphere:SetAttribute("IsGrounded", true)
+				if bodyVel then bodyVel:Destroy() end
+			end
+		else
+			-- Grounded - check for vacuum or auto-pickup
+			local closestPlayer = nil
+			local closestDist = math.huge
+
+			for _, player in ipairs(Players:GetPlayers()) do
+				local character = player.Character
+				if character and character.PrimaryPart then
+					local dist = (character.PrimaryPart.Position - sphere.Position).Magnitude
+
+					-- Auto-pickup in combat (walk over)
+					if dist <= Config.AutoPickupRange then
+						closestPlayer = player
+						closestDist = 0
+						break
+					end
+
+					-- Vacuum out of combat
+					if not isPlayerInCombat(player) and dist <= Config.VacuumRange then
+						if dist < closestDist then
+							closestPlayer = player
+							closestDist = dist
+						end
+					end
+				end
+			end
+
+			-- Vacuum to player
+			if closestPlayer and closestDist > Config.AutoPickupRange then
+				local character = closestPlayer.Character
+				if character and character.PrimaryPart then
+					sphere.Anchored = false
+					local direction = (character.PrimaryPart.Position - sphere.Position).Unit
+					sphere.CFrame = sphere.CFrame + direction * Config.VacuumSpeed * 0.016
+
+					-- Re-check distance for pickup
+					if (character.PrimaryPart.Position - sphere.Position).Magnitude <= Config.AutoPickupRange then
+						vacuumTarget = closestPlayer
+					end
+				end
+			elseif closestPlayer and closestDist <= Config.AutoPickupRange then
+				-- Trigger pickup
+				vacuumTarget = closestPlayer
+			end
+
+			-- Execute pickup
+			if vacuumTarget then
+				local success = onPickupTouched(sphere, vacuumTarget, sphere:GetAttribute("PickupType"))
+				if success then
+					if connection then connection:Disconnect() end
+					sphere:Destroy()
+					return
+				end
+			end
 		end
 	end)
 
@@ -165,9 +199,9 @@ end
 -- PICKUP LOGIC
 -- ════════════════════════════════════════════════════════════════════════════
 
-local function onPickupTouched(part, player, pickupType)
+function onPickupTouched(part, player, pickupType)
 	local character = player.Character
-	if not character then return end
+	if not character then return false end
 
 	if pickupType == "Health" then
 		-- Heal player
@@ -180,7 +214,7 @@ local function onPickupTouched(part, player, pickupType)
 
 			-- Play pickup sound
 			local sound = Instance.new("Sound")
-			sound.SoundId = "rbxassetid://5063796048" -- Health pickup sound
+			sound.SoundId = "rbxassetid://5063796048"
 			sound.Volume = 0.5
 			sound.Parent = part
 			sound:Play()
@@ -192,7 +226,6 @@ local function onPickupTouched(part, player, pickupType)
 		-- Find current weapon and restore ammo
 		local tool = character:FindFirstChildOfClass("Tool")
 		if tool then
-			-- Add ammo to reserve pool
 			local currentPool = tool:GetAttribute("PoolAmmo") or 0
 			tool:SetAttribute("PoolAmmo", currentPool + Config.AmmoRestoreAmount)
 
@@ -200,7 +233,7 @@ local function onPickupTouched(part, player, pickupType)
 
 			-- Play pickup sound
 			local sound = Instance.new("Sound")
-			sound.SoundId = "rbxassetid://876939830" -- Ammo pickup sound
+			sound.SoundId = "rbxassetid://876939830"
 			sound.Volume = 0.5
 			sound.Parent = part
 			sound:Play()
@@ -208,7 +241,7 @@ local function onPickupTouched(part, player, pickupType)
 
 			return true
 		else
-			-- No weapon equipped, still allow pickup and store for later
+			-- No weapon equipped, still allow pickup
 			print(string.format("[Pickup] %s picked up Ammo (no weapon equipped)", player.Name))
 			return true
 		end
@@ -222,97 +255,39 @@ end
 -- ════════════════════════════════════════════════════════════════════════════
 
 function PickupSystem.SpawnHealthPickup(position, parent)
-	local model, part, visual, innerGlow = createPickupModel("Health", position)
-	model.Parent = parent or workspace
+	local sphere, bodyVel = createPickupSphere("Health", position)
+	sphere.Parent = parent or workspace
 
-	-- Animation
-	local connection = animatePickup(model, part, visual, innerGlow, position)
-
-	-- Touch detection (using Region3 for better performance)
-	local touchConnection
-	touchConnection = RunService.Heartbeat:Connect(function()
-		if not part.Parent or not model.Parent then
-			if touchConnection then touchConnection:Disconnect() end
-			if connection then connection:Disconnect() end
-			return
-		end
-
-		-- Check for nearby players
-		local region = Region3.new(part.Position - Vector3.new(2, 2, 2), part.Position + Vector3.new(2, 2, 2))
-		region = region:ExpandToGrid(4)
-
-		for _, part in ipairs(workspace:FindPartsInRegion3(region, nil, 100)) do
-			local player = game.Players:GetPlayerFromCharacter(part.Parent)
-			if player then
-				local success = onPickupTouched(part, player, "Health")
-				if success then
-					-- Destroy pickup
-					if touchConnection then touchConnection:Disconnect() end
-					if connection then connection:Disconnect() end
-					model:Destroy()
-					return
-				end
-			end
-		end
-	end)
+	-- Start animation/vacuum system
+	local connection = animatePickup(sphere, bodyVel)
 
 	-- Auto-despawn
 	task.delay(Config.DespawnTime, function()
-		if model.Parent then
-			if touchConnection then touchConnection:Disconnect() end
+		if sphere.Parent then
 			if connection then connection:Disconnect() end
-			model:Destroy()
+			sphere:Destroy()
 		end
 	end)
 
-	return model
+	return sphere
 end
 
 function PickupSystem.SpawnAmmoPickup(position, parent)
-	local model, part, visual, innerGlow = createPickupModel("Ammo", position)
-	model.Parent = parent or workspace
+	local sphere, bodyVel = createPickupSphere("Ammo", position)
+	sphere.Parent = parent or workspace
 
-	-- Animation
-	local connection = animatePickup(model, part, visual, innerGlow, position)
-
-	-- Touch detection
-	local touchConnection
-	touchConnection = RunService.Heartbeat:Connect(function()
-		if not part.Parent or not model.Parent then
-			if touchConnection then touchConnection:Disconnect() end
-			if connection then connection:Disconnect() end
-			return
-		end
-
-		-- Check for nearby players
-		local region = Region3.new(part.Position - Vector3.new(2, 2, 2), part.Position + Vector3.new(2, 2, 2))
-		region = region:ExpandToGrid(4)
-
-		for _, part in ipairs(workspace:FindPartsInRegion3(region, nil, 100)) do
-			local player = game.Players:GetPlayerFromCharacter(part.Parent)
-			if player then
-				local success = onPickupTouched(part, player, "Ammo")
-				if success then
-					-- Destroy pickup
-					if touchConnection then touchConnection:Disconnect() end
-					if connection then connection:Disconnect() end
-					model:Destroy()
-					return
-				end
-			end
-		end
-	end)
+	-- Start animation/vacuum system
+	local connection = animatePickup(sphere, bodyVel)
 
 	-- Auto-despawn
 	task.delay(Config.DespawnTime, function()
-		if model.Parent then
-			if touchConnection then touchConnection:Disconnect() end
+		if sphere.Parent then
 			if connection then connection:Disconnect() end
-			model:Destroy()
+			sphere:Destroy()
 		end
 	end)
 
-	return model
+	return sphere
 end
 
 function PickupSystem.SpawnPickupsFromEnemy(enemyPosition, floorNumber, parent)

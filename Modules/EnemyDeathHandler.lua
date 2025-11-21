@@ -242,6 +242,56 @@ local function applyDeathEffects(enemyModel)
 	end)
 end
 
+local function applyRagdoll(enemyModel)
+	-- Convert joints to ragdoll constraints
+	for _, obj in ipairs(enemyModel:GetDescendants()) do
+		if obj:IsA("Motor6D") or obj:IsA("Weld") then
+			-- Create ball socket constraint for ragdoll effect
+			local ballSocket = Instance.new("BallSocketConstraint")
+			ballSocket.Name = "RagdollJoint"
+
+			-- Try to find or create attachments
+			local att0 = obj.Part0:FindFirstChild(obj.Name .. "Att") or Instance.new("Attachment")
+			if not att0.Parent then
+				att0.Name = obj.Name .. "Att"
+				att0.CFrame = obj.C0
+				att0.Parent = obj.Part0
+			end
+
+			local att1 = obj.Part1:FindFirstChild(obj.Name .. "Att") or Instance.new("Attachment")
+			if not att1.Parent then
+				att1.Name = obj.Name .. "Att"
+				att1.CFrame = obj.C1
+				att1.Parent = obj.Part1
+			end
+
+			ballSocket.Attachment0 = att0
+			ballSocket.Attachment1 = att1
+			ballSocket.LimitsEnabled = true
+			ballSocket.TwistLimitsEnabled = true
+			ballSocket.Parent = obj.Part0
+
+			obj:Destroy() -- Remove motor/weld
+		elseif obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
+			-- Unanchor for ragdoll physics
+			obj.Anchored = false
+			obj.CanCollide = true
+			obj.CanQuery = false -- Don't allow shooting dead bodies
+		end
+	end
+
+	-- Apply impulse to root part
+	local rootPart = enemyModel:FindFirstChild("HumanoidRootPart")
+	if rootPart then
+		rootPart.Anchored = false
+		local bodyVel = Instance.new("BodyVelocity")
+		bodyVel.MaxForce = Vector3.new(5000, 5000, 5000)
+		bodyVel.Velocity = Vector3.new(math.random(-8, 8), 3, math.random(-8, 8))
+		bodyVel.Parent = rootPart
+		Debris:AddItem(bodyVel, 0.15)
+	end
+end
+
 local function disableEnemy(enemyModel)
 	-- Stop enemy from doing anything
 	local humanoid = enemyModel:FindFirstChild("Humanoid")
@@ -252,18 +302,12 @@ local function disableEnemy(enemyModel)
 		humanoid.JumpPower = 0
 	end
 
-	-- Disable collision and queries (can't be shot anymore!)
-	for _, part in ipairs(enemyModel:GetDescendants()) do
-		if part:IsA("BasePart") then
-			part.CanCollide = false
-			part.CanQuery = false -- Important: prevents raycast/projectile hits!
-			part.Anchored = true
-		end
-	end
+	-- Apply ragdoll physics
+	applyRagdoll(enemyModel)
 
-	-- Destroy any accessories or attachments that might fall off
+	-- Destroy any accessories
 	for _, obj in ipairs(enemyModel:GetDescendants()) do
-		if obj:IsA("Accessory") or obj:IsA("Attachment") and obj.Parent ~= enemyModel.PrimaryPart then
+		if obj:IsA("Accessory") then
 			obj:Destroy()
 		end
 	end

@@ -31,9 +31,9 @@ function ModularLootGen:SpawnWeaponLoot(position, level, forcedRarity)
 	local weapon = WeaponGenerator:GenerateWeapon(level, nil, forcedRarity)
 	local weaponCard = WeaponGenerator:GetWeaponCard(weapon)
 
-	-- Build 3D model
+	-- Build 3D model (spawn closer to ground since enemies are elevated)
 	local weaponModel = WeaponModelBuilder:BuildWeapon(weapon)
-	weaponModel:SetPrimaryPartCFrame(CFrame.new(position + Vector3.new(0, 3, 0)))
+	weaponModel:SetPrimaryPartCFrame(CFrame.new(position + Vector3.new(0, 1, 0)))
 
 	-- Make all parts non-collidable and anchored for display
 	for _, part in pairs(weaponModel:GetDescendants()) do
@@ -49,7 +49,7 @@ function ModularLootGen:SpawnWeaponLoot(position, level, forcedRarity)
 	local lootDrop = Instance.new("Part")
 	lootDrop.Name = "WeaponLoot"
 	lootDrop.Size = Vector3.new(2, 2, 2)
-	lootDrop.Position = position + Vector3.new(0, 3, 0)
+	lootDrop.Position = position + Vector3.new(0, 1, 0)
 	lootDrop.Anchored = true
 	lootDrop.CanCollide = false
 	lootDrop.Transparency = 1
@@ -58,8 +58,8 @@ function ModularLootGen:SpawnWeaponLoot(position, level, forcedRarity)
 	-- Store weapon data
 	lootDrop:SetAttribute("WeaponData", game:GetService("HttpService"):JSONEncode(weapon))
 
-	-- Create floating animation
-	local originalY = position.Y + 3
+	-- Create floating animation (lower height)
+	local originalY = position.Y + 1
 	local floatConnection
 	floatConnection = RunService.Heartbeat:Connect(function()
 		if not lootDrop.Parent or not weaponModel.Parent then
