@@ -59,6 +59,10 @@ local isReloading = false
 local lastFireTime = 0
 local canFire = true
 
+-- ADS and combat state
+local isAiming = false
+local lastMeleeTime = 0
+
 -- ============================================================
 -- AMMO POOL CONFIGURATION (by weapon type)
 -- ============================================================
@@ -137,8 +141,20 @@ end
 
 local function getAccuracySpread(accuracy)
 	-- Convert accuracy (0-100) to spread in degrees
-	local spread = (100 - accuracy) * 0.05 -- 0 accuracy = 5 degrees, 100 accuracy = 0 degrees
-	return math.rad(spread)
+	-- Increased spread multiplier for more noticeable weapon inaccuracy
+	local baseSpread = (100 - accuracy) * 0.15 -- 0 accuracy = 15 degrees, 100 accuracy = 0 degrees
+
+	-- Hip fire vs ADS spread modifier
+	local spreadMultiplier = 1.0
+	if isAiming then
+		-- ADS: Reduce spread by 70%
+		spreadMultiplier = 0.3
+	else
+		-- Hip fire: Increase spread by 50%
+		spreadMultiplier = 1.5
+	end
+
+	return math.rad(baseSpread * spreadMultiplier)
 end
 
 local function applySpread(direction, spreadRadians)
@@ -353,6 +369,78 @@ local function createMuzzleFlash()
 end
 
 -- ============================================================
+-- ADS (AIM DOWN SIGHTS)
+-- ============================================================
+
+local function toggleADS(aimState)
+	isAiming = aimState
+
+	-- Update ViewmodelController offset
+	if ViewmodelController and ViewmodelController.SetAiming then
+		ViewmodelController:SetAiming(isAiming)
+	end
+
+	print(string.format("[ProjectileShooter] ADS: %s", isAiming and "ON" or "OFF"))
+end
+
+-- ============================================================
+-- MELEE ATTACK
+-- ============================================================
+
+local function meleeAttack()
+	local now = tick()
+	if now - lastMeleeTime < 0.6 then return end -- 0.6 second cooldown
+	lastMeleeTime = now
+
+	print("[ProjectileShooter] Melee attack!")
+
+	-- Raycast forward for melee range
+	local origin = camera.CFrame.Position
+	local direction = camera.CFrame.LookVector
+	local meleeRange = 5 -- 5 studs
+
+	local ray = Ray.new(origin, direction * meleeRange)
+	local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, {character})
+
+	if hit then
+		local hitModel = hit.Parent
+		local humanoid = hitModel and hitModel:FindFirstChild("Humanoid")
+		local isEnemy = hitModel and hitModel:GetAttribute("IsEnemy")
+
+		if humanoid and isEnemy then
+			-- Calculate melee damage (50% of weapon damage)
+			local meleeDamage = math.floor((weaponStats.Damage or 20) * 0.5)
+
+			print(string.format("[ProjectileShooter] ✓ MELEE HIT: %s - %d damage", hitModel.Name, meleeDamage))
+
+			-- Send damage to server
+			if damageEvent then
+				damageEvent:FireServer(hitModel, meleeDamage, "Physical", weaponStats)
+			end
+
+			-- Visual impact
+			local impact = Instance.new("Part")
+			impact.Size = Vector3.new(1, 1, 1)
+			impact.Position = position
+			impact.Anchored = true
+			impact.CanCollide = false
+			impact.Material = Enum.Material.Neon
+			impact.Color = Color3.fromRGB(255, 255, 200)
+			impact.Transparency = 0.3
+			impact.Shape = Enum.PartType.Ball
+			impact.Parent = workspace
+
+			Debris:AddItem(impact, 0.3)
+		end
+	end
+
+	-- Apply melee animation to viewmodel (punch forward)
+	if ViewmodelController and ViewmodelController.PlayMelee then
+		ViewmodelController:PlayMelee()
+	end
+end
+
+-- ============================================================
 -- SHOOTING
 -- ============================================================
 
@@ -491,13 +579,25 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		-- Left click - Fire
 		mouseHeld = true
 		if currentWeapon then
 			fireWeapon()
 		end
+	elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+		-- Right click - ADS
+		if currentWeapon then
+			toggleADS(true)
+		end
 	elseif input.KeyCode == Enum.KeyCode.R then
+		-- R - Reload
 		if currentWeapon then
 			reload()
+		end
+	elseif input.KeyCode == Enum.KeyCode.V then
+		-- V - Melee attack
+		if currentWeapon then
+			meleeAttack()
 		end
 	end
 end)
@@ -505,6 +605,11 @@ end)
 UserInputService.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		mouseHeld = false
+	elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+		-- Release right click - Exit ADS
+		if currentWeapon then
+			toggleADS(false)
+		end
 	end
 end)
 

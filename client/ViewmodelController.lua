@@ -62,6 +62,8 @@ local recoilOffset = CFrame.new()
 local currentRecoil = 0
 local reloadProgress = 0
 local isReloading = false
+local meleeProgress = 0
+local isMelee = false
 
 local ViewmodelController = {}
 
@@ -91,6 +93,36 @@ function ViewmodelController:PlayReload()
 		end
 		isReloading = false
 		reloadProgress = 0
+	end)
+end
+
+-- Set ADS state
+function ViewmodelController:SetAiming(aimState)
+	if aimState then
+		-- Transition to ADS offset
+		Config.TargetOffset = Config.ADSOffset
+	else
+		-- Return to hip fire offset
+		Config.TargetOffset = Config.HipFireOffset
+	end
+end
+
+-- Play melee animation
+function ViewmodelController:PlayMelee()
+	if isMelee then return end
+
+	isMelee = true
+	meleeProgress = 0
+
+	task.spawn(function()
+		local duration = 0.4 -- Quick melee
+		local startTime = tick()
+		while isMelee and (tick() - startTime) < duration do
+			meleeProgress = (tick() - startTime) / duration
+			task.wait()
+		end
+		isMelee = false
+		meleeProgress = 0
 	end)
 end
 
@@ -297,6 +329,18 @@ local function calculateReload()
 	return CFrame.new(0, -curve * 0.5, 0) * CFrame.Angles(curve * 0.3, 0, curve * 0.2)
 end
 
+-- Calculate melee animation
+local function calculateMelee()
+	if not isMelee then return CFrame.new() end
+
+	-- Fast punch forward
+	local progress = meleeProgress
+	local curve = math.sin(progress * math.pi) -- 0 -> 1 -> 0
+
+	-- Forward thrust with slight upward angle
+	return CFrame.new(0, curve * 0.3, -curve * 1.2) * CFrame.Angles(-curve * 0.4, 0, 0)
+end
+
 -- Equip viewmodel
 function ViewmodelController:EquipViewmodel(tool)
 	self:UnequipViewmodel()
@@ -351,9 +395,10 @@ function ViewmodelController:EquipViewmodel(tool)
 		local bob = calculateBob(dt)
 		local recoil = calculateRecoil(dt)
 		local reload = calculateReload()
+		local melee = calculateMelee()
 
 		-- Combine all animations
-		local finalCFrame = camera.CFrame * Config.CurrentOffset * sway * bob * recoil * reload
+		local finalCFrame = camera.CFrame * Config.CurrentOffset * sway * bob * recoil * reload * melee
 		anchor.CFrame = finalCFrame
 	end)
 
