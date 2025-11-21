@@ -140,20 +140,10 @@ function PileOfBones.Initialize(bonesAssortment)
 		return false
 	end
 
-	-- Option 1: Touch-based (walk over to trigger)
-	if bonesAssortment:IsA("BasePart") then
-		bonesAssortment.Touched:Connect(function(hit)
-			local character = hit.Parent
-			if not character then return end
+	-- REMOVED: Touch-based trigger (caused unwanted AFK teleportation)
+	-- Players should only descend via intentional interaction
 
-			local player = Players:GetPlayerFromCharacter(character)
-			if player then
-				teleportToDungeon(player)
-			end
-		end)
-	end
-
-	-- Option 2: ClickDetector (click to trigger)
+	-- Option 1: ClickDetector (click to trigger)
 	local clickDetector = bonesAssortment:FindFirstChildOfClass("ClickDetector")
 	if not clickDetector then
 		clickDetector = Instance.new("ClickDetector")
@@ -165,7 +155,7 @@ function PileOfBones.Initialize(bonesAssortment)
 		teleportToDungeon(player)
 	end)
 
-	-- Option 3: ProximityPrompt (hold to trigger)
+	-- Option 2: ProximityPrompt (hold to trigger - requires intentional action)
 	if not bonesAssortment:FindFirstChild("ProximityPrompt") then
 		local prompt = Instance.new("ProximityPrompt")
 		prompt.ActionText = "Touch the Bones"
