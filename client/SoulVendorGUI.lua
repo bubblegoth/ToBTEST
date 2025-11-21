@@ -304,8 +304,8 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 		local function forceUnlock()
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 			UserInputService.MouseIconEnabled = true
-			Camera.CameraMode = Enum.CameraMode.Classic
-			Player.CameraMode = Enum.CameraMode.Classic
+			Camera.CameraType = Enum.CameraType.Custom -- Camera uses CameraType, not CameraMode
+			Player.CameraMode = Enum.CameraMode.Classic -- Player uses CameraMode
 		end
 
 		-- Force unlock immediately
@@ -327,7 +327,7 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 		vendorGUI.Enabled = true
 
 		print("[SoulVendorGUI] ✓ GUI opened successfully - mouse unlocked, GUI visible")
-		print("  Camera.CameraMode:", Camera.CameraMode)
+		print("  Camera.CameraType:", Camera.CameraType)
 		print("  Player.CameraMode:", Player.CameraMode)
 		print("  vendorGUI.Enabled:", vendorGUI.Enabled)
 	end)
@@ -350,12 +350,14 @@ local function hideVendorGUI()
 	-- Restore FPS mouse lock and camera mode
 	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 	UserInputService.MouseIconEnabled = false
-	Camera.CameraMode = Enum.CameraMode.LockFirstPerson
+	Camera.CameraType = Enum.CameraType.Custom -- Camera uses CameraType
 	Player.CameraMode = Enum.CameraMode.LockFirstPerson
 
 	previousMouseBehavior = nil
 	previousCameraMode = nil
-	print("[SoulVendorGUI] GUI closed - mouse LOCKED, camera mode:", Camera.CameraMode, Player.CameraMode)
+	print("[SoulVendorGUI] GUI closed - mouse LOCKED")
+	print("  Camera.CameraType:", Camera.CameraType)
+	print("  Player.CameraMode:", Player.CameraMode)
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
