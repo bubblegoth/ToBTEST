@@ -92,8 +92,19 @@ local function teleportToDungeon(player)
 		local receivedWeapon, weapon = StartingWeapon.OnFloorEntry(player, playerStats, 1)
 
 		if receivedWeapon then
-			print(string.format("[Bones_Assortment] %s received starting weapon: %s", player.Name, weapon.Name))
-			print(StartingWeapon.GetWelcomeMessage(weapon))
+			print(string.format("[Bones_Assortment] %s received starting weapon: %s", player.Name, weapon.Name or "Unknown"))
+
+			-- Try to show welcome message, but don't let it stop teleportation
+			local success, welcomeMsg = pcall(function()
+				return StartingWeapon.GetWelcomeMessage(weapon)
+			end)
+
+			if success then
+				print(welcomeMsg)
+			else
+				warn("[Bones_Assortment] Could not generate welcome message:", welcomeMsg)
+				print("=== ENTERING THE DUNGEON ===\nYou have been given a starting weapon. Good luck, wanderer...")
+			end
 
 			-- TODO: Convert weapon data into actual tool/gun and give to player
 			-- You'll need to create a WeaponBuilder module to turn weapon data into 3D tool
