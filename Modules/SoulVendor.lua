@@ -18,7 +18,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ChurchSystem = require(ReplicatedStorage.Modules.ChurchSystem)
 local DungeonConfig = require(ReplicatedStorage.Modules.DungeonConfig)
 
+-- Script module table (for potential RemoteEvent callbacks)
+local SoulVendor = {}
+
 -- NPC Configuration
+-- Wait for script to be properly parented to the vendor model
+repeat task.wait() until script.Parent and script.Parent:IsA("Model")
+
 local vendor = script.Parent -- The NPC model
 local vendorName = "Soul Keeper"
 local vendorDialogue = {
