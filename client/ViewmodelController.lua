@@ -13,6 +13,11 @@ Last Updated: 2025-11-21
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+
+-- Load weapon building modules
+local Modules = ReplicatedStorage:WaitForChild("Modules")
+local WeaponModelBuilder = require(Modules:WaitForChild("WeaponModelBuilder"))
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
@@ -355,8 +360,27 @@ function ViewmodelController:EquipViewmodel(tool)
 		end
 	end
 
-	-- Create gothic pistol
-	local model = createGothicPistol()
+	-- Get weapon data from tool and build actual model
+	local model = nil
+	local weaponDataJSON = tool:GetAttribute("WeaponDataJSON")
+
+	if weaponDataJSON then
+		local success, weaponData = pcall(function()
+			return HttpService:JSONDecode(weaponDataJSON)
+		end)
+
+		if success and weaponData then
+			model = WeaponModelBuilder:BuildWeapon(weaponData)
+			print("[Viewmodel] Built weapon model:", weaponData.Name)
+		else
+			warn("[Viewmodel] Failed to decode weapon data, using fallback")
+			model = createGothicPistol()
+		end
+	else
+		warn("[Viewmodel] No weapon data found, using fallback")
+		model = createGothicPistol()
+	end
+
 	if not model then
 		warn("[Viewmodel] Failed to create model")
 		return
