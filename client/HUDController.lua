@@ -127,41 +127,41 @@ vcorner.Parent = vignette
 
 print("🗡️ [HUD] Creating VIGOUR bar...")
 
--- VIGOUR BAR (Bottom-Left, segmented scroll) - Scaled down 30%
-local vigourScroll = parchmentFrame(screenGui, UDim2.new(0, 340, 0, 80), UDim2.new(0, 20, 1, -90), Vector2.new(0,1))
+-- VIGOUR BAR (Bottom-Left, segmented scroll) - Compact size
+local vigourScroll = parchmentFrame(screenGui, UDim2.new(0, 220, 0, 55), UDim2.new(0, 15, 1, -65), Vector2.new(0,1))
 
 local vigourBg = Instance.new("Frame")
-vigourBg.Size = UDim2.new(1, -16, 0, 32)
-vigourBg.Position = UDim2.new(0, 8, 0, 40)
+vigourBg.Size = UDim2.new(1, -12, 0, 22)
+vigourBg.Position = UDim2.new(0, 6, 0, 28)
 vigourBg.BackgroundColor3 = C.DarkP
 vigourBg.Parent = vigourScroll
-local bgCorner = Instance.new("UICorner", vigourBg); bgCorner.CornerRadius = UDim.new(0, 6)
+local bgCorner = Instance.new("UICorner", vigourBg); bgCorner.CornerRadius = UDim.new(0, 4)
 
 local vigourFill = Instance.new("Frame")
 vigourFill.Name = "Fill"
-vigourFill.Size = UDim2.new(1, -8, 1, -8)
-vigourFill.Position = UDim2.new(0, 4, 0, 4)
+vigourFill.Size = UDim2.new(1, -6, 1, -6)
+vigourFill.Position = UDim2.new(0, 3, 0, 3)
 vigourFill.BackgroundColor3 = C.LightInk
 vigourFill.BorderSizePixel = 0
 vigourFill.Parent = vigourBg
-local fillCorner = Instance.new("UICorner", vigourFill); fillCorner.CornerRadius = UDim.new(0, 4)
+local fillCorner = Instance.new("UICorner", vigourFill); fillCorner.CornerRadius = UDim.new(0, 3)
 
 -- Segment dividers (4 segments)
 for i = 1, 3 do
 	local seg = Instance.new("Frame")
-	seg.Size = UDim2.new(0, 2, 1, 0)
-	seg.Position = UDim2.new(i/4, -1, 0, 0)
+	seg.Size = UDim2.new(0, 1, 1, 0)
+	seg.Position = UDim2.new(i/4, 0, 0, 0)
 	seg.BackgroundColor3 = C.Ink
 	seg.BorderSizePixel = 0
 	seg.Parent = vigourBg
 end
 
 local vigourText = Instance.new("TextLabel")
-vigourText.Size = UDim2.new(1, -16, 0, 32)
-vigourText.Position = UDim2.new(0, 8, 0, 4)
+vigourText.Size = UDim2.new(1, -12, 0, 22)
+vigourText.Position = UDim2.new(0, 6, 0, 3)
 vigourText.BackgroundTransparency = 1
 vigourText.Font = FONT_TITLE
-vigourText.TextSize = 22
+vigourText.TextSize = 15
 vigourText.TextColor3 = C.Ink
 vigourText.TextStrokeTransparency = 0.5
 vigourText.TextStrokeColor3 = C.Abyss
@@ -170,11 +170,11 @@ vigourText.TextXAlignment = Enum.TextXAlignment.Left
 vigourText.Parent = vigourScroll
 
 local vigourNums = Instance.new("TextLabel")
-vigourNums.Size = UDim2.new(1, -16, 0, 24)
-vigourNums.Position = UDim2.new(0, 8, 0, 32)
+vigourNums.Size = UDim2.new(1, -12, 0, 18)
+vigourNums.Position = UDim2.new(0, 6, 0, 22)
 vigourNums.BackgroundTransparency = 1
 vigourNums.Font = FONT_NUM
-vigourNums.TextSize = 20
+vigourNums.TextSize = 14
 vigourNums.TextColor3 = C.TorchGlow
 vigourNums.TextStrokeTransparency = 0.4
 vigourNums.TextStrokeColor3 = C.Abyss
@@ -184,15 +184,15 @@ vigourNums.Parent = vigourScroll
 
 print("🗡️ [HUD] Creating POWDER counter...")
 
--- QUARTERS (Bottom-Right, ammo counter) - Scaled down 30%
-local quartersScroll = parchmentFrame(screenGui, UDim2.new(0, 280, 0, 100), UDim2.new(1, -30, 1, -80), Vector2.new(1,1))
+-- QUARTERS (Bottom-Right, ammo counter) - Compact size
+local quartersScroll = parchmentFrame(screenGui, UDim2.new(0, 180, 0, 70), UDim2.new(1, -20, 1, -60), Vector2.new(1,1))
 
 local quartersBig = Instance.new("TextLabel")
-quartersBig.Size = UDim2.new(1, 0, 0, 70)
-quartersBig.Position = UDim2.new(0, 0, 0, 8)
+quartersBig.Size = UDim2.new(1, 0, 0, 48)
+quartersBig.Position = UDim2.new(0, 0, 0, 5)
 quartersBig.BackgroundTransparency = 1
 quartersBig.Font = FONT_NUM
-quartersBig.TextSize = 80
+quartersBig.TextSize = 52
 quartersBig.TextColor3 = C.TorchGlow
 quartersBig.TextStrokeTransparency = 0.3
 quartersBig.TextStrokeColor3 = C.Abyss
@@ -202,11 +202,11 @@ quartersBig.TextYAlignment = Enum.TextYAlignment.Bottom
 quartersBig.Parent = quartersScroll
 
 local quartersRes = Instance.new("TextLabel")
-quartersRes.Size = UDim2.new(1, 0, 0, 28)
-quartersRes.Position = UDim2.new(0, 0, 1, -28)
+quartersRes.Size = UDim2.new(1, 0, 0, 20)
+quartersRes.Position = UDim2.new(0, 0, 1, -20)
 quartersRes.BackgroundTransparency = 1
 quartersRes.Font = FONT_TITLE
-quartersRes.TextSize = 18
+quartersRes.TextSize = 12
 quartersRes.TextColor3 = C.Ink
 quartersRes.TextStrokeTransparency = 0.6
 quartersRes.TextStrokeColor3 = C.Abyss
@@ -215,11 +215,11 @@ quartersRes.TextXAlignment = Enum.TextXAlignment.Center
 quartersRes.Parent = quartersScroll
 
 local quartersPool = Instance.new("TextLabel")
-quartersPool.Size = UDim2.new(1, 0, 0, 22)
-quartersPool.Position = UDim2.new(0, 0, 1, -8)
+quartersPool.Size = UDim2.new(1, 0, 0, 16)
+quartersPool.Position = UDim2.new(0, 0, 1, -6)
 quartersPool.BackgroundTransparency = 1
 quartersPool.Font = FONT_DESC
-quartersPool.TextSize = 16
+quartersPool.TextSize = 12
 quartersPool.TextColor3 = C.LightInk
 quartersPool.Text = "/ 240"
 quartersPool.TextXAlignment = Enum.TextXAlignment.Right
@@ -227,14 +227,14 @@ quartersPool.Parent = quartersScroll
 
 print("🗡️ [HUD] Creating ESTEEM display...")
 
--- ESTEEM (Top-Right scroll) - Scaled down 30%
-local esteemScroll = parchmentFrame(screenGui, UDim2.new(0, 260, 0, 56), UDim2.new(1, -28, 0, 28), Vector2.new(1,0))
+-- ESTEEM (Top-Right scroll) - Compact size
+local esteemScroll = parchmentFrame(screenGui, UDim2.new(0, 170, 0, 40), UDim2.new(1, -18, 0, 18), Vector2.new(1,0))
 
 local esteemText = Instance.new("TextLabel")
 esteemText.Size = UDim2.new(1,0,1,0)
 esteemText.BackgroundTransparency = 1
 esteemText.Font = FONT_TITLE
-esteemText.TextSize = 24
+esteemText.TextSize = 16
 esteemText.TextColor3 = C.TorchGlow
 esteemText.TextStrokeTransparency = 0.5
 esteemText.TextStrokeColor3 = C.Abyss
@@ -244,15 +244,15 @@ esteemText.Parent = esteemScroll
 
 print("🗡️ [HUD] Creating REGION banner...")
 
--- REGION BANNER (Top-Center, grand inscription) - Scaled down 30%
-local regionBanner = parchmentFrame(screenGui, UDim2.new(0, 600, 0, 64), UDim2.new(0.5, 0, 0, 20), Vector2.new(0.5,0))
+-- REGION BANNER (Top-Center, grand inscription) - Compact size
+local regionBanner = parchmentFrame(screenGui, UDim2.new(0, 420, 0, 45), UDim2.new(0.5, 0, 0, 14), Vector2.new(0.5,0))
 
 local regionText = Instance.new("TextLabel")
-regionText.Size = UDim2.new(1, -28, 1, 0)
-regionText.Position = UDim2.new(0, 14, 0, 0)
+regionText.Size = UDim2.new(1, -20, 1, 0)
+regionText.Position = UDim2.new(0, 10, 0, 0)
 regionText.BackgroundTransparency = 1
 regionText.Font = FONT_TITLE
-regionText.TextSize = 34
+regionText.TextSize = 22
 regionText.TextColor3 = C.Ink
 regionText.TextStrokeTransparency = 0.3
 regionText.TextStrokeColor3 = C.Abyss
@@ -290,7 +290,7 @@ local function updateVigour()
 	local hp, maxhp = math.floor(hum.Health), math.floor(hum.MaxHealth)
 	vigourNums.Text = hp .. " / " .. maxhp
 	local ratio = hp / maxhp
-	vigourFill.Size = UDim2.new(math.max(ratio, 0.02), -8, 1, -8)
+	vigourFill.Size = UDim2.new(math.max(ratio, 0.02), -6, 1, -6)
 
 	local isAfflicted = ratio <= 0.25
 	if isAfflicted ~= afflicted then
