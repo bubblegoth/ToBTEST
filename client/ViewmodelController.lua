@@ -26,12 +26,27 @@ local Config = {
 	TargetOffset = CFrame.new(0.7, -0.5, -1.2) * CFrame.Angles(math.rad(-2), math.rad(-3), 0),
 	CurrentOffset = CFrame.new(0.7, -0.5, -1.2) * CFrame.Angles(math.rad(-2), math.rad(-3), 0),
 	OffsetLerpSpeed = 12,
+
+	-- Enhanced sway (PlayStation style)
 	SwayEnabled = true,
-	SwayAmount = 0.02,
-	SwaySpeed = 8,
+	SwayAmount = 0.035, -- Increased for more noticeable movement
+	SwaySpeed = 6, -- Slower, more weighted feel
+	SwaySmoothing = 0.15, -- Smooth out sway
+
+	-- Head bob
 	BobEnabled = true,
-	BobAmount = 0.05,
-	BobSpeed = 10,
+	BobAmount = 0.08, -- More pronounced
+	BobSpeed = 12,
+
+	-- Recoil
+	RecoilEnabled = true,
+	RecoilAmount = 0.15,
+	RecoilSpeed = 15,
+	RecoilRecovery = 8,
+
+	-- Reload animation
+	ReloadEnabled = true,
+	ReloadDuration = 1.5,
 }
 
 -- State
@@ -42,7 +57,42 @@ local swayOffset = CFrame.new()
 local bobOffset = 0
 local lastCameraRotation = camera.CFrame.Rotation
 
+-- Animation state
+local recoilOffset = CFrame.new()
+local currentRecoil = 0
+local reloadProgress = 0
+local isReloading = false
+
 local ViewmodelController = {}
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- ANIMATION FUNCTIONS
+-- ════════════════════════════════════════════════════════════════════════════
+
+-- Apply recoil kick
+function ViewmodelController:ApplyRecoil(intensity)
+	if not Config.RecoilEnabled then return end
+	intensity = intensity or 1
+	currentRecoil = Config.RecoilAmount * intensity
+end
+
+-- Start reload animation
+function ViewmodelController:PlayReload()
+	if not Config.ReloadEnabled or isReloading then return end
+
+	isReloading = true
+	reloadProgress = 0
+
+	task.spawn(function()
+		local startTime = tick()
+		while isReloading and (tick() - startTime) < Config.ReloadDuration do
+			reloadProgress = (tick() - startTime) / Config.ReloadDuration
+			task.wait()
+		end
+		isReloading = false
+		reloadProgress = 0
+	end)
+end
 
 -- Create gothic pistol fallback
 local function createGothicPistol()
@@ -168,7 +218,7 @@ local function createViewmodelAnchor()
 	return anchor
 end
 
--- Calculate sway
+-- Calculate sway (PlayStation style - smooth and weighted)
 local function calculateSway(dt)
 	if not Config.SwayEnabled then return CFrame.new() end
 
@@ -177,13 +227,22 @@ local function calculateSway(dt)
 	lastCameraRotation = currentRotation
 
 	local _, yaw, roll = rotationDelta:ToEulerAnglesYXZ()
-	local targetSway = CFrame.Angles(0, -yaw * Config.SwayAmount * 10, roll * Config.SwayAmount * 5)
-	swayOffset = swayOffset:Lerp(targetSway, dt * Config.SwaySpeed)
+
+	-- More exaggerated sway for cinematic PS1/PS2 feel
+	local targetSway = CFrame.Angles(
+		roll * Config.SwayAmount * 3,   -- Pitch (up/down)
+		-yaw * Config.SwayAmount * 12,  -- Yaw (left/right) - more noticeable
+		roll * Config.SwayAmount * 6    -- Roll (tilt)
+	)
+
+	-- Smooth interpolation with dampening
+	swayOffset = swayOffset:Lerp(targetSway, Config.SwaySmoothing)
+	swayOffset = swayOffset:Lerp(CFrame.new(), dt * Config.SwaySpeed)
 
 	return swayOffset
 end
 
--- Calculate bob
+-- Calculate bob (enhanced for PlayStation feel)
 local function calculateBob(dt)
 	if not Config.BobEnabled then return CFrame.new() end
 
@@ -197,12 +256,45 @@ local function calculateBob(dt)
 			bobOffset = bobOffset + dt * Config.BobSpeed * (speed / 16)
 			local bobY = math.sin(bobOffset) * Config.BobAmount
 			local bobX = math.cos(bobOffset * 0.5) * Config.BobAmount * 0.5
-			return CFrame.new(bobX, bobY, 0)
+			local bobZ = math.sin(bobOffset * 0.5) * Config.BobAmount * 0.3 -- Forward/back movement
+			return CFrame.new(bobX, bobY, bobZ)
 		end
 	end
 
 	bobOffset = bobOffset * 0.95
 	return CFrame.new()
+end
+
+-- Calculate recoil
+local function calculateRecoil(dt)
+	if not Config.RecoilEnabled then return CFrame.new() end
+
+	-- Recover from recoil
+	if currentRecoil > 0 then
+		currentRecoil = math.max(0, currentRecoil - dt * Config.RecoilRecovery)
+	end
+
+	-- Apply recoil kick (up and back)
+	local recoilKick = CFrame.Angles(
+		-currentRecoil * 2,  -- Pitch up
+		(math.random() - 0.5) * currentRecoil * 0.5, -- Random horizontal
+		0
+	) * CFrame.new(0, 0, currentRecoil * 0.3) -- Pull back
+
+	recoilOffset = recoilOffset:Lerp(recoilKick, dt * Config.RecoilSpeed)
+
+	return recoilOffset
+end
+
+-- Calculate reload animation
+local function calculateReload()
+	if not isReloading or not Config.ReloadEnabled then return CFrame.new() end
+
+	-- Sine wave for smooth reload motion (dip down and rotate)
+	local progress = reloadProgress
+	local curve = math.sin(progress * math.pi) -- 0 -> 1 -> 0
+
+	return CFrame.new(0, -curve * 0.5, 0) * CFrame.Angles(curve * 0.3, 0, curve * 0.2)
 end
 
 -- Equip viewmodel
@@ -245,7 +337,7 @@ function ViewmodelController:EquipViewmodel(tool)
 	currentViewmodel = model
 	model:SetAttribute("AnchorPart", anchor.Name)
 
-	-- Render loop
+	-- Render loop (with all animations)
 	renderConnection = RunService.RenderStepped:Connect(function(dt)
 		if not currentViewmodel or not currentViewmodel.Parent then
 			self:UnequipViewmodel()
@@ -253,10 +345,15 @@ function ViewmodelController:EquipViewmodel(tool)
 		end
 
 		Config.CurrentOffset = Config.CurrentOffset:Lerp(Config.TargetOffset, math.min(dt * Config.OffsetLerpSpeed, 1))
+
+		-- Calculate all animation offsets
 		local sway = calculateSway(dt)
 		local bob = calculateBob(dt)
+		local recoil = calculateRecoil(dt)
+		local reload = calculateReload()
 
-		local finalCFrame = camera.CFrame * Config.CurrentOffset * sway * bob
+		-- Combine all animations
+		local finalCFrame = camera.CFrame * Config.CurrentOffset * sway * bob * recoil * reload
 		anchor.CFrame = finalCFrame
 	end)
 

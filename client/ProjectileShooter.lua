@@ -18,6 +18,9 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local camera = workspace.CurrentCamera
 
+-- Get ViewmodelController for animations
+local ViewmodelController = require(player.PlayerScripts:WaitForChild("ViewmodelController"))
+
 -- ============================================================
 -- CONFIGURATION
 -- ============================================================
@@ -392,6 +395,11 @@ local function fireWeapon()
 	-- Muzzle flash
 	createMuzzleFlash()
 
+	-- Apply recoil animation
+	if ViewmodelController and ViewmodelController.ApplyRecoil then
+		ViewmodelController:ApplyRecoil(1.0) -- Full recoil intensity
+	end
+
 	-- Play shoot sound (you can add custom sounds here)
 	-- local shootSound = currentWeapon:FindFirstChild("ShootSound")
 	-- if shootSound then shootSound:Play() end
@@ -412,6 +420,11 @@ function reload()
 
 	isReloading = true
 	canFire = false
+
+	-- Trigger reload animation
+	if ViewmodelController and ViewmodelController.PlayReload then
+		ViewmodelController:PlayReload()
+	end
 
 	print(string.format("[ProjectileShooter] Reloading... (%.1fs)", weaponStats.ReloadTime))
 
