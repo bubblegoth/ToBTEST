@@ -12,8 +12,12 @@ Last Updated: 2025-11-21
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- Store mouse state
+local previousMouseBehavior = nil
 
 -- Create RemoteEvent for communication
 local SoulVendorRemote = ReplicatedStorage:WaitForChild("SoulVendorRemote", 10)
@@ -280,12 +284,24 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 		createUpgradeOption(upgrade, i, optionsContainer)
 	end
 
+	-- Save current mouse behavior and unlock for GUI
+	previousMouseBehavior = UserInputService.MouseBehavior
+	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+	UserInputService.MouseIconEnabled = true
+
 	-- Show GUI
 	vendorGUI.Enabled = true
 end
 
 local function hideVendorGUI()
 	vendorGUI.Enabled = false
+
+	-- Restore previous mouse behavior
+	if previousMouseBehavior then
+		UserInputService.MouseBehavior = previousMouseBehavior
+		UserInputService.MouseIconEnabled = false
+		previousMouseBehavior = nil
+	end
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
