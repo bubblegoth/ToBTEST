@@ -19,7 +19,7 @@ local Camera = workspace.CurrentCamera
 
 -- Store previous camera/mouse state
 local previousMouseBehavior = nil
-local previousCameraType = nil
+local previousCameraMode = nil
 
 -- Create RemoteEvent for communication
 local SoulVendorRemote = ReplicatedStorage:WaitForChild("SoulVendorRemote", 10)
@@ -288,35 +288,35 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 
 	-- Save current state
 	previousMouseBehavior = UserInputService.MouseBehavior
-	previousCameraType = Camera.CameraType
+	previousCameraMode = Player.CameraMode
 
 	-- Unlock mouse and camera for GUI interaction
 	UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- Unlock mouse
 	UserInputService.MouseIconEnabled = true -- Show cursor
-	Camera.CameraType = Enum.CameraType.Custom -- Unlock camera from first-person
+	Player.CameraMode = Enum.CameraMode.Classic -- Allow camera to move freely (unlock from first-person)
 
 	-- Show GUI
 	vendorGUI.Enabled = true
-	print("[SoulVendorGUI] GUI opened - mouse and camera unlocked, cursor shown")
+	print("[SoulVendorGUI] GUI opened - mouse unlocked, camera mode:", Player.CameraMode, "cursor shown")
 end
 
 local function hideVendorGUI()
 	vendorGUI.Enabled = false
 
-	-- Restore FPS mouse lock and camera (locked center, no cursor)
+	-- Restore FPS mouse lock and camera mode
 	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 	UserInputService.MouseIconEnabled = false
 
-	-- Restore camera type if it was saved
-	if previousCameraType then
-		Camera.CameraType = previousCameraType
+	-- Restore camera mode if it was saved
+	if previousCameraMode then
+		Player.CameraMode = previousCameraMode
 	else
-		Camera.CameraType = Enum.CameraType.Custom -- Default to custom
+		Player.CameraMode = Enum.CameraMode.LockFirstPerson -- Default to first-person locked
 	end
 
 	previousMouseBehavior = nil
-	previousCameraType = nil
-	print("[SoulVendorGUI] GUI closed - mouse and camera locked, cursor hidden")
+	previousCameraMode = nil
+	print("[SoulVendorGUI] GUI closed - mouse locked, camera mode:", Player.CameraMode, "cursor hidden")
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
