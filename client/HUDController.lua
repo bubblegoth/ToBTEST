@@ -4,17 +4,25 @@
     The Ancestor approves. Bring light to the darkness.
 ]]
 
+print("🗡️ [HUD] Starting Darkest HUD initialization...")
+
+local success, err = pcall(function()
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
+print("🗡️ [HUD] Services loaded, creating ScreenGui...")
+
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "DarkestHUD"
 screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.Parent = PlayerGui
+
+print("🗡️ [HUD] ScreenGui created")
 
 -- DARKEST DUNGEON PALETTE: Sepia, torchlight, blood ink
 local C = {
@@ -27,9 +35,12 @@ local C = {
 	Abyss      = Color3.fromRGB(25, 20, 35),     -- Void background
 }
 
-local FONT_TITLE  = Enum.Font.Creepster      -- Horror handwritten
-local FONT_NUM    = Enum.Font.UnifrakturCook -- Gothic numerals
-local FONT_DESC   = Enum.Font.SourceSans     -- Clean for details
+-- Safe fonts that definitely exist in Roblox
+local FONT_TITLE  = Enum.Font.SpecialElite  -- Typewriter/gothic style
+local FONT_NUM    = Enum.Font.GothamBold     -- Bold numerals
+local FONT_DESC   = Enum.Font.Gotham         -- Clean details
+
+print("🗡️ [HUD] Colors and fonts defined")
 
 -- PARCEL: Parchment frame helper
 local function parchmentFrame(parent, size, pos, anchor)
@@ -63,6 +74,8 @@ local function parchmentFrame(parent, size, pos, anchor)
 	return frame
 end
 
+print("🗡️ [HUD] Creating vignette...")
+
 -- TORCHLIGHT VIGNETTE (flickering overlay)
 local vignette = Instance.new("Frame")
 vignette.Name = "TorchVignette"
@@ -85,6 +98,8 @@ vgrad.Parent = vignette
 local vcorner = Instance.new("UICorner")
 vcorner.CornerRadius = UDim.new(1, 0)
 vcorner.Parent = vignette
+
+print("🗡️ [HUD] Creating VIGOUR bar...")
 
 -- VIGOUR BAR (Bottom-Left, segmented scroll)
 local vigourScroll = parchmentFrame(screenGui, UDim2.new(0, 480, 0, 110), UDim2.new(0, 30, 1, -130), Vector2.new(0,1))
@@ -141,6 +156,8 @@ vigourNums.Text = "66 / 100"
 vigourNums.TextXAlignment = Enum.TextXAlignment.Right
 vigourNums.Parent = vigourScroll
 
+print("🗡️ [HUD] Creating POWDER counter...")
+
 -- QUARTERS (Bottom-Right, massive gothic nums)
 local quartersScroll = parchmentFrame(screenGui, UDim2.new(0, 420, 0, 140), UDim2.new(1, -50, 1, -110), Vector2.new(1,1))
 
@@ -182,6 +199,8 @@ quartersPool.Text = "/ 240"
 quartersPool.TextXAlignment = Enum.TextXAlignment.Right
 quartersPool.Parent = quartersScroll
 
+print("🗡️ [HUD] Creating ESTEEM display...")
+
 -- ESTEEM (Top-Right scroll)
 local esteemScroll = parchmentFrame(screenGui, UDim2.new(0, 380, 0, 80), UDim2.new(1, -40, 0, 40), Vector2.new(1,0))
 
@@ -196,6 +215,8 @@ esteemText.TextStrokeColor3 = C.Abyss
 esteemText.Text = "ESTEEM: 66,666"
 esteemText.TextXAlignment = Enum.TextXAlignment.Right
 esteemText.Parent = esteemScroll
+
+print("🗡️ [HUD] Creating REGION banner...")
 
 -- REGION BANNER (Top-Center, grand inscription)
 local regionBanner = parchmentFrame(screenGui, UDim2.new(0, 850, 0, 90), UDim2.new(0.5, 0, 0, 30), Vector2.new(0.5,0))
@@ -212,6 +233,8 @@ regionText.TextStrokeColor3 = C.Abyss
 regionText.Text = "CRYPT OF THE BLOOD SAINT — REGION XIII"
 regionText.TextXAlignment = Enum.TextXAlignment.Center
 regionText.Parent = regionBanner
+
+print("🗡️ [HUD] Setting up torch flicker effect...")
 
 -- TORCH FLICKER EFFECT
 local torchTime = 0
@@ -300,6 +323,8 @@ local function updateRegion()
 	end
 end
 
+print("🗡️ [HUD] Setting up character listeners...")
+
 -- BINDINGS
 Player.CharacterAdded:Connect(function(char)
 	local hum = char:WaitForChild("Humanoid")
@@ -307,7 +332,11 @@ Player.CharacterAdded:Connect(function(char)
 	updateVigour()
 end)
 
-if Player.Character then updateVigour() end
+if Player.Character then
+	task.spawn(updateVigour)
+end
+
+print("🗡️ [HUD] Setting up update loops...")
 
 task.spawn(function()
 	while task.wait(0.3) do
@@ -324,11 +353,21 @@ task.spawn(function()
 		waited += 0.5
 	end
 	if _G.AmmoUpdateEvent then
+		print("🗡️ [HUD] AmmoUpdateEvent connected")
 		_G.AmmoUpdateEvent.Event:Connect(function(data)
 			currentAmmoData = data
 			updateQuarters()
 		end)
+	else
+		warn("🗡️ [HUD] AmmoUpdateEvent not found - ammo display will not update")
 	end
 end)
 
 print("🗡️ DARKEST HUD AWAKENED 🗡️ — RISE, HERO! BRING TORCHLIGHT TO THE VOID.")
+
+end) -- end pcall
+
+if not success then
+	warn("🗡️ [HUD] ERROR INITIALIZING HUD:")
+	warn(err)
+end
