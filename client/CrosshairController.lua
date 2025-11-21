@@ -230,7 +230,9 @@ RunService.RenderStepped:Connect(function(deltaTime)
 	updateCrosshairVisibility()
 end)
 
--- Hide default Roblox crosshair
+-- Hide default Roblox crosshair and lock mouse for FPS gameplay
 Mouse.Icon = ""
+UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+UserInputService.MouseIconEnabled = false
 
-print("[CrosshairController] Gothic crosshair initialized")
+print("[CrosshairController] Gothic crosshair initialized - Mouse locked for FPS gameplay")

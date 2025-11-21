@@ -284,24 +284,24 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 		createUpgradeOption(upgrade, i, optionsContainer)
 	end
 
-	-- Save current mouse behavior and unlock for GUI
+	-- Unlock mouse and show cursor for GUI interaction
 	previousMouseBehavior = UserInputService.MouseBehavior
-	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-	UserInputService.MouseIconEnabled = true
+	UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- Unlock camera
+	UserInputService.MouseIconEnabled = true -- Show cursor
 
 	-- Show GUI
 	vendorGUI.Enabled = true
+	print("[SoulVendorGUI] GUI opened - mouse unlocked and cursor shown")
 end
 
 local function hideVendorGUI()
 	vendorGUI.Enabled = false
 
-	-- Restore previous mouse behavior
-	if previousMouseBehavior then
-		UserInputService.MouseBehavior = previousMouseBehavior
-		UserInputService.MouseIconEnabled = false
-		previousMouseBehavior = nil
-	end
+	-- Restore FPS mouse lock (locked center, no cursor)
+	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+	UserInputService.MouseIconEnabled = false
+	previousMouseBehavior = nil
+	print("[SoulVendorGUI] GUI closed - mouse locked and cursor hidden")
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
