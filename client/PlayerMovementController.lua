@@ -34,9 +34,9 @@ local Config = {
 
 	-- Slide
 	SlideSpeed = 35,
-	SlideDuration = 0.8,
-	SlideDeceleration = 0.9,
-	SlideCooldown = 1.0,
+	SlideDuration = 1.5,  -- Increased from 0.8 for longer slide
+	SlideDeceleration = 0.85,  -- Slightly less deceleration
+	SlideCooldown = 1.2,  -- Slightly longer cooldown
 	MinSprintTimeForSlide = 0.3, -- Must sprint for at least this long
 
 	-- Keybinds

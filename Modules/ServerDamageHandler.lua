@@ -35,6 +35,11 @@ local Config = {
 	MaxDamagePerShot = 500, -- Maximum damage a single shot can deal
 	MaxRange = 2000, -- Maximum range for damage to be valid (studs)
 
+	-- Body part damage multipliers
+	HeadshotMultiplier = 2.0, -- 2x damage for headshots
+	MiniCritChance = 0.25, -- 25% chance for mini-crit on other body parts
+	MiniCritMultiplier = 1.35, -- 1.35x damage for mini-crits
+
 	-- Logging
 	LogSuspiciousActivity = true,
 }
@@ -144,10 +149,32 @@ local function validateRange(attacker, target)
 end
 
 -- ============================================================
+-- DAMAGE MULTIPLIER CALCULATION
+-- ============================================================
+
+local function calculateDamageMultiplier(hitPart)
+	if not hitPart then return 1.0, "" end
+
+	local partName = hitPart.Name:lower()
+
+	-- Headshot detection
+	if partName:find("head") then
+		return Config.HeadshotMultiplier, "HEADSHOT"
+	end
+
+	-- Mini-crit chance for other body parts
+	if math.random() < Config.MiniCritChance then
+		return Config.MiniCritMultiplier, "Mini-Crit"
+	end
+
+	return 1.0, ""
+end
+
+-- ============================================================
 -- DAMAGE EVENT HANDLER
 -- ============================================================
 
-damageEvent.OnServerEvent:Connect(function(player, target, damage, damageType, weaponData)
+damageEvent.OnServerEvent:Connect(function(player, target, damage, damageType, weaponData, hitPart)
 	-- Validate player and character
 	if not player or not player.Character then return end
 
@@ -182,6 +209,11 @@ damageEvent.OnServerEvent:Connect(function(player, target, damage, damageType, w
 		end
 	end
 
+	-- Calculate damage multiplier based on hit part
+	local multiplier, critType = calculateDamageMultiplier(hitPart)
+	local baseDamage = damage
+	damage = damage * multiplier
+
 	-- Clamp damage to reasonable value
 	damage = math.clamp(damage, 0, Config.MaxDamagePerShot)
 
@@ -189,11 +221,13 @@ damageEvent.OnServerEvent:Connect(function(player, target, damage, damageType, w
 	local success = Combat:Damage(player, target, damage, damageType, weaponData)
 
 	if success then
-		print(string.format("[ServerDamageHandler] %s → %s: %.0f %s damage",
+		local critText = critType ~= "" and (" [" .. critType .. "]") or ""
+		print(string.format("[ServerDamageHandler] %s → %s: %.0f %s damage%s",
 			player.Name,
 			target.Name,
 			damage,
-			damageType or "Physical"))
+			damageType or "Physical",
+			critText))
 	end
 end)
 

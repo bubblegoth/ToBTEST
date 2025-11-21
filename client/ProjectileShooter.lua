@@ -273,7 +273,10 @@ local function setupProjectileHitDetection(projectile, damage, weaponData)
 
 		if hitModel and humanoid and isEnemy then
 			hasHit = true
-			print(string.format("[ProjectileShooter] ✓ HIT ENEMY: %s - Sending %d damage", hitModel.Name, damage))
+
+			-- Log hit part for headshot/body part detection
+			local hitPartName = hit.Name or "Unknown"
+			print(string.format("[ProjectileShooter] ✓ HIT ENEMY: %s (Part: %s) - Sending %d damage", hitModel.Name, hitPartName, damage))
 
 			-- Determine damage type
 			local damageType = "Physical"
@@ -285,9 +288,9 @@ local function setupProjectileHitDetection(projectile, damage, weaponData)
 				damageType = "Shadow"
 			end
 
-			-- Send damage to server
+			-- Send damage to server (includes hit part for headshot detection)
 			if damageEvent then
-				damageEvent:FireServer(hitModel, damage, damageType, weaponData)
+				damageEvent:FireServer(hitModel, damage, damageType, weaponData, hit)
 			else
 				warn("[ProjectileShooter] ✗ Cannot send damage - damageEvent is nil!")
 			end
