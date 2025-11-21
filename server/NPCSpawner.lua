@@ -64,22 +64,27 @@ local function SpawnSoulVendor()
 	-- Position vendor in Church (ON TOP of spawn part)
 	local vendorSpawnPoint = workspace:FindFirstChild(Config.VendorSpawnName)
 	if vendorSpawnPoint and vendorSpawnPoint:IsA("BasePart") then
+		-- Get vendor's full bounding box to find the lowest point (feet)
+		local modelCFrame, modelSize = vendorModel:GetBoundingBox()
+		local modelBottomOffset = modelSize.Y / 2 -- Distance from model center to feet
+
 		-- Calculate position on top of the spawn part
 		local spawnPartTop = vendorSpawnPoint.Position.Y + (vendorSpawnPoint.Size.Y / 2)
 
-		-- Get vendor's HumanoidRootPart to calculate proper height
+		-- Position vendor so feet are on top of spawn part
 		local rootPart = vendorModel:FindFirstChild("HumanoidRootPart")
-		local vendorHeightOffset = rootPart and (rootPart.Size.Y / 2) or 3
+		if rootPart then
+			local targetPosition = Vector3.new(
+				vendorSpawnPoint.Position.X,
+				spawnPartTop + modelBottomOffset, -- Feet on top
+				vendorSpawnPoint.Position.Z
+			)
 
-		-- Position vendor on top of spawn part
-		local targetPosition = Vector3.new(
-			vendorSpawnPoint.Position.X,
-			spawnPartTop + vendorHeightOffset,
-			vendorSpawnPoint.Position.Z
-		)
-
-		vendorModel:SetPrimaryPartCFrame(CFrame.new(targetPosition) * (vendorSpawnPoint.CFrame - vendorSpawnPoint.Position))
-		print("[NPCSpawner] Soul Vendor positioned ON TOP of", Config.VendorSpawnName)
+			vendorModel:SetPrimaryPartCFrame(CFrame.new(targetPosition) * (vendorSpawnPoint.CFrame - vendorSpawnPoint.Position))
+			print("[NPCSpawner] Soul Vendor positioned ON TOP of", Config.VendorSpawnName, "at Y:", targetPosition.Y)
+		else
+			warn("[NPCSpawner] No HumanoidRootPart found in vendor model")
+		end
 	else
 		vendorModel:SetPrimaryPartCFrame(Config.DefaultPosition)
 		warn("[NPCSpawner]", Config.VendorSpawnName, "not found, using default position")
