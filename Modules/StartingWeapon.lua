@@ -121,11 +121,11 @@ function StartingWeapon.GetWelcomeMessage(weapon)
 		"Level: %d\n\n" ..
 		"Weapons will begin dropping from enemies on Floor 2.\n" ..
 		"Good luck, wanderer...",
-		weapon.Name,
-		weapon.Manufacturer,
-		weapon.Type,
-		weapon.Rarity,
-		weapon.Level
+		weapon.Name or "Unknown Weapon",
+		weapon.Manufacturer or "Unknown",
+		weapon.WeaponType or weapon.Type or "Unknown",
+		weapon.Rarity or "Common",
+		weapon.Level or 1
 	)
 end
 
