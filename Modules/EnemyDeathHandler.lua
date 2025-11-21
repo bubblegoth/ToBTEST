@@ -18,6 +18,7 @@ local EnemyDeathHandler = {}
 -- Try to load optional modules
 local ModularLootGen = nil
 local WeaponGenerator = nil
+local PickupSystem = nil
 
 local function loadModules()
 	-- Try to load from Modules folder (our structure)
@@ -30,6 +31,10 @@ local function loadModules()
 		if Modules:FindFirstChild("WeaponGenerator") then
 			WeaponGenerator = require(Modules.WeaponGenerator)
 			print("[EnemyDeath] Loaded WeaponGenerator")
+		end
+		if Modules:FindFirstChild("PickupSystem") then
+			PickupSystem = require(Modules.PickupSystem)
+			print("[EnemyDeath] Loaded PickupSystem")
 		end
 	end
 end
@@ -159,11 +164,18 @@ local function rollForDrops(enemyModel, position, parent)
 	local isBoss = enemyModel:GetAttribute("IsBoss") or false
 	local floorNumber = enemyModel:GetAttribute("FloorNumber") or 1
 
-	-- FLOOR 1: Only drop health/shields (no weapons until Floor 2)
+	-- FLOOR 1: Only drop health/ammo (no weapons until Floor 2)
 	if floorNumber == 1 then
-		print("[EnemyDeath] Floor 1 - No weapon drops (health/shields only)")
-		-- TODO: Add health/shield drops here when system is implemented
+		print("[EnemyDeath] Floor 1 - No weapon drops (health/ammo only)")
+		if PickupSystem then
+			PickupSystem.SpawnPickupsFromEnemy(position, floorNumber, parent)
+		end
 		return drops
+	end
+
+	-- ALL FLOORS: Always spawn health/ammo pickups
+	if PickupSystem then
+		PickupSystem.SpawnPickupsFromEnemy(position, floorNumber, parent)
 	end
 
 	-- FLOOR 2+: Normal weapon drops

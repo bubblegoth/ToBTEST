@@ -98,26 +98,26 @@ DungeonConfig.EnemyTypes = {
 
 	RARE = {
 		ID = "Rare",
-		Description = "Tougher enemy with Soul drops",
+		Description = "Tougher enemy with better weapon drops",
 		Weight = 25, -- 25% of spawns (can be modified by room type)
 		HealthMultiplier = 2.5,
 		DamageMultiplier = 1.5,
-		SoulDropChance = 0.75, -- 75% chance to drop Souls
-		SoulDropMin = 1,
-		SoulDropMax = 5,
+		SoulDropChance = 0.0, -- No souls (only bosses drop souls)
+		SoulDropMin = 0,
+		SoulDropMax = 0,
 		WeaponDropChance = 0.50, -- 50% chance to drop weapon (Floor 2+)
 		WeaponRarityBonus = 1, -- +1 rarity tier
 	},
 
 	BOSS = {
 		ID = "Boss",
-		Description = "Boss enemy - guaranteed Soul drops, high weapon chance",
+		Description = "Boss enemy - ONLY SOURCE OF SOULS, guaranteed drops",
 		Weight = 5, -- 5% of spawns (only in boss rooms)
 		HealthMultiplier = 10.0,
 		DamageMultiplier = 2.0,
-		SoulDropChance = 1.0, -- 100% drop Souls
-		SoulDropMin = 10,
-		SoulDropMax = 50,
+		SoulDropChance = 1.0, -- 100% drop Souls (ONLY SOURCE)
+		SoulDropMin = 100, -- 100 base souls per boss
+		SoulDropMax = 150, -- Up to 150 souls per boss
 		WeaponDropChance = 1.0, -- 100% weapon drop (Floor 2+)
 		WeaponRarityBonus = 2, -- +2 rarity tiers
 	},

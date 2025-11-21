@@ -13,6 +13,7 @@ local Debris = game:GetService("Debris")
 local WeaponGenerator = require(script.Parent.WeaponGenerator)
 local WeaponModelBuilder = require(script.Parent.WeaponModelBuilder)
 local WeaponToolBuilder = require(script.Parent.WeaponToolBuilder)
+local PickupSystem = require(script.Parent.PickupSystem)
 
 -- ============================================================
 -- WEAPON LOOT SPAWNING
@@ -213,12 +214,15 @@ function ModularLootGen:SpawnLootFromEnemy(enemy, playerLevel, floorNumber)
 	local position = enemy.PrimaryPart.Position
 	local enemyLevel = enemy:GetAttribute("Level") or floorNumber or 1
 
-	-- FLOOR 1: Only drop health/shields/ammo (no weapons until Floor 2)
+	-- FLOOR 1: Only drop health/ammo (no weapons until Floor 2)
 	if (floorNumber or 1) == 1 then
-		print("[ModularLootGen] Floor 1 - No weapon drops (health/shields/ammo only)")
-		-- TODO: Add health/shield/ammo drops here when system is implemented
+		print("[ModularLootGen] Floor 1 - No weapon drops (health/ammo only)")
+		PickupSystem.SpawnPickupsFromEnemy(position, floorNumber, enemy.Parent)
 		return
 	end
+
+	-- ALL FLOORS: Always roll for health/ammo pickups
+	PickupSystem.SpawnPickupsFromEnemy(position, floorNumber, enemy.Parent)
 
 	-- Drop chance based on floor number (increases with progression)
 	local baseDropChance = 0.3
