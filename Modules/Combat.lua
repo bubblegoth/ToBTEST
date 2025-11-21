@@ -147,13 +147,8 @@ function Combat:HandleDeath(killer, enemy, weaponData)
 		print(string.format("[Combat] Regular enemy kill - no souls (bosses only)"))
 	end
 
-	-- Spawn loot
-	local ModularLootGen = require(ReplicatedStorage.Modules.ModularLootGen)
-	if playerStats then
-		local currentFloor = playerStats:GetCurrentFloor()
-		local playerLevel = killer:GetAttribute("Level") or 1
-		ModularLootGen:SpawnLootFromEnemy(enemy, playerLevel, currentFloor)
-	end
+	-- Loot spawning is handled by EnemyDeathHandler, not here
+	-- (EnemyDeathHandler has proper Floor 1 checks to prevent weapon drops)
 
 	-- Destroy enemy after delay
 	task.wait(2)
