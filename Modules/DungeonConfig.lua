@@ -1,8 +1,15 @@
 --[[
-	DungeonConfig.lua
-	Configuration for dungeon generation, enemy spawning, loot drops, and progression
-	Part of the Gothic FPS Roguelite Dungeon System
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: DungeonConfig
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Central configuration for all dungeon systems.
+             Defines enemy stats, loot tables, upgrade costs, difficulty scaling.
+             Floor 0 = Church (safe), Floor 1+ = dungeon (666 max floors).
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local DungeonConfig = {}
 

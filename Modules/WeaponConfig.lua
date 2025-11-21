@@ -1,10 +1,15 @@
 --[[
-	WeaponConfig.lua
-	Configuration for the Gothic FPS Weapon Generation System (BL2-Accurate)
-
-	Defines rarities, manufacturers, weapon types, and elemental effects
-	Generation follows Borderlands 2 mechanics: Rarity → Manufacturer → Parts
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: WeaponConfig
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Gothic FPS weapon generation configuration (BL2-accurate).
+             Defines rarities, manufacturers, weapon types, elemental effects.
+             Generation flow: Rarity → Manufacturer → Parts.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local WeaponConfig = {}
 

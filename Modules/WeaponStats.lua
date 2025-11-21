@@ -1,15 +1,15 @@
 --[[
-	WeaponStats.lua
-	BL2-Accurate Stat Calculation System
-
-	Calculates final weapon statistics from:
-	- Base weapon type stats
-	- Manufacturer modifiers
-	- Part modifiers (barrel, grip, stock, magazine, sight, accessory)
-	- Rarity bonuses (damage boost like +2 levels per rarity tier)
-	- Element damage
-	- Level scaling (1.13× per level - BL2 formula)
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: WeaponStats
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Borderlands 2-accurate weapon stat calculation system.
+             Calculates damage, fire rate, accuracy, reload from parts.
+             1.13× damage scaling per level (BL2 formula).
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local WeaponConfig = require(script.Parent.WeaponConfig)
 

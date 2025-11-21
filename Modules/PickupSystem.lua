@@ -2,10 +2,11 @@
 ════════════════════════════════════════════════════════════════════════════════
 Module: PickupSystem
 Location: ReplicatedStorage/Modules/
-Description: Handles health and ammo pickups that drop from enemies.
-            Gothic visual style with floating animations.
-
-Version: 1.0 - Gothic FPS Roguelite
+Type: ModuleScript
+Description: Health and ammo pickup system from enemy drops.
+             15% health drop chance, 25% ammo drop chance.
+             Gothic visual style with floating neon orbs and animations.
+Version: 1.0
 Last Updated: 2025-11-21
 ════════════════════════════════════════════════════════════════════════════════
 --]]

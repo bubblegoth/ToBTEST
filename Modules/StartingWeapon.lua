@@ -1,9 +1,15 @@
 --[[
-	StartingWeapon.lua
-	Handles giving player their starting weapon when entering Floor 1
-	Common Level 1 Pistol - guaranteed on dungeon entry
-	Part of the Gothic FPS Roguelite Dungeon System
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: StartingWeapon
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Starting weapon system for Floor 1 entry.
+             Gives player Common Level 1 Pistol when entering dungeon.
+             Only triggers on Floor 1+, not in Church (Floor 0).
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local WeaponGenerator = require(script.Parent.WeaponGenerator)
 local WeaponToolBuilder = require(script.Parent.WeaponToolBuilder)

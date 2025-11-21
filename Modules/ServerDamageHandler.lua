@@ -1,9 +1,15 @@
 --[[
-	ServerDamageHandler.lua
-	Server-side damage processing for projectile hits
-	Place in ServerScriptService as a Script
-	Gothic FPS Roguelite - Combat System Integration
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: ServerDamageHandler
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Server-side damage processing for projectile hits.
+             Validates hits, applies damage through Combat module.
+             Handles RemoteEvent communication from client shots.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Combat = require(ReplicatedStorage.Modules.Combat)

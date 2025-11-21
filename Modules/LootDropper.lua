@@ -1,9 +1,15 @@
 --[[
-	LootDropper.lua
-	Handles loot drops from enemies (Weapons Floor 2+, Souls from Rare/Boss)
-	Now delegates to ModularLootGen for visual weapon drops
-	Part of the Gothic FPS Roguelite Dungeon System
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: LootDropper
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Enemy loot drop system (weapons Floor 2+, souls from bosses).
+             Delegates to ModularLootGen for visual weapon drops.
+             Handles soul orb spawning and pickup detection.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local DungeonConfig = require(script.Parent.DungeonConfig)
 local EnemySystem = require(script.Parent.EnemySystem)

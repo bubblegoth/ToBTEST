@@ -1,10 +1,15 @@
 --[[
-	ServerInit.lua
-	Server initialization script - spawns Soul Vendor and sets up game
-	Place this in ServerScriptService
-
-	This script runs ONCE when the server starts, not per-player
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: ServerInit
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Server initialization system - runs once on server start.
+             Spawns Soul Vendor in Church, sets up global game systems.
+             Not per-player - executes once for the entire server.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")

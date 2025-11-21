@@ -1,8 +1,15 @@
 --[[
-	WeaponParts.lua
-	Enhanced weapon parts module with full Borderlands-style part system
-	Gothic FPS Roguelite - Part of 666 Floor Dungeon System
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: WeaponParts
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Borderlands-style modular weapon part database.
+             Defines manufacturers, barrels, grips, stocks, magazines, sights.
+             Gothic-themed manufacturers (Sanctum Armory, Abyssal Forge, etc).
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local WeaponParts = {}
 

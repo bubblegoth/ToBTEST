@@ -1,8 +1,15 @@
 --[[
-	WeaponModelBuilder.lua
-	Procedurally builds 3D weapon models from weapon parts data
-	Gothic FPS Roguelite - Creates visual weapon representations
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: WeaponModelBuilder
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Procedurally builds 3D weapon models from weapon data.
+             Creates visual representations with gothic materials.
+             Generates floating loot cards and viewmodels.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local WeaponModelBuilder = {}
 

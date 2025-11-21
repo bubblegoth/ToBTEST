@@ -1,8 +1,15 @@
 --[[
-	WeaponGenerator.lua
-	Enhanced Borderlands-style weapon generation for Gothic FPS Roguelite
-	Generates procedural weapons from modular parts with full stat calculation
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: WeaponGenerator
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Procedural Borderlands-style weapon generation system.
+             Generates weapons from modular parts with rarity system.
+             6 rarities: Common, Uncommon, Rare, Epic, Legendary, Mythic.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local WeaponGenerator = {}
 

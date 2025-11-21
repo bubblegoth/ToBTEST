@@ -1,14 +1,15 @@
 --[[
-	PlayerDataManager.lua
-	Manages player data initialization, persistence, and tracking
-	Place this in ServerScriptService
-
-	Handles:
-	- Player data initialization when they join
-	- Storing PlayerStats in player object
-	- DataStore save/load (optional)
-	- Death handling integration
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: PlayerDataManager
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Manages player data initialization and persistence.
+             Creates PlayerStats instances, handles join/leave events.
+             Optional DataStore integration for save/load.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

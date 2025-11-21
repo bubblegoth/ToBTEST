@@ -1,8 +1,15 @@
 --[[
-	DeathHandler.lua
-	Handles player death, run completion, and persistence (Souls/Upgrades)
-	Part of the Gothic FPS Roguelite Dungeon System
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: DeathHandler
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Player death and run completion system.
+             Handles soul persistence, upgrade retention, run reset.
+             Returns player to Church (Floor 0) after death.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local DeathHandler = {}
 

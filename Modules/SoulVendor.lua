@@ -1,15 +1,15 @@
 --[[
-	SoulVendor.lua
-	NPC Soul Vendor for purchasing permanent upgrades in the Church (Floor 0)
-	Uses ChurchSystem for upgrade logic
-	Part of the Gothic FPS Roguelite Dungeon System
-
-	SETUP INSTRUCTIONS:
-	1. Place this script inside the SoulVendor NPC model in workspace
-	2. NPC model should have a Humanoid and a primary part (HumanoidRootPart)
-	3. Optionally add a ClickDetector or ProximityPrompt for interaction
-	4. Create a GUI for displaying upgrades (or use print statements for testing)
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: SoulVendor
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: NPC Soul Vendor system for Church (Floor 0) upgrades.
+             Uses ChurchSystem for upgrade logic and purchase validation.
+             Interfaces with SoulVendorGUI for client-side interaction.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

@@ -1,15 +1,15 @@
 --[[
-	DungeonInstanceManager.lua
-	Manages per-player dungeon instances for single-player experience
-	Each player gets their own private dungeon floors
-
-	Handles:
-	- Creating player-specific dungeon folders
-	- Tracking active instances
-	- Cleaning up instances on player leave
-	- Teleporting players within their instances
-	- Managing floor progression per player
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: DungeonInstanceManager
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Per-player dungeon instance manager for single-player experience.
+             Creates private dungeon folders at X = Floor × 10000.
+             Handles instance cleanup, floor progression, teleportation.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local DungeonInstanceManager = {}
 

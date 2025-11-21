@@ -1,8 +1,15 @@
 --[[
-	ModularLootGen.lua
-	Handles weapon loot drops with visual effects
-	Gothic FPS Roguelite - Integrates with dungeon system
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: ModularLootGen
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Weapon loot drop system with visual effects and pickups.
+             Spawns floating weapon cards with rarity-colored beams.
+             Integrates with PickupSystem for health/ammo drops.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local ModularLootGen = {}
 

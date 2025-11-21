@@ -1,8 +1,15 @@
 --[[
-	PlayerStats.lua
-	Manages persistent player progression (Souls, Upgrades, Current Run Stats)
-	Part of the Gothic FPS Roguelite Dungeon System
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: PlayerStats
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Manages persistent player progression data (Souls, Upgrades).
+             Tracks current run state (floor, weapons, shields).
+             Handles stat calculations with upgrade bonuses applied.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local DungeonConfig = require(script.Parent.DungeonConfig)
 

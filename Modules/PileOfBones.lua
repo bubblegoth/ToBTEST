@@ -1,14 +1,15 @@
 --[[
-	PileOfBones.lua
-	Teleporter script for the Bones_Assortment in the Church (Floor 0)
-	Teleports player to dungeon (Floor 1+) and gives starting weapon
-	Part of the Gothic FPS Roguelite Dungeon System
-
-	SETUP INSTRUCTIONS:
-	1. Place this script inside the Bones_Assortment model in workspace
-	2. The script will automatically detect the clickable part (script.Parent)
-	3. Ensure DungeonSpawn exists in workspace for Floor 1 spawn point
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: PileOfBones
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Church teleporter system (Bones_Assortment interaction).
+             Teleports player from Floor 0 to Floor 1 dungeon start.
+             Triggers starting weapon spawn via StartingWeapon module.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

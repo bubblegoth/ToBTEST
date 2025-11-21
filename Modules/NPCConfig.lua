@@ -1,8 +1,15 @@
 --[[
-	NPCConfig.lua
-	Configuration for NPC types, stats, and appearance rules
-	Part of the Gothic FPS Roguelite Dungeon System
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: NPCConfig
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: NPC type definitions and configuration.
+             Defines Soul Vendor, enemies, and other NPC types.
+             Includes stats, appearance rules, and behavior settings.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local NPCConfig = {}
 

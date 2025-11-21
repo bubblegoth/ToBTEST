@@ -1,9 +1,15 @@
 --[[
-	WeaponToolBuilder.lua
-	Converts weapon data into functional Roblox Tools
-	Integrates WeaponModelBuilder for 3D visuals
-	Gothic FPS Roguelite - Weapon System Integration
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: WeaponToolBuilder
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Converts weapon data into functional Roblox Tool instances.
+             Integrates 3D models from WeaponModelBuilder.
+             Handles weapon equipping, unequipping, and player inventory.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local WeaponToolBuilder = {}
 

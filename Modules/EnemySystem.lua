@@ -1,8 +1,15 @@
 --[[
-	EnemySystem.lua
-	Enemy spawning, stats calculation, and type management
-	Part of the Gothic FPS Roguelite Dungeon System
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: EnemySystem
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Enemy spawning and stat calculation system.
+             Manages enemy types (Normal, Rare, Boss) with scaling stats.
+             Handles room-based enemy distribution and difficulty scaling.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local DungeonConfig = require(script.Parent.DungeonConfig)
 

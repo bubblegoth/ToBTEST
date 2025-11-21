@@ -1,10 +1,15 @@
 --[[
-	NPCParts.lua
-	Combined NPC parts module - all body parts in one file
-	Part of the Gothic FPS Roguelite Dungeon System
-
-	Similar structure to WeaponParts - randomized component selection
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: NPCParts
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: NPC body part database for procedural generation.
+             Defines heads, torsos, arms, legs with gothic aesthetics.
+             Similar to WeaponParts - randomized component selection.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local NPCParts = {}
 

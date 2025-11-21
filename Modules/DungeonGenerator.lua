@@ -1,8 +1,15 @@
 --[[
-	DungeonGenerator.lua
-	Procedural dungeon floor generation with random rooms, enemy spawns, and loot
-	Part of the Gothic FPS Roguelite Dungeon System
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: DungeonGenerator
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Procedural dungeon floor generation system.
+             Creates randomized room layouts, enemy spawns, and loot placement.
+             Seed-based generation for consistency and reproducibility.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local DungeonConfig = require(script.Parent.DungeonConfig)
 

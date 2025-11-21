@@ -1,9 +1,15 @@
 --[[
-	ChurchSystem.lua
-	Church hub system for purchasing permanent upgrades with Souls (Floor 0 only)
-	Accessible only after death or run completion
-	Part of the Gothic FPS Roguelite Dungeon System
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: ChurchSystem
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Church hub system for purchasing permanent upgrades with Souls.
+             Floor 0 safe zone - accessible after death or run completion.
+             Manages upgrade shop, purchase validation, and stat bonuses.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local DungeonConfig = require(script.Parent.DungeonConfig)
 

@@ -1,8 +1,15 @@
 --[[
-	Combat.lua
-	Combat system for Gothic FPS Roguelite
-	Handles damage calculation, enemy deaths, and loot drops
-]]
+════════════════════════════════════════════════════════════════════════════════
+Module: Combat
+Location: ReplicatedStorage/Modules/
+Type: ModuleScript
+Description: Core combat system for damage calculation and processing.
+             Handles enemy deaths, loot drops, and damage types.
+             Integrates with EnemyDeathHandler and LootDropper.
+Version: 1.0
+Last Updated: 2025-11-21
+════════════════════════════════════════════════════════════════════════════════
+--]]
 
 local Combat = {}
 
