@@ -15,9 +15,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
 
--- Store mouse state
+-- Store previous camera/mouse state
 local previousMouseBehavior = nil
+local previousCameraType = nil
 
 -- Create RemoteEvent for communication
 local SoulVendorRemote = ReplicatedStorage:WaitForChild("SoulVendorRemote", 10)
@@ -284,24 +286,37 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 		createUpgradeOption(upgrade, i, optionsContainer)
 	end
 
-	-- Unlock mouse and show cursor for GUI interaction
+	-- Save current state
 	previousMouseBehavior = UserInputService.MouseBehavior
-	UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- Unlock camera
+	previousCameraType = Camera.CameraType
+
+	-- Unlock mouse and camera for GUI interaction
+	UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- Unlock mouse
 	UserInputService.MouseIconEnabled = true -- Show cursor
+	Camera.CameraType = Enum.CameraType.Custom -- Unlock camera from first-person
 
 	-- Show GUI
 	vendorGUI.Enabled = true
-	print("[SoulVendorGUI] GUI opened - mouse unlocked and cursor shown")
+	print("[SoulVendorGUI] GUI opened - mouse and camera unlocked, cursor shown")
 end
 
 local function hideVendorGUI()
 	vendorGUI.Enabled = false
 
-	-- Restore FPS mouse lock (locked center, no cursor)
+	-- Restore FPS mouse lock and camera (locked center, no cursor)
 	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 	UserInputService.MouseIconEnabled = false
+
+	-- Restore camera type if it was saved
+	if previousCameraType then
+		Camera.CameraType = previousCameraType
+	else
+		Camera.CameraType = Enum.CameraType.Custom -- Default to custom
+	end
+
 	previousMouseBehavior = nil
-	print("[SoulVendorGUI] GUI closed - mouse locked and cursor hidden")
+	previousCameraType = nil
+	print("[SoulVendorGUI] GUI closed - mouse and camera locked, cursor hidden")
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
