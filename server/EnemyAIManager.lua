@@ -340,12 +340,20 @@ function EnemyAI:performAttack()
 	if not targetHumanoid then return end
 
 	local targetRoot = self.target:FindFirstChild("HumanoidRootPart")
-	if targetRoot then
-		self.rootPart.CFrame = CFrame.new(self.rootPart.Position,
-			Vector3.new(targetRoot.Position.X, self.rootPart.Position.Y, targetRoot.Position.Z))
+	if not targetRoot then return end
+
+	-- Face target
+	self.rootPart.CFrame = CFrame.new(self.rootPart.Position,
+		Vector3.new(targetRoot.Position.X, self.rootPart.Position.Y, targetRoot.Position.Z))
+
+	-- RANGED ATTACK: Projectile with red flash warning
+	if self.archetypeName == "Ranged" or self.archetypeName == "Sniper" then
+		self:performRangedAttack(targetRoot, targetHumanoid)
+	else
+		-- MELEE ATTACK: Instant damage (as before)
+		targetHumanoid:TakeDamage(self.archetype.damage)
 	end
 
-	targetHumanoid:TakeDamage(self.archetype.damage)
 	self.lastAttackTime = tick()
 
 	if self.hasAttackToken then
@@ -354,6 +362,99 @@ function EnemyAI:performAttack()
 			self.hasAttackToken = false
 		end)
 	end
+end
+
+function EnemyAI:performRangedAttack(targetRoot, targetHumanoid)
+	-- RED FLASH WARNING (telegraph attack)
+	local warningFlash = Instance.new("Part")
+	warningFlash.Name = "AttackWarning"
+	warningFlash.Shape = Enum.PartType.Ball
+	warningFlash.Size = Vector3.new(1, 1, 1)
+	warningFlash.Color = Color3.fromRGB(255, 50, 50) -- Bright red
+	warningFlash.Material = Enum.Material.Neon
+	warningFlash.Anchored = true
+	warningFlash.CanCollide = false
+	warningFlash.Transparency = 0.3
+	warningFlash.CFrame = self.rootPart.CFrame + Vector3.new(0, 2, 0)
+	warningFlash.Parent = workspace
+
+	-- Pulse effect
+	local pulse = game:GetService("TweenService"):Create(
+		warningFlash,
+		TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+		{Transparency = 0.8, Size = Vector3.new(2, 2, 2)}
+	)
+	pulse:Play()
+
+	-- Wait for warning, then fire
+	task.wait(0.5)
+	warningFlash:Destroy()
+
+	-- Calculate aim (lead target slightly for moving players)
+	local targetVelocity = targetRoot.AssemblyVelocity or Vector3.zero
+	local projectileSpeed = 100
+	local distance = (targetRoot.Position - self.rootPart.Position).Magnitude
+	local timeToHit = distance / projectileSpeed
+	local leadPosition = targetRoot.Position + (targetVelocity * timeToHit * 0.5)
+
+	-- Spawn projectile
+	local projectile = Instance.new("Part")
+	projectile.Name = "EnemyProjectile"
+	projectile.Shape = Enum.PartType.Ball
+	projectile.Size = Vector3.new(0.8, 0.8, 0.8)
+	projectile.Color = Color3.fromRGB(255, 80, 80) -- Red projectile
+	projectile.Material = Enum.Material.Neon
+	projectile.Anchored = false
+	projectile.CanCollide = false
+	projectile.CFrame = self.rootPart.CFrame + Vector3.new(0, 2, 0)
+	projectile.Parent = workspace
+
+	-- Add glow effect
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 50, 50)
+	light.Brightness = 5
+	light.Range = 10
+	light.Parent = projectile
+
+	-- Store damage data
+	projectile:SetAttribute("Damage", self.archetype.damage)
+	projectile:SetAttribute("IsEnemyProjectile", true)
+	projectile:SetAttribute("OwnerID", self.id)
+
+	-- Launch projectile
+	local bodyVelocity = Instance.new("BodyVelocity")
+	bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+	bodyVelocity.Velocity = (leadPosition - projectile.Position).Unit * projectileSpeed
+	bodyVelocity.Parent = projectile
+
+	-- Collision detection
+	local hitConnection
+	hitConnection = projectile.Touched:Connect(function(hit)
+		if hit:IsDescendantOf(self.model) then return end -- Don't hit self
+
+		-- Check if hit player
+		local hitModel = hit.Parent
+		if hitModel and hitModel:FindFirstChild("Humanoid") then
+			local hitHumanoid = hitModel:FindFirstChild("Humanoid")
+			if hitHumanoid and hitHumanoid.Health > 0 then
+				-- Deal damage
+				hitHumanoid:TakeDamage(self.archetype.damage)
+				print(string.format("[EnemyAI] %s projectile hit %s for %d damage",
+					self.archetypeName, hitModel.Name, self.archetype.damage))
+			end
+		end
+
+		-- Destroy projectile on any hit
+		hitConnection:Disconnect()
+		projectile:Destroy()
+	end)
+
+	-- Auto-destroy after 5 seconds (missed shots)
+	task.delay(5, function()
+		if projectile.Parent then
+			projectile:Destroy()
+		end
+	end)
 end
 
 function EnemyAI:changeState(newState)
