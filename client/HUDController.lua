@@ -11,8 +11,13 @@ local success, err = pcall(function()
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- Disable default Roblox health bar
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+print("🗡️ [HUD] Disabled default health bar")
 
 print("🗡️ [HUD] Services loaded, creating ScreenGui...")
 
@@ -161,7 +166,7 @@ vigourText.Size = UDim2.new(1, -12, 0, 22)
 vigourText.Position = UDim2.new(0, 6, 0, 3)
 vigourText.BackgroundTransparency = 1
 vigourText.Font = FONT_TITLE
-vigourText.TextSize = 15
+vigourText.TextScaled = true
 vigourText.TextColor3 = C.Ink
 vigourText.TextStrokeTransparency = 0.5
 vigourText.TextStrokeColor3 = C.Abyss
@@ -170,12 +175,17 @@ vigourText.TextXAlignment = Enum.TextXAlignment.Left
 vigourText.ZIndex = 3
 vigourText.Parent = vigourScroll
 
+local vigourTextConstraint = Instance.new("UITextSizeConstraint")
+vigourTextConstraint.MaxTextSize = 15
+vigourTextConstraint.MinTextSize = 10
+vigourTextConstraint.Parent = vigourText
+
 local vigourNums = Instance.new("TextLabel")
 vigourNums.Size = UDim2.new(1, -12, 0, 18)
 vigourNums.Position = UDim2.new(0, 6, 0, 22)
 vigourNums.BackgroundTransparency = 1
 vigourNums.Font = FONT_NUM
-vigourNums.TextSize = 14
+vigourNums.TextScaled = true
 vigourNums.TextColor3 = C.TorchGlow
 vigourNums.TextStrokeTransparency = 0.4
 vigourNums.TextStrokeColor3 = C.Abyss
@@ -184,17 +194,22 @@ vigourNums.TextXAlignment = Enum.TextXAlignment.Right
 vigourNums.ZIndex = 3
 vigourNums.Parent = vigourScroll
 
+local vigourNumsConstraint = Instance.new("UITextSizeConstraint")
+vigourNumsConstraint.MaxTextSize = 14
+vigourNumsConstraint.MinTextSize = 10
+vigourNumsConstraint.Parent = vigourNums
+
 print("🗡️ [HUD] Creating POWDER counter...")
 
 -- QUARTERS (Bottom-Right, ammo counter) - Compact size
 local quartersScroll = parchmentFrame(screenGui, UDim2.new(0, 180, 0, 70), UDim2.new(1, -20, 1, -60), Vector2.new(1,1))
 
 local quartersBig = Instance.new("TextLabel")
-quartersBig.Size = UDim2.new(1, 0, 0, 48)
-quartersBig.Position = UDim2.new(0, 0, 0, 5)
+quartersBig.Size = UDim2.new(1, -10, 0, 48)
+quartersBig.Position = UDim2.new(0, 5, 0, 5)
 quartersBig.BackgroundTransparency = 1
 quartersBig.Font = FONT_NUM
-quartersBig.TextSize = 52
+quartersBig.TextScaled = true
 quartersBig.TextColor3 = C.TorchGlow
 quartersBig.TextStrokeTransparency = 0.3
 quartersBig.TextStrokeColor3 = C.Abyss
@@ -204,12 +219,17 @@ quartersBig.TextYAlignment = Enum.TextYAlignment.Bottom
 quartersBig.ZIndex = 3
 quartersBig.Parent = quartersScroll
 
+local quartersBigConstraint = Instance.new("UITextSizeConstraint")
+quartersBigConstraint.MaxTextSize = 48
+quartersBigConstraint.MinTextSize = 24
+quartersBigConstraint.Parent = quartersBig
+
 local quartersRes = Instance.new("TextLabel")
-quartersRes.Size = UDim2.new(1, 0, 0, 20)
-quartersRes.Position = UDim2.new(0, 0, 1, -20)
+quartersRes.Size = UDim2.new(1, -10, 0, 20)
+quartersRes.Position = UDim2.new(0, 5, 1, -20)
 quartersRes.BackgroundTransparency = 1
 quartersRes.Font = FONT_TITLE
-quartersRes.TextSize = 12
+quartersRes.TextScaled = true
 quartersRes.TextColor3 = C.Ink
 quartersRes.TextStrokeTransparency = 0.6
 quartersRes.TextStrokeColor3 = C.Abyss
@@ -218,17 +238,27 @@ quartersRes.TextXAlignment = Enum.TextXAlignment.Center
 quartersRes.ZIndex = 3
 quartersRes.Parent = quartersScroll
 
+local quartersResConstraint = Instance.new("UITextSizeConstraint")
+quartersResConstraint.MaxTextSize = 12
+quartersResConstraint.MinTextSize = 8
+quartersResConstraint.Parent = quartersRes
+
 local quartersPool = Instance.new("TextLabel")
-quartersPool.Size = UDim2.new(1, 0, 0, 16)
-quartersPool.Position = UDim2.new(0, 0, 1, -6)
+quartersPool.Size = UDim2.new(0.5, -5, 0, 16)
+quartersPool.Position = UDim2.new(0.5, 0, 1, -6)
 quartersPool.BackgroundTransparency = 1
 quartersPool.Font = FONT_DESC
-quartersPool.TextSize = 12
+quartersPool.TextScaled = true
 quartersPool.TextColor3 = C.LightInk
 quartersPool.Text = "/ 240"
 quartersPool.TextXAlignment = Enum.TextXAlignment.Right
 quartersPool.ZIndex = 3
 quartersPool.Parent = quartersScroll
+
+local quartersPoolConstraint = Instance.new("UITextSizeConstraint")
+quartersPoolConstraint.MaxTextSize = 12
+quartersPoolConstraint.MinTextSize = 8
+quartersPoolConstraint.Parent = quartersPool
 
 print("🗡️ [HUD] Creating ESTEEM display...")
 
@@ -236,10 +266,11 @@ print("🗡️ [HUD] Creating ESTEEM display...")
 local esteemScroll = parchmentFrame(screenGui, UDim2.new(0, 170, 0, 40), UDim2.new(1, -18, 0, 18), Vector2.new(1,0))
 
 local esteemText = Instance.new("TextLabel")
-esteemText.Size = UDim2.new(1,0,1,0)
+esteemText.Size = UDim2.new(1, -10, 1, -8)
+esteemText.Position = UDim2.new(0, 5, 0, 4)
 esteemText.BackgroundTransparency = 1
 esteemText.Font = FONT_TITLE
-esteemText.TextSize = 16
+esteemText.TextScaled = true
 esteemText.TextColor3 = C.TorchGlow
 esteemText.TextStrokeTransparency = 0.5
 esteemText.TextStrokeColor3 = C.Abyss
@@ -248,17 +279,22 @@ esteemText.TextXAlignment = Enum.TextXAlignment.Right
 esteemText.ZIndex = 3
 esteemText.Parent = esteemScroll
 
+local esteemTextConstraint = Instance.new("UITextSizeConstraint")
+esteemTextConstraint.MaxTextSize = 16
+esteemTextConstraint.MinTextSize = 10
+esteemTextConstraint.Parent = esteemText
+
 print("🗡️ [HUD] Creating REGION banner...")
 
 -- REGION BANNER (Top-Center, grand inscription) - Compact size
 local regionBanner = parchmentFrame(screenGui, UDim2.new(0, 420, 0, 45), UDim2.new(0.5, 0, 0, 14), Vector2.new(0.5,0))
 
 local regionText = Instance.new("TextLabel")
-regionText.Size = UDim2.new(1, -20, 1, 0)
-regionText.Position = UDim2.new(0, 10, 0, 0)
+regionText.Size = UDim2.new(1, -20, 1, -8)
+regionText.Position = UDim2.new(0, 10, 0, 4)
 regionText.BackgroundTransparency = 1
 regionText.Font = FONT_TITLE
-regionText.TextSize = 22
+regionText.TextScaled = true
 regionText.TextColor3 = C.Ink
 regionText.TextStrokeTransparency = 0.3
 regionText.TextStrokeColor3 = C.Abyss
@@ -266,6 +302,11 @@ regionText.Text = "CRYPT OF THE BLOOD SAINT — REGION XIII"
 regionText.TextXAlignment = Enum.TextXAlignment.Center
 regionText.ZIndex = 3
 regionText.Parent = regionBanner
+
+local regionTextConstraint = Instance.new("UITextSizeConstraint")
+regionTextConstraint.MaxTextSize = 20
+regionTextConstraint.MinTextSize = 12
+regionTextConstraint.Parent = regionText
 
 print("🗡️ [HUD] Setting up torch flicker effect...")
 
