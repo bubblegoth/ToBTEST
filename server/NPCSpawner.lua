@@ -24,6 +24,7 @@ end
 
 local NPCGenerator = require(Modules:WaitForChild("NPCGenerator"))
 local NPCConfig = require(Modules:WaitForChild("NPCConfig"))
+local ChurchSystem = require(Modules:WaitForChild("ChurchSystem"))
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- CONFIGURATION
@@ -32,7 +33,91 @@ local NPCConfig = require(Modules:WaitForChild("NPCConfig"))
 local Config = {
 	VendorSpawnName = "SoulVendorSpawn", -- Part in workspace to spawn at
 	DefaultPosition = CFrame.new(0, 5, 0), -- Fallback if spawn point not found
+	UpgradeChoiceCount = 3, -- Number of upgrades to present per interaction
 }
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- REMOTE EVENT SETUP
+-- ════════════════════════════════════════════════════════════════════════════
+
+local SoulVendorRemote = ReplicatedStorage:FindFirstChild("SoulVendorRemote")
+if not SoulVendorRemote then
+	SoulVendorRemote = Instance.new("RemoteEvent")
+	SoulVendorRemote.Name = "SoulVendorRemote"
+	SoulVendorRemote.Parent = ReplicatedStorage
+	print("[NPCSpawner] Created SoulVendorRemote")
+end
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- UPGRADE SELECTION LOGIC
+-- ════════════════════════════════════════════════════════════════════════════
+
+local function formatBonus(value, statKey)
+	-- Percentage stats
+	if statKey == "GunDamage" or statKey == "FireRate" or statKey == "Accuracy" or
+	   statKey == "CritDamage" or statKey == "ElementalChance" or statKey == "ElementalDamage" or
+	   statKey == "RecoilReduction" or statKey == "ReloadSpeed" or statKey == "MeleeDamage" or
+	   statKey == "GrenadeDamage" or statKey == "ShieldRechargeRate" then
+		return string.format("+%.1f%%", value * 100)
+	end
+
+	-- Flat value stats
+	if statKey == "MaxHealth" or statKey == "ShieldCapacity" then
+		return string.format("+%.0f", value)
+	end
+
+	-- Default
+	return tostring(value)
+end
+
+local function selectRandomUpgrades(playerStats, count)
+	local allUpgrades = ChurchSystem.GetAvailableUpgrades(playerStats)
+	local selected = {}
+
+	-- Filter out maxed upgrades
+	local available = {}
+	for _, upgrade in ipairs(allUpgrades) do
+		if not upgrade.IsMaxed then
+			table.insert(available, upgrade)
+		end
+	end
+
+	-- If fewer available than requested, return all available
+	if #available <= count then
+		return available
+	end
+
+	-- Randomly select upgrades
+	local indices = {}
+	for i = 1, #available do
+		table.insert(indices, i)
+	end
+
+	-- Fisher-Yates shuffle
+	for i = #indices, 2, -1 do
+		local j = math.random(i)
+		indices[i], indices[j] = indices[j], indices[i]
+	end
+
+	-- Take first 'count' upgrades
+	for i = 1, count do
+		table.insert(selected, available[indices[i]])
+	end
+
+	return selected
+end
+
+local function prepareUpgradeData(upgrade)
+	return {
+		ID = upgrade.ID,
+		Name = upgrade.Name,
+		Description = upgrade.Description,
+		CurrentLevel = upgrade.CurrentLevel,
+		Cost = upgrade.NextCost,
+		BonusText = formatBonus(upgrade.BonusPerLevel, upgrade.StatKey),
+		CanAfford = upgrade.CanAfford,
+	}
+end
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- SPAWN SOUL VENDOR
@@ -156,22 +241,101 @@ local function SpawnSoulVendor()
 		prompt.RequiresLineOfSight = false
 		prompt.Parent = rootPart
 
-		-- Handle interaction (temporary print for testing)
+		-- Handle interaction - show 3 random upgrades
 		prompt.Triggered:Connect(function(player)
 			local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
-			if playerStats then
-				local souls = playerStats:GetSouls()
-				print(string.format("[Soul Keeper] %s interacted (Souls: %d)", player.Name, souls))
-				-- TODO: Open upgrade GUI here
-			else
+			if not playerStats then
 				warn("[Soul Keeper] PlayerStats not found for", player.Name)
+				return
 			end
+
+			-- Check if player is in Church (Floor 0)
+			local currentFloor = playerStats:GetCurrentFloor()
+			if currentFloor ~= 0 then
+				print("[Soul Keeper]", player.Name, "tried to access vendor outside Church")
+				return
+			end
+
+			-- Select 3 random upgrades
+			local selectedUpgrades = selectRandomUpgrades(playerStats, Config.UpgradeChoiceCount)
+			local upgradeData = {}
+
+			for _, upgrade in ipairs(selectedUpgrades) do
+				table.insert(upgradeData, prepareUpgradeData(upgrade))
+			end
+
+			-- Send to client
+			local souls = playerStats:GetSouls()
+			print(string.format("[Soul Keeper] %s opened shop (Souls: %d, Options: %d)",
+				player.Name, souls, #upgradeData))
+			SoulVendorRemote:FireClient(player, "ShowUpgrades", upgradeData, souls)
 		end)
 	end
 
 	print("[NPCSpawner] ✓ Soul Vendor spawned successfully:", vendorModel.Name)
 	return vendorModel
 end
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- PURCHASE HANDLER
+-- ════════════════════════════════════════════════════════════════════════════
+
+SoulVendorRemote.OnServerEvent:Connect(function(player, action, upgradeID)
+	if action == "Purchase" then
+		local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
+		if not playerStats then
+			warn("[Soul Keeper] PlayerStats not found for", player.Name)
+			SoulVendorRemote:FireClient(player, "PurchaseResult", false, "Player data not found")
+			return
+		end
+
+		-- Check if in Church
+		if playerStats:GetCurrentFloor() ~= 0 then
+			SoulVendorRemote:FireClient(player, "PurchaseResult", false, "Can only purchase in Church")
+			return
+		end
+
+		-- Attempt purchase using ChurchSystem
+		local success, message = ChurchSystem.PurchaseUpgrade(playerStats, upgradeID)
+
+		if success then
+			print(string.format("[Soul Keeper] %s purchased %s", player.Name, upgradeID))
+
+			-- Update player values
+			if _G.UpdatePlayerValues then
+				_G.UpdatePlayerValues(player)
+			end
+
+			-- Send new upgrade options
+			local selectedUpgrades = selectRandomUpgrades(playerStats, Config.UpgradeChoiceCount)
+			local upgradeData = {}
+			for _, upgrade in ipairs(selectedUpgrades) do
+				table.insert(upgradeData, prepareUpgradeData(upgrade))
+			end
+
+			local souls = playerStats:GetSouls()
+			SoulVendorRemote:FireClient(player, "ShowUpgrades", upgradeData, souls)
+			SoulVendorRemote:FireClient(player, "PurchaseResult", true, message)
+		else
+			print(string.format("[Soul Keeper] %s purchase failed: %s", player.Name, message))
+			SoulVendorRemote:FireClient(player, "PurchaseResult", false, message)
+		end
+
+	elseif action == "RequestUpgrades" then
+		-- Player requested updated upgrade list
+		local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
+		if playerStats then
+			local selectedUpgrades = selectRandomUpgrades(playerStats, Config.UpgradeChoiceCount)
+			local upgradeData = {}
+			for _, upgrade in ipairs(selectedUpgrades) do
+				table.insert(upgradeData, prepareUpgradeData(upgrade))
+			end
+
+			local souls = playerStats:GetSouls()
+			SoulVendorRemote:FireClient(player, "ShowUpgrades", upgradeData, souls)
+		end
+	end
+end)
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- INITIALIZE ON SERVER START
