@@ -21,13 +21,12 @@ local DungeonGenerator = require(ReplicatedStorage.Modules.DungeonGenerator)
 local DungeonInstanceManager = require(ReplicatedStorage.Modules.DungeonInstanceManager)
 local StartingWeapon = require(ReplicatedStorage.Modules.StartingWeapon)
 
--- Configuration
-local bonesAssortment = script.Parent -- The Bones_Assortment part/model the player interacts with
-local dungeonSpawnLocation = workspace:FindFirstChild("DungeonSpawn") -- Floor 1 spawn point
-
 -- Cooldown to prevent spam
 local cooldowns = {}
 local COOLDOWN_TIME = 2 -- seconds
+
+-- Module export
+local PileOfBones = {}
 
 -- ============================================================
 -- TELEPORT FUNCTION
@@ -128,49 +127,63 @@ local function teleportToDungeon(player)
 end
 
 -- ============================================================
--- TOUCH/CLICK DETECTION
+-- INITIALIZATION
 -- ============================================================
 
--- Option 1: Touch-based (walk over to trigger)
-if bonesAssortment:IsA("BasePart") then
-	bonesAssortment.Touched:Connect(function(hit)
-		local character = hit.Parent
-		if not character then return end
+--[[
+	Initializes the Bones_Assortment teleporter
+	@param bonesAssortment Instance - The part/model in workspace to use as teleporter
+]]
+function PileOfBones.Initialize(bonesAssortment)
+	if not bonesAssortment then
+		warn("[PileOfBones] No Bones_Assortment part provided!")
+		return false
+	end
 
-		local player = Players:GetPlayerFromCharacter(character)
-		if player then
-			teleportToDungeon(player)
-		end
-	end)
-end
+	-- Option 1: Touch-based (walk over to trigger)
+	if bonesAssortment:IsA("BasePart") then
+		bonesAssortment.Touched:Connect(function(hit)
+			local character = hit.Parent
+			if not character then return end
 
--- Option 2: ClickDetector (click to trigger)
-local clickDetector = bonesAssortment:FindFirstChildOfClass("ClickDetector")
-if not clickDetector then
-	clickDetector = Instance.new("ClickDetector")
-	clickDetector.Parent = bonesAssortment
-	clickDetector.MaxActivationDistance = 10 -- 10 studs
-end
+			local player = Players:GetPlayerFromCharacter(character)
+			if player then
+				teleportToDungeon(player)
+			end
+		end)
+	end
 
-clickDetector.MouseClick:Connect(function(player)
-	teleportToDungeon(player)
-end)
+	-- Option 2: ClickDetector (click to trigger)
+	local clickDetector = bonesAssortment:FindFirstChildOfClass("ClickDetector")
+	if not clickDetector then
+		clickDetector = Instance.new("ClickDetector")
+		clickDetector.Parent = bonesAssortment
+		clickDetector.MaxActivationDistance = 10 -- 10 studs
+	end
 
-print("[Bones_Assortment] Teleporter initialized")
-
--- ============================================================
--- VISUAL FEEDBACK (Optional)
--- ============================================================
-
--- Add a hover prompt
-if not bonesAssortment:FindFirstChild("ProximityPrompt") then
-	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "Touch the Bones"
-	prompt.ObjectText = "Descend into the Dungeon"
-	prompt.HoldDuration = 1 -- Hold for 1 second
-	prompt.Parent = bonesAssortment
-
-	prompt.Triggered:Connect(function(player)
+	clickDetector.MouseClick:Connect(function(player)
 		teleportToDungeon(player)
 	end)
+
+	-- Option 3: ProximityPrompt (hold to trigger)
+	if not bonesAssortment:FindFirstChild("ProximityPrompt") then
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.ActionText = "Touch the Bones"
+		prompt.ObjectText = "Descend into the Dungeon"
+		prompt.HoldDuration = 1 -- Hold for 1 second
+		prompt.Parent = bonesAssortment
+
+		prompt.Triggered:Connect(function(player)
+			teleportToDungeon(player)
+		end)
+	end
+
+	print("[Bones_Assortment] Teleporter initialized")
+	return true
 end
+
+-- ============================================================
+-- MODULE RETURN
+-- ============================================================
+
+return PileOfBones

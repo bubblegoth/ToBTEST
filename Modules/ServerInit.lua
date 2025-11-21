@@ -50,10 +50,24 @@ local function Initialize()
 	-- Soul Vendor is now spawned by server/NPCSpawner.lua (not here)
 	print("[ServerInit] Soul Vendor handled by NPCSpawner.lua")
 
+	-- Initialize Bones_Assortment teleporter (Church → Dungeon)
+	local bonesAssortment = workspace:FindFirstChild("Bones_Assortment")
+	if bonesAssortment then
+		print("[ServerInit] Found Bones_Assortment, initializing teleporter...")
+		local PileOfBones = require(ReplicatedStorage.Modules.PileOfBones)
+		local success = PileOfBones.Initialize(bonesAssortment)
+		if success then
+			print("[ServerInit] ✓ Bones_Assortment teleporter active")
+		else
+			warn("[ServerInit] ✗ Failed to initialize Bones_Assortment teleporter")
+		end
+	else
+		warn("[ServerInit] Bones_Assortment not found in workspace! Dungeon teleporter will not work.")
+		warn("[ServerInit] Please add a part named 'Bones_Assortment' to workspace in the Church area.")
+	end
+
 	-- TODO: Add other initialization here
 	-- - Spawn starting enemies (if any)
-	-- - Set up dungeon entrance
-	-- - Initialize player data management
 
 	print("[ServerInit] Game initialization complete!")
 end
