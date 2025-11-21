@@ -246,6 +246,7 @@ local function disableEnemy(enemyModel)
 	-- Stop enemy from doing anything
 	local humanoid = enemyModel:FindFirstChild("Humanoid")
 	if humanoid then
+		humanoid.BreakJointsOnDeath = false -- Prevent body parts from falling off
 		humanoid.Health = 0
 		humanoid.WalkSpeed = 0
 		humanoid.JumpPower = 0
@@ -257,6 +258,13 @@ local function disableEnemy(enemyModel)
 			part.CanCollide = false
 			part.CanQuery = false -- Important: prevents raycast/projectile hits!
 			part.Anchored = true
+		end
+	end
+
+	-- Destroy any accessories or attachments that might fall off
+	for _, obj in ipairs(enemyModel:GetDescendants()) do
+		if obj:IsA("Accessory") or obj:IsA("Attachment") and obj.Parent ~= enemyModel.PrimaryPart then
+			obj:Destroy()
 		end
 	end
 

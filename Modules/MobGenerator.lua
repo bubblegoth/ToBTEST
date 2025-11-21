@@ -757,6 +757,7 @@ function MobGenerator.Generate(options)
 	humanoid.MaxHealth = stats.health
 	humanoid.Health = stats.health
 	humanoid.WalkSpeed = stats.speed
+	humanoid.BreakJointsOnDeath = false -- Prevent body parts from falling off on death
 	humanoid.Parent = mobModel
 
 	-- Create HumanoidRootPart for proper character handling
