@@ -149,26 +149,41 @@ local function SpawnSoulVendor()
 	if vendorSpawnPoint and vendorSpawnPoint:IsA("BasePart") then
 		-- Parent to workspace first so physics can settle
 		vendorModel.Parent = workspace
-		task.wait(0.1) -- Let physics settle
 
-		-- Get model's actual size using GetExtentsSize
-		local modelSize = vendorModel:GetExtentsSize()
-		local modelBottomOffset = modelSize.Y / 2
+		local rootPart = vendorModel:FindFirstChild("HumanoidRootPart")
+		if not rootPart then
+			warn("[NPCSpawner] No HumanoidRootPart found in vendor model")
+			return nil
+		end
 
-		-- Calculate target position on top of spawn part
+		-- Position temporarily to let physics settle and get accurate measurements
+		vendorModel:SetPrimaryPartCFrame(CFrame.new(0, 100, 0))
+		task.wait(0.1)
+
+		-- Get bounding box to find actual bottom of model
+		local modelCFrame, modelSize = vendorModel:GetBoundingBox()
+		local modelBottomY = modelCFrame.Y - (modelSize.Y / 2) -- Actual lowest point
+		local rootPartY = rootPart.Position.Y
+
+		-- Calculate offset: how far root part is above model's bottom
+		local bottomOffset = rootPartY - modelBottomY
+
+		-- Calculate where top of spawn part is
 		local spawnPartTop = vendorSpawnPoint.Position.Y + (vendorSpawnPoint.Size.Y / 2)
 
-		-- Position HumanoidRootPart so bottom of model sits on spawn part surface
+		-- Position root part so model's bottom sits exactly on spawn part top
+		local targetY = spawnPartTop + bottomOffset
 		local targetPosition = Vector3.new(
 			vendorSpawnPoint.Position.X,
-			spawnPartTop + modelBottomOffset, -- Feet on top surface
+			targetY,
 			vendorSpawnPoint.Position.Z
 		)
 
 		-- Set final position with rotation from spawn part
 		vendorModel:SetPrimaryPartCFrame(CFrame.new(targetPosition) * (vendorSpawnPoint.CFrame - vendorSpawnPoint.Position))
-		print(string.format("[NPCSpawner] Soul Vendor positioned ON TOP of %s (Height: %.2f)",
-			Config.VendorSpawnName, modelSize.Y))
+
+		print(string.format("[NPCSpawner] Soul Vendor positioned: ModelBottom=%.2f, RootPart=%.2f, Offset=%.2f, TargetY=%.2f",
+			modelBottomY, rootPartY, bottomOffset, targetY))
 	else
 		vendorModel.Parent = workspace
 		vendorModel:SetPrimaryPartCFrame(Config.DefaultPosition)
