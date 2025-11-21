@@ -90,41 +90,59 @@ end
 	@return floorData, floorModel - Generated floor data and 3D model
 ]]
 function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
+	print(string.format("[DungeonInstanceManager] 🔍 GetOrGenerateFloor called for %s, floor %d", player.Name, floorNumber))
+
 	local instance = PlayerInstances[player.UserId]
 
 	if not instance then
-		warn("[DungeonInstanceManager] No instance found for", player.Name)
-		return nil, nil
+		warn("[DungeonInstanceManager] ⚠ No instance found for", player.Name, "- Auto-creating instance...")
+		DungeonInstanceManager.CreatePlayerInstance(player)
+		instance = PlayerInstances[player.UserId]
+
+		if not instance then
+			warn("[DungeonInstanceManager] ✗ Failed to create instance for", player.Name)
+			return nil, nil
+		end
+		print("[DungeonInstanceManager] ✓ Instance auto-created successfully")
+	else
+		print("[DungeonInstanceManager] ✓ Instance found for player")
 	end
 
 	-- Check cache first
 	if instance.FloorCache[floorNumber] and instance.FloorModels[floorNumber] then
-		print("[DungeonInstanceManager] Using cached floor", floorNumber, "for", player.Name)
+		print("[DungeonInstanceManager] ✓ Using cached floor", floorNumber, "for", player.Name)
 		return instance.FloorCache[floorNumber], instance.FloorModels[floorNumber]
 	end
 
 	-- Generate new floor
-	print("[DungeonInstanceManager] Generating floor", floorNumber, "for", player.Name)
+	print("[DungeonInstanceManager] 🔍 Generating NEW floor", floorNumber, "for", player.Name)
 
 	local floorSeed = instance.Seed + floorNumber
+	print("[DungeonInstanceManager] Floor seed:", floorSeed)
+
 	local floorData = DungeonGenerator.GenerateFloor(floorNumber, floorSeed)
+	print("[DungeonInstanceManager] ✓ DungeonGenerator.GenerateFloor completed")
 
 	-- Build 3D dungeon geometry using MazeDungeonGenerator
-	print("[DungeonInstanceManager] Building 3D geometry for floor", floorNumber)
+	print("[DungeonInstanceManager] 🔍 Building 3D geometry for floor", floorNumber)
 	local dungeonModel = MazeDungeonGenerator.Generate(floorSeed, instance.Folder)
 
 	if not dungeonModel then
-		warn("[DungeonInstanceManager] Failed to build dungeon geometry for floor", floorNumber)
+		warn("[DungeonInstanceManager] ✗ Failed to build dungeon geometry for floor", floorNumber)
 		return floorData, nil
 	end
+	print("[DungeonInstanceManager] ✓ Dungeon model created:", dungeonModel.Name)
 
 	-- Position the dungeon at the correct offset for this floor
 	local floorOffset = Vector3.new(0, -1000 * floorNumber, 0)
+	print("[DungeonInstanceManager] Moving dungeon to offset:", floorOffset)
 	dungeonModel:MoveTo(floorOffset)
+	print("[DungeonInstanceManager] ✓ Dungeon positioned")
 
 	-- Spawn enemies in the dungeon
-	print("[DungeonInstanceManager] Spawning enemies for floor", floorNumber)
+	print("[DungeonInstanceManager] 🔍 Spawning enemies for floor", floorNumber)
 	local enemies, enemyCount = EnemySpawner.SpawnEnemiesInDungeon(dungeonModel, floorNumber, player)
+	print("[DungeonInstanceManager] ✓ Spawned", enemyCount, "enemies")
 
 	-- Store dungeon model reference in floor data
 	floorData.DungeonModel = dungeonModel
@@ -153,17 +171,21 @@ end
 	@return success - Whether teleport was successful
 ]]
 function DungeonInstanceManager.TeleportToFloor(player, floorNumber)
+	print(string.format("[DungeonInstanceManager] 🔍 DEBUG: TeleportToFloor called for %s to floor %d", player.Name, floorNumber))
+
 	local character = player.Character
 	if not character then
-		warn("[DungeonInstanceManager] Character not found for", player.Name)
+		warn("[DungeonInstanceManager] ✗ Character not found for", player.Name)
 		return false
 	end
+	print("[DungeonInstanceManager] ✓ Character found")
 
 	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
 	if not humanoidRootPart then
-		warn("[DungeonInstanceManager] HumanoidRootPart not found for", player.Name)
+		warn("[DungeonInstanceManager] ✗ HumanoidRootPart not found for", player.Name)
 		return false
 	end
+	print("[DungeonInstanceManager] ✓ HumanoidRootPart found at position:", humanoidRootPart.Position)
 
 	-- Floor 0 = Church (shared, not instanced)
 	if floorNumber == 0 then
@@ -179,37 +201,53 @@ function DungeonInstanceManager.TeleportToFloor(player, floorNumber)
 		end
 	end
 
+	print("[DungeonInstanceManager] 🔍 Calling GetOrGenerateFloor...")
+
 	-- Get or generate the floor
 	local floorData, dungeonModel = DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 
+	print(string.format("[DungeonInstanceManager] 🔍 GetOrGenerateFloor returned: floorData=%s, dungeonModel=%s",
+		tostring(floorData ~= nil), tostring(dungeonModel ~= nil)))
+
 	if not floorData or not dungeonModel then
-		warn("[DungeonInstanceManager] Failed to generate floor", floorNumber)
+		warn("[DungeonInstanceManager] ✗ Failed to generate floor", floorNumber)
 		return false
 	end
+	print("[DungeonInstanceManager] ✓ Floor generated successfully")
 
 	-- Get player's instance folder
 	local instance = PlayerInstances[player.UserId]
 	if not instance then
-		warn("[DungeonInstanceManager] No instance found for", player.Name)
+		warn("[DungeonInstanceManager] ✗ No instance found for", player.Name, "- Did CreatePlayerInstance() get called?")
 		return false
 	end
+	print("[DungeonInstanceManager] ✓ Instance found:", instance.Folder.Name)
 
 	-- Find the player spawn point in the generated dungeon
 	local spawnsFolder = dungeonModel:FindFirstChild("Spawns")
 	local playerSpawn = spawnsFolder and spawnsFolder:FindFirstChild("PlayerSpawn")
 
+	print(string.format("[DungeonInstanceManager] 🔍 Spawn search: spawnsFolder=%s, playerSpawn=%s",
+		tostring(spawnsFolder ~= nil), tostring(playerSpawn ~= nil)))
+
 	if not playerSpawn then
-		warn("[DungeonInstanceManager] No PlayerSpawn found in dungeon floor", floorNumber)
+		warn("[DungeonInstanceManager] ⚠ No PlayerSpawn found in dungeon floor", floorNumber, "- using fallback position")
 		-- Fallback to dungeon center
 		local floorOffset = Vector3.new(0, -1000 * floorNumber, 0)
-		humanoidRootPart.CFrame = CFrame.new(floorOffset + SPAWN_OFFSET)
+		local targetPos = floorOffset + SPAWN_OFFSET
+		print("[DungeonInstanceManager] Teleporting to fallback position:", targetPos)
+		humanoidRootPart.CFrame = CFrame.new(targetPos)
+		print("[DungeonInstanceManager] Player new position:", humanoidRootPart.Position)
 	else
 		-- Teleport to actual spawn point
+		local targetPos = playerSpawn.CFrame.Position + SPAWN_OFFSET
+		print("[DungeonInstanceManager] Teleporting to PlayerSpawn:", targetPos)
 		humanoidRootPart.CFrame = playerSpawn.CFrame + SPAWN_OFFSET
+		print("[DungeonInstanceManager] Player new position:", humanoidRootPart.Position)
 	end
 
 	print(string.format(
-		"[DungeonInstanceManager] Teleported %s to Floor %d (Instance: %s)",
+		"[DungeonInstanceManager] ✓ Teleported %s to Floor %d (Instance: %s)",
 		player.Name,
 		floorNumber,
 		instance.Folder.Name
