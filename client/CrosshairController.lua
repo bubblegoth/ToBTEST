@@ -164,10 +164,13 @@ local function updateCrosshairSpread(deltaTime)
 	if not character then return end
 
 	local humanoid = character:FindFirstChild("Humanoid")
-	if not humanoid then return end
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+	if not humanoid or not rootPart then return end
 
-	-- Calculate spread based on movement speed
-	local moveSpeed = humanoid.MoveVector.Magnitude
+	-- Calculate spread based on movement speed (use horizontal velocity)
+	local velocity = rootPart.Velocity
+	local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
+	local moveSpeed = math.min(horizontalSpeed / humanoid.WalkSpeed, 1)
 	local isShooting = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
 
 	-- Target gap increases with movement and shooting
