@@ -252,6 +252,8 @@ local function SpawnSoulVendor()
 
 		-- Handle interaction - show 3 random upgrades
 		prompt.Triggered:Connect(function(player)
+			print("[Soul Keeper] ProximityPrompt triggered by", player.Name)
+
 			local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
 			if not playerStats then
 				warn("[Soul Keeper] PlayerStats not found for", player.Name)
@@ -260,6 +262,7 @@ local function SpawnSoulVendor()
 
 			-- Check if player is in Church (Floor 0)
 			local currentFloor = playerStats:GetCurrentFloor()
+			print("[Soul Keeper]", player.Name, "current floor:", currentFloor)
 			if currentFloor ~= 0 then
 				print("[Soul Keeper]", player.Name, "tried to access vendor outside Church")
 				return
@@ -275,9 +278,16 @@ local function SpawnSoulVendor()
 
 			-- Send to client
 			local souls = playerStats:GetSouls()
-			print(string.format("[Soul Keeper] %s opened shop (Souls: %d, Options: %d)",
+			print(string.format("[Soul Keeper] Sending ShowUpgrades to %s (Souls: %d, Options: %d)",
 				player.Name, souls, #upgradeData))
+
+			-- Debug: Print upgrade data
+			for i, data in ipairs(upgradeData) do
+				print(string.format("  [%d] %s - Lv.%d - %d souls", i, data.Name, data.CurrentLevel, data.Cost))
+			end
+
 			SoulVendorRemote:FireClient(player, "ShowUpgrades", upgradeData, souls)
+			print("[Soul Keeper] RemoteEvent fired to client")
 		end)
 	end
 

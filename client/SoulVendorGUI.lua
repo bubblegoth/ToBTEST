@@ -146,7 +146,7 @@ local function createVendorGUI()
 	closeStroke.Parent = closeButton
 
 	closeButton.MouseButton1Click:Connect(function()
-		screenGui.Enabled = false
+		hideVendorGUI()
 	end)
 
 	return screenGui
@@ -325,8 +325,11 @@ end
 
 -- Listen for server sending upgrade options
 SoulVendorRemote.OnClientEvent:Connect(function(action, ...)
+	print("[SoulVendorGUI] Received event from server:", action)
+
 	if action == "ShowUpgrades" then
 		local upgradeOptions, playerSouls = ...
+		print("[SoulVendorGUI] Showing upgrades - Options:", #upgradeOptions, "Souls:", playerSouls)
 		showVendorGUI(upgradeOptions, playerSouls)
 	elseif action == "PurchaseResult" then
 		local success, message = ...
