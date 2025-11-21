@@ -157,9 +157,10 @@ local function rollForDrops(enemyModel, position, parent)
 
 	local level = enemyModel:GetAttribute("Level") or 1
 	local isBoss = enemyModel:GetAttribute("IsBoss") or false
+	local floorNumber = enemyModel:GetAttribute("FloorNumber") or 1
 
 	-- FLOOR 1: Only drop health/shields (no weapons until Floor 2)
-	if level == 1 then
+	if floorNumber == 1 then
 		print("[EnemyDeath] Floor 1 - No weapon drops (health/shields only)")
 		-- TODO: Add health/shield drops here when system is implemented
 		return drops

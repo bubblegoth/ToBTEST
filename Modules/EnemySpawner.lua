@@ -141,6 +141,9 @@ local function spawnEnemyAtMarker(spawnMarker, floorNumber, parentFolder, isBoss
 		return nil
 	end
 
+	-- Store floor number for loot drops
+	mob:SetAttribute("FloorNumber", floorNumber)
+
 	-- Scale by floor
 	if isBoss then
 		scaleBoss(mob, floorNumber)
