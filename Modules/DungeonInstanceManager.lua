@@ -3,10 +3,11 @@
 Module: DungeonInstanceManager
 Location: ReplicatedStorage/Modules/
 Type: ModuleScript
-Description: Per-player dungeon instance manager for single-player experience.
+Description: Dungeon instance manager for solo and party (up to 4 players) play.
              Creates private dungeon folders at X = Floor × 10000.
              Handles instance cleanup, floor progression, teleportation.
-Version: 1.0
+             Integrates with PartyManager for co-op instances.
+Version: 2.0
 Last Updated: 2025-11-21
 ════════════════════════════════════════════════════════════════════════════════
 --]]
@@ -17,9 +18,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DungeonGenerator = require(ReplicatedStorage.Modules.DungeonGenerator)
 local MazeDungeonGenerator = require(ReplicatedStorage.Modules.MazeDungeonGenerator)
 local EnemySpawner = require(ReplicatedStorage.Modules.EnemySpawner)
+local PartyManager = require(ReplicatedStorage.Modules.PartyManager)
+local DifficultyScaler = require(ReplicatedStorage.Modules.DifficultyScaler)
+local ThemeApplier = require(ReplicatedStorage.Modules.ThemeApplier)
+local PortalSystem = require(ReplicatedStorage.Modules.PortalSystem)
+local DungeonValidator = require(ReplicatedStorage.Modules.DungeonValidator)
 
--- Store active player instances
-local PlayerInstances = {}
+-- Store active instances
+local PlayerInstances = {} -- [UserId] = instance data (solo play)
+local PartyInstances = {} -- [PartyID] = instance data (party play)
 
 -- Configuration
 local INSTANCE_FOLDER_NAME = "DungeonInstances"
@@ -39,6 +46,60 @@ local function GetInstancesFolder()
 		print("[DungeonInstanceManager] Created DungeonInstances folder in workspace")
 	end
 	return folder
+end
+
+-- ============================================================
+-- INSTANCE RETRIEVAL HELPERS
+-- ============================================================
+
+--[[
+	Gets the appropriate instance for a player (party or solo)
+	@param player - The Player object
+	@return instance data, isParty
+]]
+local function GetPlayerInstanceData(player)
+	-- Check if player is in a party
+	if PartyManager:IsInParty(player) then
+		local partyID = PartyManager:GetPartyID(player)
+		if partyID and PartyInstances[partyID] then
+			return PartyInstances[partyID], true
+		end
+	end
+
+	-- Fall back to solo instance
+	if PlayerInstances[player.UserId] then
+		return PlayerInstances[player.UserId], false
+	end
+
+	return nil, false
+end
+
+--[[
+	Gets or creates the appropriate instance for a player
+	@param player - The Player object
+	@return instanceFolder, isParty
+]]
+local function GetOrCreateInstance(player)
+	-- Check if player is in a party
+	if PartyManager:IsInParty(player) then
+		local partyID = PartyManager:GetPartyID(player)
+		if partyID then
+			-- Check if party instance exists
+			if PartyInstances[partyID] then
+				return PartyInstances[partyID], true
+			end
+			-- Create party instance
+			return DungeonInstanceManager.CreatePartyInstance(partyID), true
+		end
+	end
+
+	-- Solo play - check if instance exists
+	if PlayerInstances[player.UserId] then
+		return PlayerInstances[player.UserId], false
+	end
+
+	-- Create solo instance
+	return DungeonInstanceManager.CreatePlayerInstance(player), false
 end
 
 -- ============================================================
@@ -71,12 +132,46 @@ function DungeonInstanceManager.CreatePlayerInstance(player)
 		CurrentFloor = nil, -- Will be generated on demand
 		FloorCache = {}, -- Cache generated floors (data)
 		FloorModels = {}, -- Cache generated floor 3D models
-		Seed = tick() + player.UserId -- Unique seed per player
+		Seed = math.random(1, 1000000) -- Unique seed per player
 	}
 
 	print("[DungeonInstanceManager] Instance created:", instanceFolder.Name)
 
-	return instanceFolder
+	return PlayerInstances[player.UserId]
+end
+
+--[[
+	Creates a new dungeon instance for a party
+	@param partyID - The party ID
+	@return instanceData - The party instance data
+]]
+function DungeonInstanceManager.CreatePartyInstance(partyID)
+	-- Check if instance already exists
+	if PartyInstances[partyID] then
+		warn("[DungeonInstanceManager] Party instance already exists for", partyID)
+		return PartyInstances[partyID]
+	end
+
+	print("[DungeonInstanceManager] Creating party dungeon instance for", partyID)
+
+	-- Create party's dungeon folder
+	local instanceFolder = Instance.new("Folder")
+	instanceFolder.Name = "PartyInstance_" .. partyID
+	instanceFolder.Parent = GetInstancesFolder()
+
+	-- Store instance data
+	PartyInstances[partyID] = {
+		Folder = instanceFolder,
+		PartyID = partyID,
+		CurrentFloor = nil,
+		FloorCache = {},
+		FloorModels = {},
+		Seed = math.random(1, 1000000) -- Unique seed per party
+	}
+
+	print("[DungeonInstanceManager] Party instance created:", instanceFolder.Name)
+
+	return PartyInstances[partyID]
 end
 
 -- ============================================================
@@ -92,20 +187,18 @@ end
 function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 	print(string.format("[DungeonInstanceManager] 🔍 GetOrGenerateFloor called for %s, floor %d", player.Name, floorNumber))
 
-	local instance = PlayerInstances[player.UserId]
+	-- Get or create the appropriate instance (party or solo)
+	local instance, isParty = GetOrCreateInstance(player)
 
 	if not instance then
-		warn("[DungeonInstanceManager] ⚠ No instance found for", player.Name, "- Auto-creating instance...")
-		DungeonInstanceManager.CreatePlayerInstance(player)
-		instance = PlayerInstances[player.UserId]
+		warn("[DungeonInstanceManager] ✗ Failed to get or create instance for", player.Name)
+		return nil, nil
+	end
 
-		if not instance then
-			warn("[DungeonInstanceManager] ✗ Failed to create instance for", player.Name)
-			return nil, nil
-		end
-		print("[DungeonInstanceManager] ✓ Instance auto-created successfully")
+	if isParty then
+		print("[DungeonInstanceManager] ✓ Using party instance")
 	else
-		print("[DungeonInstanceManager] ✓ Instance found for player")
+		print("[DungeonInstanceManager] ✓ Using solo instance")
 	end
 
 	-- Check cache first
@@ -117,7 +210,8 @@ function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 	-- Generate new floor
 	print("[DungeonInstanceManager] 🔍 Generating NEW floor", floorNumber, "for", player.Name)
 
-	local floorSeed = instance.Seed + floorNumber
+	-- Enhanced seed calculation for better randomization
+	local floorSeed = instance.Seed * 7919 + floorNumber * 104729 + math.random(1, 10000)
 	print("[DungeonInstanceManager] Floor seed:", floorSeed)
 
 	local floorData = DungeonGenerator.GenerateFloor(floorNumber, floorSeed)
@@ -162,23 +256,64 @@ function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 		end
 	end
 
-	-- Spawn enemies in the dungeon
+	-- Apply visual theme to dungeon
+	print("[DungeonInstanceManager] 🔍 Applying visual theme for floor", floorNumber)
+	ThemeApplier:ApplyTheme(dungeonModel, floorNumber)
+	print("[DungeonInstanceManager] ✓ Theme applied")
+
+	-- Validate dungeon connectivity
+	print("[DungeonInstanceManager] 🔍 Validating dungeon connectivity...")
+	local spawnsFolder = dungeonModel:FindFirstChild("Spawns")
+	local playerSpawn = spawnsFolder and spawnsFolder:FindFirstChild("PlayerSpawn")
+	local spawnPos = playerSpawn and playerSpawn.Position or dungeonModel:GetPivot().Position
+
+	local isValid, validationData = DungeonValidator:ValidateAndMark(dungeonModel, spawnPos)
+	if not isValid then
+		warn("[DungeonInstanceManager] ⚠ Dungeon failed validation:", validationData.Reason)
+		DungeonValidator:PrintReport(validationData)
+		-- Continue anyway but log the issue
+	else
+		print("[DungeonInstanceManager] ✓ Dungeon validated successfully")
+	end
+
+	-- Spawn enemies in the dungeon with difficulty scaling
 	print("[DungeonInstanceManager] 🔍 Spawning enemies for floor", floorNumber)
 	local enemies, enemyCount = EnemySpawner.SpawnEnemiesInDungeon(dungeonModel, floorNumber, player)
-	print("[DungeonInstanceManager] ✓ Spawned", enemyCount, "enemies")
+
+	-- Apply difficulty scaling to all spawned enemies
+	local difficulty = DifficultyScaler:GetFloorDifficulty(floorNumber)
+	for _, enemy in ipairs(enemies) do
+		if enemy and enemy:FindFirstChild("Humanoid") then
+			local isBoss = difficulty.IsBossFloor and validationData and validationData.BossRoom
+				and (enemy.PrimaryPart.Position - validationData.BossRoom.Position).Magnitude < 50
+			DifficultyScaler:ApplyEnemyScaling(enemy:FindFirstChild("Humanoid"), floorNumber, isBoss)
+		end
+	end
+	print("[DungeonInstanceManager] ✓ Spawned and scaled", enemyCount, "enemies")
+
+	-- Create entrance and exit portals
+	print("[DungeonInstanceManager] 🔍 Creating floor transition portals...")
+	local spawnCFrame = playerSpawn and playerSpawn.CFrame or CFrame.new(spawnPos)
+	local entrancePortal, exitPortal = PortalSystem:CreateFloorPortals(dungeonModel, floorNumber, spawnCFrame)
+	print(string.format("[DungeonInstanceManager] ✓ Created portals (Entrance: %s, Exit: %s)",
+		tostring(entrancePortal ~= nil), tostring(exitPortal ~= nil)))
 
 	-- Store dungeon model reference in floor data
 	floorData.DungeonModel = dungeonModel
 	floorData.Enemies = enemies
 	floorData.Seed = floorSeed
+	floorData.Difficulty = difficulty
+	floorData.ValidationData = validationData
+	floorData.EntrancePortal = entrancePortal
+	floorData.ExitPortal = exitPortal
 
 	-- Cache the floor
 	instance.FloorCache[floorNumber] = floorData
 	instance.FloorModels[floorNumber] = dungeonModel
 	instance.CurrentFloor = floorNumber
 
-	print(string.format("[DungeonInstanceManager] ✓ Floor %d ready for %s (%d enemies spawned)",
-		floorNumber, player.Name, enemyCount))
+	print(string.format("[DungeonInstanceManager] ✓ Floor %d ready for %s (%d enemies, Theme: %s)",
+		floorNumber, player.Name, enemyCount, difficulty.Theme.Name))
 
 	return floorData, dungeonModel
 end
@@ -238,13 +373,13 @@ function DungeonInstanceManager.TeleportToFloor(player, floorNumber)
 	end
 	print("[DungeonInstanceManager] ✓ Floor generated successfully")
 
-	-- Get player's instance folder
-	local instance = PlayerInstances[player.UserId]
+	-- Get player's instance (party or solo)
+	local instance, isParty = GetPlayerInstanceData(player)
 	if not instance then
-		warn("[DungeonInstanceManager] ✗ No instance found for", player.Name, "- Did CreatePlayerInstance() get called?")
+		warn("[DungeonInstanceManager] ✗ No instance found for", player.Name)
 		return false
 	end
-	print("[DungeonInstanceManager] ✓ Instance found:", instance.Folder.Name)
+	print("[DungeonInstanceManager] ✓ Instance found:", instance.Folder.Name, "(Party:", isParty, ")")
 
 	-- Find the player spawn point in the generated dungeon
 	local spawnsFolder = dungeonModel:FindFirstChild("Spawns")
@@ -284,22 +419,23 @@ end
 -- ============================================================
 
 --[[
-	Gets a player's dungeon instance folder
+	Gets a player's dungeon instance folder (party or solo)
 	@param player - The Player object
 	@return instanceFolder or nil
 ]]
 function DungeonInstanceManager.GetPlayerInstance(player)
-	local instance = PlayerInstances[player.UserId]
+	local instance, isParty = GetPlayerInstanceData(player)
 	return instance and instance.Folder
 end
 
 --[[
-	Checks if a player has an active instance
+	Checks if a player has an active instance (party or solo)
 	@param player - The Player object
 	@return boolean
 ]]
 function DungeonInstanceManager.HasInstance(player)
-	return PlayerInstances[player.UserId] ~= nil
+	local instance = GetPlayerInstanceData(player)
+	return instance ~= nil
 end
 
 --[[
@@ -308,7 +444,7 @@ end
 	@param floorNumber - Floor to clear
 ]]
 function DungeonInstanceManager.ClearFloorCache(player, floorNumber)
-	local instance = PlayerInstances[player.UserId]
+	local instance = GetPlayerInstanceData(player)
 	if not instance then return end
 
 	-- Destroy 3D model if it exists
@@ -326,7 +462,7 @@ function DungeonInstanceManager.ClearFloorCache(player, floorNumber)
 end
 
 --[[
-	Destroys a player's dungeon instance and cleans up
+	Destroys a player's solo dungeon instance and cleans up
 	@param player - The Player object
 ]]
 function DungeonInstanceManager.DestroyPlayerInstance(player)
@@ -336,7 +472,7 @@ function DungeonInstanceManager.DestroyPlayerInstance(player)
 		return
 	end
 
-	print("[DungeonInstanceManager] Destroying instance for", player.Name)
+	print("[DungeonInstanceManager] Destroying solo instance for", player.Name)
 
 	-- Destroy the folder and all contents
 	if instance.Folder then
@@ -346,7 +482,31 @@ function DungeonInstanceManager.DestroyPlayerInstance(player)
 	-- Clear cache
 	PlayerInstances[player.UserId] = nil
 
-	print("[DungeonInstanceManager] Instance destroyed for", player.Name)
+	print("[DungeonInstanceManager] Solo instance destroyed for", player.Name)
+end
+
+--[[
+	Destroys a party's dungeon instance and cleans up
+	@param partyID - The party ID
+]]
+function DungeonInstanceManager.DestroyPartyInstance(partyID)
+	local instance = PartyInstances[partyID]
+
+	if not instance then
+		return
+	end
+
+	print("[DungeonInstanceManager] Destroying party instance", partyID)
+
+	-- Destroy the folder and all contents
+	if instance.Folder then
+		instance.Folder:Destroy()
+	end
+
+	-- Clear cache
+	PartyInstances[partyID] = nil
+
+	print("[DungeonInstanceManager] Party instance destroyed", partyID)
 end
 
 -- ============================================================
@@ -354,12 +514,12 @@ end
 -- ============================================================
 
 --[[
-	Gets the current floor number for a player
+	Gets the current floor number for a player (party or solo)
 	@param player - The Player object
 	@return floorNumber or nil
 ]]
 function DungeonInstanceManager.GetPlayerCurrentFloor(player)
-	local instance = PlayerInstances[player.UserId]
+	local instance = GetPlayerInstanceData(player)
 	return instance and instance.CurrentFloor
 end
 
@@ -368,11 +528,13 @@ end
 	@return stats table
 ]]
 function DungeonInstanceManager.GetInstanceStats()
-	local count = 0
+	local soloCount = 0
+	local partyCount = 0
 	local totalFloorsCached = 0
 
+	-- Count solo instances
 	for userId, instance in pairs(PlayerInstances) do
-		count = count + 1
+		soloCount = soloCount + 1
 
 		-- Count cached floors
 		for _ in pairs(instance.FloorCache) do
@@ -380,10 +542,24 @@ function DungeonInstanceManager.GetInstanceStats()
 		end
 	end
 
+	-- Count party instances
+	for partyID, instance in pairs(PartyInstances) do
+		partyCount = partyCount + 1
+
+		-- Count cached floors
+		for _ in pairs(instance.FloorCache) do
+			totalFloorsCached = totalFloorsCached + 1
+		end
+	end
+
+	local totalInstances = soloCount + partyCount
+
 	return {
-		ActiveInstances = count,
+		ActiveInstances = totalInstances,
+		SoloInstances = soloCount,
+		PartyInstances = partyCount,
 		TotalFloorsCached = totalFloorsCached,
-		AverageFloorsPerInstance = count > 0 and (totalFloorsCached / count) or 0
+		AverageFloorsPerInstance = totalInstances > 0 and (totalFloorsCached / totalInstances) or 0
 	}
 end
 
@@ -398,17 +574,37 @@ function DungeonInstanceManager.PrintDebugInfo()
 
 	local stats = DungeonInstanceManager.GetInstanceStats()
 	print("Active Instances:", stats.ActiveInstances)
+	print("  - Solo Instances:", stats.SoloInstances)
+	print("  - Party Instances:", stats.PartyInstances)
 	print("Total Floors Cached:", stats.TotalFloorsCached)
 	print("Average Floors/Instance:", string.format("%.2f", stats.AverageFloorsPerInstance))
 
-	print("\nPlayer Instances:")
+	print("\nSolo Player Instances:")
 	for userId, instance in pairs(PlayerInstances) do
+		local cachedFloors = 0
+		for _ in pairs(instance.FloorCache) do
+			cachedFloors = cachedFloors + 1
+		end
 		print(string.format(
 			"  - %s (UserId: %d) - Current Floor: %s - Cached Floors: %d",
 			instance.Player.Name,
 			userId,
 			tostring(instance.CurrentFloor or "None"),
-			#instance.FloorCache
+			cachedFloors
+		))
+	end
+
+	print("\nParty Instances:")
+	for partyID, instance in pairs(PartyInstances) do
+		local cachedFloors = 0
+		for _ in pairs(instance.FloorCache) do
+			cachedFloors = cachedFloors + 1
+		end
+		print(string.format(
+			"  - %s - Current Floor: %s - Cached Floors: %d",
+			partyID,
+			tostring(instance.CurrentFloor or "None"),
+			cachedFloors
 		))
 	end
 
