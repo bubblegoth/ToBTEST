@@ -71,7 +71,7 @@ function DungeonInstanceManager.CreatePlayerInstance(player)
 		CurrentFloor = nil, -- Will be generated on demand
 		FloorCache = {}, -- Cache generated floors (data)
 		FloorModels = {}, -- Cache generated floor 3D models
-		Seed = tick() + player.UserId -- Unique seed per player
+		Seed = math.random(1, 1000000) -- Random seed per player session
 	}
 
 	print("[DungeonInstanceManager] Instance created:", instanceFolder.Name)
@@ -117,7 +117,8 @@ function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 	-- Generate new floor
 	print("[DungeonInstanceManager] 🔍 Generating NEW floor", floorNumber, "for", player.Name)
 
-	local floorSeed = instance.Seed + floorNumber
+	-- Use a more complex seed calculation for better randomization
+	local floorSeed = instance.Seed * 7919 + floorNumber * 104729 + math.random(1, 10000)
 	print("[DungeonInstanceManager] Floor seed:", floorSeed)
 
 	local floorData = DungeonGenerator.GenerateFloor(floorNumber, floorSeed)
