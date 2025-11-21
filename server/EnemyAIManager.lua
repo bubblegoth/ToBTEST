@@ -391,7 +391,7 @@ function EnemyAI:performRangedAttack(targetRoot, targetHumanoid)
 	warningFlash:Destroy()
 
 	-- Calculate aim (lead target slightly for moving players)
-	local targetVelocity = targetRoot.AssemblyVelocity or Vector3.zero
+	local targetVelocity = targetRoot.AssemblyLinearVelocity or targetRoot.Velocity or Vector3.zero
 	local projectileSpeed = 100
 	local distance = (targetRoot.Position - self.rootPart.Position).Magnitude
 	local timeToHit = distance / projectileSpeed
