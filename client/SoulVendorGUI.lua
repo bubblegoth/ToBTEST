@@ -266,9 +266,34 @@ end
 -- GUI MANAGEMENT
 -- ════════════════════════════════════════════════════════════════════════════
 
-local vendorGUI = createVendorGUI()
+-- Forward declarations
+local vendorGUI
 local isGUIOpen = false
 local unlockConnection = nil
+
+-- Define hideVendorGUI BEFORE creating the GUI so the close button can reference it
+local function hideVendorGUI()
+	vendorGUI.Enabled = false
+	isGUIOpen = false
+
+	-- Disconnect the continuous unlock loop
+	if unlockConnection then
+		unlockConnection:Disconnect()
+		unlockConnection = nil
+	end
+
+	-- Restore FPS mouse lock and camera mode
+	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+	UserInputService.MouseIconEnabled = false
+	Camera.CameraType = Enum.CameraType.Custom -- Camera uses CameraType
+	Player.CameraMode = Enum.CameraMode.LockFirstPerson
+
+	previousMouseBehavior = nil
+	previousCameraMode = nil
+	print("[SoulVendorGUI] GUI closed - mouse LOCKED")
+	print("  Camera.CameraType:", Camera.CameraType)
+	print("  Player.CameraMode:", Player.CameraMode)
+end
 
 local function showVendorGUI(upgradeOptions, playerSouls)
 	print("[SoulVendorGUI] showVendorGUI called with", #upgradeOptions, "options and", playerSouls, "souls")
@@ -337,28 +362,8 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 	end
 end
 
-local function hideVendorGUI()
-	vendorGUI.Enabled = false
-	isGUIOpen = false
-
-	-- Disconnect the continuous unlock loop
-	if unlockConnection then
-		unlockConnection:Disconnect()
-		unlockConnection = nil
-	end
-
-	-- Restore FPS mouse lock and camera mode
-	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-	UserInputService.MouseIconEnabled = false
-	Camera.CameraType = Enum.CameraType.Custom -- Camera uses CameraType
-	Player.CameraMode = Enum.CameraMode.LockFirstPerson
-
-	previousMouseBehavior = nil
-	previousCameraMode = nil
-	print("[SoulVendorGUI] GUI closed - mouse LOCKED")
-	print("  Camera.CameraType:", Camera.CameraType)
-	print("  Player.CameraMode:", Player.CameraMode)
-end
+-- Create GUI (now hideVendorGUI is defined and can be referenced by close button)
+vendorGUI = createVendorGUI()
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- SERVER COMMUNICATION
