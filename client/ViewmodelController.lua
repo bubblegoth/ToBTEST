@@ -21,12 +21,13 @@ pcall(function()
 	WeaponModelBuilder = require(ReplicatedStorage.Modules.WeaponModelBuilder)
 end)
 
--- Viewmodel constants (fallback if WeaponConstants not available)
-local VIEW_MODEL_OFFSET = CFrame.new(0.5, -0.5, -1.5)
-local VIEW_MODEL_ADS_OFFSET = CFrame.new(0, -0.3, -0.8)
-local VIEW_MODEL_INSPECT_OFFSET = CFrame.new(0, -0.2, -1.2) * CFrame.Angles(0, math.rad(45), 0)
-local VIEW_MODEL_LERP_SPEED = 10
+-- Viewmodel constants (improved positioning for better appearance)
+local VIEW_MODEL_OFFSET = CFrame.new(0.3, -0.35, -0.8) * CFrame.Angles(0, math.rad(-5), 0)
+local VIEW_MODEL_ADS_OFFSET = CFrame.new(0, -0.2, -0.5)
+local VIEW_MODEL_INSPECT_OFFSET = CFrame.new(0.2, -0.1, -0.6) * CFrame.Angles(math.rad(-10), math.rad(30), math.rad(5))
+local VIEW_MODEL_LERP_SPEED = 12
 local INSPECT_ROTATE_SPEED = 0.5
+local VIEW_MODEL_SCALE = 0.7 -- Scale down weapons for better visibility
 
 local BOB_PATTERNS = {
 	Idle = { amplitude = 0.02, frequency = 1 },
@@ -120,6 +121,19 @@ function ViewmodelController:createProceduralViewmodel()
 			part.Massless = true
 			part.CastShadow = false
 			part.LocalTransparencyModifier = 0
+
+			-- Scale down for better viewmodel appearance
+			part.Size = part.Size * VIEW_MODEL_SCALE
+		end
+	end
+
+	-- Reposition welded parts after scaling
+	for _, obj in ipairs(model:GetDescendants()) do
+		if obj:IsA("Weld") or obj:IsA("WeldConstraint") or obj:IsA("Motor6D") then
+			if obj:IsA("Weld") or obj:IsA("Motor6D") then
+				obj.C0 = obj.C0 * CFrame.new(obj.C0.Position * (VIEW_MODEL_SCALE - 1))
+				obj.C1 = obj.C1 * CFrame.new(obj.C1.Position * (VIEW_MODEL_SCALE - 1))
+			end
 		end
 	end
 
