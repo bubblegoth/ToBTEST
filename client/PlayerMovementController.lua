@@ -79,7 +79,21 @@ end
 local function isMoving()
 	local humanoid = getHumanoid()
 	if not humanoid then return false end
-	return humanoid.MoveVector.Magnitude > 0.1
+
+	-- Use MoveDirection (older, more compatible) instead of MoveVector
+	local moveDir = humanoid.MoveDirection
+	if moveDir and moveDir.Magnitude > 0.1 then
+		return true
+	end
+
+	-- Fallback: Check velocity
+	local rootPart = getRootPart()
+	if rootPart then
+		local velocity = rootPart.AssemblyLinearVelocity or rootPart.Velocity
+		return velocity.Magnitude > 1
+	end
+
+	return false
 end
 
 local function canSlide()
