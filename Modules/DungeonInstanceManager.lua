@@ -136,8 +136,29 @@ function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 	-- Position the dungeon at the correct offset for this floor
 	local floorOffset = Vector3.new(0, -1000 * floorNumber, 0)
 	print("[DungeonInstanceManager] Moving dungeon to offset:", floorOffset)
-	dungeonModel:MoveTo(floorOffset)
-	print("[DungeonInstanceManager] ✓ Dungeon positioned")
+	print("[DungeonInstanceManager] Dungeon current pivot:", dungeonModel:GetPivot().Position)
+
+	-- Use PivotTo for reliable model positioning (MoveTo doesn't work well with complex models)
+	-- Get the current pivot, then ADD the floor offset to move it down
+	local currentPivot = dungeonModel:GetPivot()
+	local newPosition = currentPivot.Position + floorOffset
+	local targetPivot = CFrame.new(newPosition) * (currentPivot - currentPivot.Position)
+	dungeonModel:PivotTo(targetPivot)
+
+	print("[DungeonInstanceManager] ✓ Dungeon positioned at:", newPosition)
+
+	-- Verify spawn markers moved correctly
+	local spawnsFolder = dungeonModel:FindFirstChild("Spawns")
+	if spawnsFolder then
+		local playerSpawn = spawnsFolder:FindFirstChild("PlayerSpawn")
+		if playerSpawn then
+			print("[DungeonInstanceManager] PlayerSpawn after move:", playerSpawn.Position)
+		end
+		local firstEnemySpawn = spawnsFolder:FindFirstChildOfClass("Part")
+		if firstEnemySpawn and firstEnemySpawn:GetAttribute("SpawnType") == "Enemy" then
+			print("[DungeonInstanceManager] First enemy spawn after move:", firstEnemySpawn.Position)
+		end
+	end
 
 	-- Spawn enemies in the dungeon
 	print("[DungeonInstanceManager] 🔍 Spawning enemies for floor", floorNumber)
