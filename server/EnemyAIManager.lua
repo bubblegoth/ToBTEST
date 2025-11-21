@@ -255,7 +255,7 @@ function EnemyAI:equipWeapon()
 	weapon.IsEnemyWeapon = true
 
 	-- Create weapon tool and equip it
-	local weaponTool = WeaponToolBuilder:BuildWeaponTool(weapon)
+	local weaponTool = WeaponToolBuilder:CreateWeaponTool(weapon)
 	if weaponTool then
 		weaponTool.Parent = self.model
 		self.humanoid:EquipTool(weaponTool)
