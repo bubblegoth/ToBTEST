@@ -42,23 +42,49 @@ local FONT_DESC   = Enum.Font.Gotham         -- Clean details
 
 print("🗡️ [HUD] Colors and fonts defined")
 
--- PARCEL: Parchment frame helper
+-- PARCEL: Parchment frame helper with depth
 local function parchmentFrame(parent, size, pos, anchor)
+	-- Shadow layer (depth)
+	local shadow = Instance.new("Frame")
+	shadow.Size = size
+	shadow.Position = pos + UDim2.new(0, 4, 0, 4) -- Offset shadow
+	shadow.AnchorPoint = anchor or Vector2.new(0,0)
+	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	shadow.BackgroundTransparency = 0.7
+	shadow.BorderSizePixel = 0
+	shadow.ZIndex = 1
+	shadow.Parent = parent
+
+	local shadowCorner = Instance.new("UICorner")
+	shadowCorner.CornerRadius = UDim.new(0, 12)
+	shadowCorner.Parent = shadow
+
+	-- Main frame
 	local frame = Instance.new("Frame")
 	frame.Size = size
 	frame.Position = pos
 	frame.AnchorPoint = anchor or Vector2.new(0,0)
 	frame.BackgroundColor3 = C.Parchment
 	frame.BorderSizePixel = 0
+	frame.ZIndex = 2
 	frame.Parent = parent
 
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 12)
 	corner.Parent = frame
 
+	-- Inner border (depth illusion)
+	local innerStroke = Instance.new("UIStroke")
+	innerStroke.Color = C.DarkP
+	innerStroke.Thickness = 2
+	innerStroke.Transparency = 0.3
+	innerStroke.Parent = frame
+
+	-- Outer border
 	local stroke = Instance.new("UIStroke")
 	stroke.Color = C.Ink
 	stroke.Thickness = 3
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	stroke.Parent = frame
 
 	-- Burnt edge gradient
@@ -101,24 +127,24 @@ vcorner.Parent = vignette
 
 print("🗡️ [HUD] Creating VIGOUR bar...")
 
--- VIGOUR BAR (Bottom-Left, segmented scroll)
-local vigourScroll = parchmentFrame(screenGui, UDim2.new(0, 480, 0, 110), UDim2.new(0, 30, 1, -130), Vector2.new(0,1))
+-- VIGOUR BAR (Bottom-Left, segmented scroll) - Scaled down 30%
+local vigourScroll = parchmentFrame(screenGui, UDim2.new(0, 340, 0, 80), UDim2.new(0, 20, 1, -90), Vector2.new(0,1))
 
 local vigourBg = Instance.new("Frame")
-vigourBg.Size = UDim2.new(1, -20, 0, 45)
-vigourBg.Position = UDim2.new(0, 10, 0, 55)
+vigourBg.Size = UDim2.new(1, -16, 0, 32)
+vigourBg.Position = UDim2.new(0, 8, 0, 40)
 vigourBg.BackgroundColor3 = C.DarkP
 vigourBg.Parent = vigourScroll
-local bgCorner = Instance.new("UICorner", vigourBg); bgCorner.CornerRadius = UDim.new(0, 8)
+local bgCorner = Instance.new("UICorner", vigourBg); bgCorner.CornerRadius = UDim.new(0, 6)
 
 local vigourFill = Instance.new("Frame")
 vigourFill.Name = "Fill"
-vigourFill.Size = UDim2.new(1, -10, 1, -10)
-vigourFill.Position = UDim2.new(0, 5, 0, 5)
+vigourFill.Size = UDim2.new(1, -8, 1, -8)
+vigourFill.Position = UDim2.new(0, 4, 0, 4)
 vigourFill.BackgroundColor3 = C.LightInk
 vigourFill.BorderSizePixel = 0
 vigourFill.Parent = vigourBg
-local fillCorner = Instance.new("UICorner", vigourFill); fillCorner.CornerRadius = UDim.new(0, 6)
+local fillCorner = Instance.new("UICorner", vigourFill); fillCorner.CornerRadius = UDim.new(0, 4)
 
 -- Segment dividers (4 segments)
 for i = 1, 3 do
@@ -131,11 +157,11 @@ for i = 1, 3 do
 end
 
 local vigourText = Instance.new("TextLabel")
-vigourText.Size = UDim2.new(1, -20, 0, 45)
-vigourText.Position = UDim2.new(0, 10, 0, 5)
+vigourText.Size = UDim2.new(1, -16, 0, 32)
+vigourText.Position = UDim2.new(0, 8, 0, 4)
 vigourText.BackgroundTransparency = 1
 vigourText.Font = FONT_TITLE
-vigourText.TextSize = 32
+vigourText.TextSize = 22
 vigourText.TextColor3 = C.Ink
 vigourText.TextStrokeTransparency = 0.5
 vigourText.TextStrokeColor3 = C.Abyss
@@ -144,11 +170,11 @@ vigourText.TextXAlignment = Enum.TextXAlignment.Left
 vigourText.Parent = vigourScroll
 
 local vigourNums = Instance.new("TextLabel")
-vigourNums.Size = UDim2.new(1, -20, 0, 35)
-vigourNums.Position = UDim2.new(0, 10, 0, 45)
+vigourNums.Size = UDim2.new(1, -16, 0, 24)
+vigourNums.Position = UDim2.new(0, 8, 0, 32)
 vigourNums.BackgroundTransparency = 1
 vigourNums.Font = FONT_NUM
-vigourNums.TextSize = 28
+vigourNums.TextSize = 20
 vigourNums.TextColor3 = C.TorchGlow
 vigourNums.TextStrokeTransparency = 0.4
 vigourNums.TextStrokeColor3 = C.Abyss
@@ -158,15 +184,15 @@ vigourNums.Parent = vigourScroll
 
 print("🗡️ [HUD] Creating POWDER counter...")
 
--- QUARTERS (Bottom-Right, massive gothic nums)
-local quartersScroll = parchmentFrame(screenGui, UDim2.new(0, 420, 0, 140), UDim2.new(1, -50, 1, -110), Vector2.new(1,1))
+-- QUARTERS (Bottom-Right, ammo counter) - Scaled down 30%
+local quartersScroll = parchmentFrame(screenGui, UDim2.new(0, 280, 0, 100), UDim2.new(1, -30, 1, -80), Vector2.new(1,1))
 
 local quartersBig = Instance.new("TextLabel")
-quartersBig.Size = UDim2.new(1, 0, 0, 100)
-quartersBig.Position = UDim2.new(0, 0, 0, 10)
+quartersBig.Size = UDim2.new(1, 0, 0, 70)
+quartersBig.Position = UDim2.new(0, 0, 0, 8)
 quartersBig.BackgroundTransparency = 1
 quartersBig.Font = FONT_NUM
-quartersBig.TextSize = 120
+quartersBig.TextSize = 80
 quartersBig.TextColor3 = C.TorchGlow
 quartersBig.TextStrokeTransparency = 0.3
 quartersBig.TextStrokeColor3 = C.Abyss
@@ -176,11 +202,11 @@ quartersBig.TextYAlignment = Enum.TextYAlignment.Bottom
 quartersBig.Parent = quartersScroll
 
 local quartersRes = Instance.new("TextLabel")
-quartersRes.Size = UDim2.new(1, 0, 0, 40)
-quartersRes.Position = UDim2.new(0, 0, 1, -40)
+quartersRes.Size = UDim2.new(1, 0, 0, 28)
+quartersRes.Position = UDim2.new(0, 0, 1, -28)
 quartersRes.BackgroundTransparency = 1
 quartersRes.Font = FONT_TITLE
-quartersRes.TextSize = 26
+quartersRes.TextSize = 18
 quartersRes.TextColor3 = C.Ink
 quartersRes.TextStrokeTransparency = 0.6
 quartersRes.TextStrokeColor3 = C.Abyss
@@ -189,11 +215,11 @@ quartersRes.TextXAlignment = Enum.TextXAlignment.Center
 quartersRes.Parent = quartersScroll
 
 local quartersPool = Instance.new("TextLabel")
-quartersPool.Size = UDim2.new(1, 0, 0, 30)
-quartersPool.Position = UDim2.new(0, 0, 1, -10)
+quartersPool.Size = UDim2.new(1, 0, 0, 22)
+quartersPool.Position = UDim2.new(0, 0, 1, -8)
 quartersPool.BackgroundTransparency = 1
 quartersPool.Font = FONT_DESC
-quartersPool.TextSize = 22
+quartersPool.TextSize = 16
 quartersPool.TextColor3 = C.LightInk
 quartersPool.Text = "/ 240"
 quartersPool.TextXAlignment = Enum.TextXAlignment.Right
@@ -201,14 +227,14 @@ quartersPool.Parent = quartersScroll
 
 print("🗡️ [HUD] Creating ESTEEM display...")
 
--- ESTEEM (Top-Right scroll)
-local esteemScroll = parchmentFrame(screenGui, UDim2.new(0, 380, 0, 80), UDim2.new(1, -40, 0, 40), Vector2.new(1,0))
+-- ESTEEM (Top-Right scroll) - Scaled down 30%
+local esteemScroll = parchmentFrame(screenGui, UDim2.new(0, 260, 0, 56), UDim2.new(1, -28, 0, 28), Vector2.new(1,0))
 
 local esteemText = Instance.new("TextLabel")
 esteemText.Size = UDim2.new(1,0,1,0)
 esteemText.BackgroundTransparency = 1
 esteemText.Font = FONT_TITLE
-esteemText.TextSize = 34
+esteemText.TextSize = 24
 esteemText.TextColor3 = C.TorchGlow
 esteemText.TextStrokeTransparency = 0.5
 esteemText.TextStrokeColor3 = C.Abyss
@@ -218,15 +244,15 @@ esteemText.Parent = esteemScroll
 
 print("🗡️ [HUD] Creating REGION banner...")
 
--- REGION BANNER (Top-Center, grand inscription)
-local regionBanner = parchmentFrame(screenGui, UDim2.new(0, 850, 0, 90), UDim2.new(0.5, 0, 0, 30), Vector2.new(0.5,0))
+-- REGION BANNER (Top-Center, grand inscription) - Scaled down 30%
+local regionBanner = parchmentFrame(screenGui, UDim2.new(0, 600, 0, 64), UDim2.new(0.5, 0, 0, 20), Vector2.new(0.5,0))
 
 local regionText = Instance.new("TextLabel")
-regionText.Size = UDim2.new(1, -40, 1, 0)
-regionText.Position = UDim2.new(0, 20, 0, 0)
+regionText.Size = UDim2.new(1, -28, 1, 0)
+regionText.Position = UDim2.new(0, 14, 0, 0)
 regionText.BackgroundTransparency = 1
 regionText.Font = FONT_TITLE
-regionText.TextSize = 48
+regionText.TextSize = 34
 regionText.TextColor3 = C.Ink
 regionText.TextStrokeTransparency = 0.3
 regionText.TextStrokeColor3 = C.Abyss
@@ -264,7 +290,7 @@ local function updateVigour()
 	local hp, maxhp = math.floor(hum.Health), math.floor(hum.MaxHealth)
 	vigourNums.Text = hp .. " / " .. maxhp
 	local ratio = hp / maxhp
-	vigourFill.Size = UDim2.new(math.max(ratio, 0.02), -10, 1, -10)
+	vigourFill.Size = UDim2.new(math.max(ratio, 0.02), -8, 1, -8)
 
 	local isAfflicted = ratio <= 0.25
 	if isAfflicted ~= afflicted then
