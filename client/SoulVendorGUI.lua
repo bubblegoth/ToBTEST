@@ -267,6 +267,8 @@ end
 -- ════════════════════════════════════════════════════════════════════════════
 
 local vendorGUI = createVendorGUI()
+local isGUIOpen = false
+local unlockConnection = nil
 
 local function showVendorGUI(upgradeOptions, playerSouls)
 	local dialogFrame = vendorGUI.DialogFrame
@@ -291,32 +293,51 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 	previousCameraMode = Player.CameraMode
 
 	-- Unlock mouse and camera for GUI interaction
-	UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- Unlock mouse
-	UserInputService.MouseIconEnabled = true -- Show cursor
-	Player.CameraMode = Enum.CameraMode.Classic -- Allow camera to move freely (unlock from first-person)
+	local function forceUnlock()
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		UserInputService.MouseIconEnabled = true
+		Camera.CameraMode = Enum.CameraMode.Classic
+		Player.CameraMode = Enum.CameraMode.Classic
+	end
+
+	-- Force unlock immediately
+	forceUnlock()
+
+	-- Continuously enforce unlock while GUI is open (in case something tries to re-lock)
+	isGUIOpen = true
+	if unlockConnection then
+		unlockConnection:Disconnect()
+	end
+	unlockConnection = game:GetService("RunService").RenderStepped:Connect(function()
+		if isGUIOpen then
+			forceUnlock()
+		end
+	end)
 
 	-- Show GUI
 	vendorGUI.Enabled = true
-	print("[SoulVendorGUI] GUI opened - mouse unlocked, camera mode:", Player.CameraMode, "cursor shown")
+	print("[SoulVendorGUI] GUI opened - FORCING mouse unlock, camera mode:", Camera.CameraMode, Player.CameraMode)
 end
 
 local function hideVendorGUI()
 	vendorGUI.Enabled = false
+	isGUIOpen = false
+
+	-- Disconnect the continuous unlock loop
+	if unlockConnection then
+		unlockConnection:Disconnect()
+		unlockConnection = nil
+	end
 
 	-- Restore FPS mouse lock and camera mode
 	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 	UserInputService.MouseIconEnabled = false
-
-	-- Restore camera mode if it was saved
-	if previousCameraMode then
-		Player.CameraMode = previousCameraMode
-	else
-		Player.CameraMode = Enum.CameraMode.LockFirstPerson -- Default to first-person locked
-	end
+	Camera.CameraMode = Enum.CameraMode.LockFirstPerson
+	Player.CameraMode = Enum.CameraMode.LockFirstPerson
 
 	previousMouseBehavior = nil
 	previousCameraMode = nil
-	print("[SoulVendorGUI] GUI closed - mouse locked, camera mode:", Player.CameraMode, "cursor hidden")
+	print("[SoulVendorGUI] GUI closed - mouse LOCKED, camera mode:", Camera.CameraMode, Player.CameraMode)
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
