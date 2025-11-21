@@ -90,6 +90,11 @@ local function Initialize()
 	-- Wait for workspace to load
 	wait(1)
 
+	-- CRITICAL: Disable Roblox's kill plane for deep dungeons
+	-- Dungeons go down to Y = -666000 (Floor 666), default kill plane is Y = -500
+	workspace.FallenPartsDestroyHeight = -700000
+	print("[ServerInit] Set FallenPartsDestroyHeight to -700000 (dungeons go to Y = -666000)")
+
 	-- Spawn Soul Vendor
 	SpawnSoulVendor()
 
