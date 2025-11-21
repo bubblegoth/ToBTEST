@@ -136,7 +136,7 @@ function WeaponToolBuilder:CreateWeaponTool(weaponData)
 		tool:SetAttribute("Part_Manufacturer", weaponData.Parts.Manufacturer.Name)
 	end
 
-	-- Store full weapon data as JSON (for detailed inspection)
+	-- Store full weapon data as JSON (for viewmodel and detailed inspection)
 	local HttpService = game:GetService("HttpService")
 	local weaponDataCopy = {
 		Name = weaponData.Name,
@@ -149,7 +149,10 @@ function WeaponToolBuilder:CreateWeaponTool(weaponData)
 		Capacity = weaponData.Capacity,
 		Accuracy = weaponData.Accuracy,
 		Range = weaponData.Range,
-		ReloadTime = weaponData.ReloadTime
+		ReloadTime = weaponData.ReloadTime,
+		Pellets = weaponData.Pellets,
+		-- Include Parts so viewmodel can rebuild the weapon model
+		Parts = weaponData.Parts
 	}
 	tool:SetAttribute("WeaponDataJSON", HttpService:JSONEncode(weaponDataCopy))
 
