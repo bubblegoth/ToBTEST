@@ -147,12 +147,34 @@ local function updateFloor()
 	end
 end
 
-local function updateAmmo()
-	-- TODO: Implement ammo pool system
-	-- For now, show unlimited ammo
-	ammoLabel.Text = "∞ Ammo"
+local currentAmmoData = {
+	MagAmmo = 0,
+	PoolAmmo = 0,
+	MagSize = 0,
+	IsReloading = false,
+}
 
-	-- Future implementation will show: "12 / 48" (mag / pool)
+local function updateAmmo()
+	if currentAmmoData.IsReloading then
+		ammoLabel.Text = "⟳ Reloading..."
+		ammoLabel.TextColor3 = COLOR_SECONDARY
+	elseif currentAmmoData.MagSize == 0 then
+		-- No weapon equipped
+		ammoLabel.Text = "No Weapon"
+		ammoLabel.TextColor3 = COLOR_SECONDARY
+	else
+		-- Show mag / pool
+		ammoLabel.Text = string.format("%d / %d", currentAmmoData.MagAmmo, currentAmmoData.PoolAmmo)
+
+		-- Color based on ammo status
+		if currentAmmoData.MagAmmo == 0 then
+			ammoLabel.TextColor3 = COLOR_HEALTH -- Red when empty
+		elseif currentAmmoData.MagAmmo <= currentAmmoData.MagSize * 0.3 then
+			ammoLabel.TextColor3 = COLOR_ACCENT -- Gold when low
+		else
+			ammoLabel.TextColor3 = COLOR_PRIMARY -- Normal color
+		end
+	end
 end
 
 local function updateAllHUD()
@@ -214,6 +236,27 @@ if playerStats then
 else
 	warn("[HUD] PlayerStats not found after 10 seconds!")
 end
+
+-- Listen for ammo updates from ProjectileShooter
+task.spawn(function()
+	-- Wait for AmmoUpdateEvent to be created by ProjectileShooter
+	local maxWait = 10
+	local waited = 0
+	while not _G.AmmoUpdateEvent and waited < maxWait do
+		task.wait(0.5)
+		waited = waited + 0.5
+	end
+
+	if _G.AmmoUpdateEvent then
+		print("[HUD] AmmoUpdateEvent found, setting up ammo listener")
+		_G.AmmoUpdateEvent.Event:Connect(function(ammoData)
+			currentAmmoData = ammoData
+			updateAmmo()
+		end)
+	else
+		warn("[HUD] AmmoUpdateEvent not found after", maxWait, "seconds - ammo display will not update")
+	end
+end)
 
 -- Update HUD every second as a fallback
 task.spawn(function()

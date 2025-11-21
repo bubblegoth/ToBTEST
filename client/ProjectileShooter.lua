@@ -34,7 +34,7 @@ local Config = {
 	MuzzleFlashEnabled = true,
 
 	-- Ammo management
-	InfiniteAmmo = false, -- Set to true for testing
+	InfiniteAmmo = false, -- Ammo pool system enabled
 
 	-- Reloading
 	AutoReload = true,
@@ -47,9 +47,25 @@ local Config = {
 local currentWeapon = nil
 local weaponStats = {}
 local ammoInMag = 0
+local ammoPool = 0 -- Reserve ammo pool
 local isReloading = false
 local lastFireTime = 0
 local canFire = true
+
+-- ============================================================
+-- AMMO POOL CONFIGURATION (by weapon type)
+-- ============================================================
+
+local AmmoPoolSizes = {
+	Pistol = 120,      -- 120 rounds reserve
+	Revolver = 72,     -- 72 rounds reserve
+	SMG = 240,         -- 240 rounds reserve
+	Rifle = 180,       -- 180 rounds reserve
+	Shotgun = 48,      -- 48 shells reserve
+	Sniper = 60,       -- 60 rounds reserve
+	HeavyWeapon = 300, -- 300 rounds reserve
+	Default = 150,     -- Fallback
+}
 
 -- ============================================================
 -- REMOTE EVENTS
@@ -61,6 +77,27 @@ if not damageEvent then
 	warn("[ProjectileShooter] ✗ DealDamage RemoteEvent not found after 10 second wait!")
 else
 	print("[ProjectileShooter] ✓ DealDamage RemoteEvent connected")
+end
+
+-- Create ammo update event for HUD
+local ammoUpdateEvent = Instance.new("BindableEvent")
+ammoUpdateEvent.Name = "AmmoUpdate"
+
+-- Export for HUD to access
+_G.AmmoUpdateEvent = ammoUpdateEvent
+
+-- ============================================================
+-- AMMO DISPLAY UPDATE
+-- ============================================================
+
+function updateAmmoDisplay()
+	-- Fire event with current ammo data for HUD to consume
+	ammoUpdateEvent:Fire({
+		MagAmmo = ammoInMag,
+		PoolAmmo = ammoPool,
+		MagSize = weaponStats.Capacity or 0,
+		IsReloading = isReloading,
+	})
 end
 
 -- ============================================================
@@ -331,6 +368,7 @@ local function fireWeapon()
 	-- Consume ammo
 	if not Config.InfiniteAmmo then
 		ammoInMag = ammoInMag - 1
+		updateAmmoDisplay()
 	end
 
 	-- Calculate shot origin and direction
@@ -367,6 +405,10 @@ end
 
 function reload()
 	if isReloading or ammoInMag >= weaponStats.Capacity then return end
+	if ammoPool <= 0 then
+		print("[ProjectileShooter] ⚠ No ammo in reserve!")
+		return
+	end
 
 	isReloading = true
 	canFire = false
@@ -375,11 +417,19 @@ function reload()
 
 	task.wait(weaponStats.ReloadTime)
 
-	ammoInMag = weaponStats.Capacity
+	-- Calculate how much ammo we need to fill the magazine
+	local ammoNeeded = weaponStats.Capacity - ammoInMag
+	local ammoToAdd = math.min(ammoNeeded, ammoPool)
+
+	-- Transfer ammo from pool to magazine
+	ammoInMag = ammoInMag + ammoToAdd
+	ammoPool = ammoPool - ammoToAdd
+
 	isReloading = false
 	canFire = true
 
-	print(string.format("[ProjectileShooter] Reload complete! Ammo: %d", ammoInMag))
+	print(string.format("[ProjectileShooter] Reload complete! Ammo: %d / %d", ammoInMag, ammoPool))
+	updateAmmoDisplay()
 end
 
 -- ============================================================
@@ -394,9 +444,16 @@ local function onWeaponEquipped(tool)
 	canFire = true
 	lastFireTime = 0
 
+	-- Initialize ammo pool based on weapon type
+	local weaponType = tool:GetAttribute("WeaponType") or "Default"
+	ammoPool = AmmoPoolSizes[weaponType] or AmmoPoolSizes.Default
+
 	print(string.format("[ProjectileShooter] Equipped: %s", tool.Name))
 	print(string.format("  Damage: %.0f | Fire Rate: %.2fs | Accuracy: %.0f%%",
 		weaponStats.Damage, weaponStats.FireRate, weaponStats.Accuracy))
+	print(string.format("  Ammo: %d / %d", ammoInMag, ammoPool))
+
+	updateAmmoDisplay()
 end
 
 local function onWeaponUnequipped()
