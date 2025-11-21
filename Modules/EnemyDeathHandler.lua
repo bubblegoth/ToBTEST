@@ -121,8 +121,8 @@ end
 local function createWeaponDrop(position, level, parent)
 	-- Try using ModularLootGen if available
 	if ModularLootGen and WeaponGenerator then
-		local weaponData = WeaponGenerator.Generate(level)
-		local lootDrop = ModularLootGen.CreateLootDrop(weaponData, position, parent or workspace)
+		-- ModularLootGen uses SpawnWeaponLoot(position, level, forcedRarity)
+		local lootDrop = ModularLootGen:SpawnWeaponLoot(position, level, nil)
 		return lootDrop
 	end
 
