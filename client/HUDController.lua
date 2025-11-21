@@ -3,11 +3,7 @@
 	Client-side HUD that displays player stats
 	Place this in StarterPlayer.StarterPlayerScripts
 
-	Displays:
-	- Health (top-left)
-	- Ammo (bottom-right) - mag/pool or ∞
-	- Souls (top-right)
-	- Current Floor (top-center)
+	REVISION: DOOM/BORDERLANDS STYLE
 ]]
 
 local Players = game:GetService("Players")
@@ -27,13 +23,13 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = PlayerGui
 
--- Gothic color scheme
-local COLOR_PRIMARY = Color3.fromRGB(200, 200, 200) -- Light gray text
-local COLOR_SECONDARY = Color3.fromRGB(150, 150, 150) -- Dim gray
-local COLOR_ACCENT = Color3.fromRGB(220, 180, 100) -- Gold accent
-local COLOR_HEALTH = Color3.fromRGB(180, 50, 50) -- Dark red
-local COLOR_BACKGROUND = Color3.fromRGB(20, 20, 20) -- Very dark background
-local FONT = Enum.Font.SourceSansBold
+-- BORDERLANDS/INDUSTRIAL STYLE
+local COLOR_PRIMARY = Color3.fromRGB(255, 255, 255) -- White Text
+local COLOR_SECONDARY = Color3.fromRGB(150, 150, 150) -- Dim Gray
+local COLOR_ACCENT = Color3.fromRGB(255, 170, 0) -- Bright Orange/Yellow (Eridium/Rare Loot)
+local COLOR_HEALTH = Color3.fromRGB(80, 200, 80) -- Bright Green/Lime
+local COLOR_BACKGROUND = Color3.fromRGB(50, 50, 50) -- Dark Industrial Gray
+local FONT = Enum.Font.RobotoMono -- Monospaced font for industrial feel
 
 -- Helper function to create text labels
 local function createLabel(name, position, anchorPoint, textColor, textSize)
@@ -41,10 +37,11 @@ local function createLabel(name, position, anchorPoint, textColor, textSize)
 	frame.Name = name .. "Frame"
 	frame.AnchorPoint = anchorPoint or Vector2.new(0, 0)
 	frame.Position = position
-	frame.Size = UDim2.new(0, 200, 0, 50)
-	frame.BackgroundTransparency = 0.3
+	frame.Size = UDim2.new(0, 250, 0, 45)
+	frame.BackgroundTransparency = 0.1
 	frame.BackgroundColor3 = COLOR_BACKGROUND
-	frame.BorderSizePixel = 0
+	frame.BorderSizePixel = 1
+	frame.BorderColor3 = COLOR_PRIMARY
 	frame.Parent = screenGui
 
 	local label = Instance.new("TextLabel")
@@ -85,10 +82,10 @@ soulsLabel.TextXAlignment = Enum.TextXAlignment.Right
 -- Floor (Top-Center)
 local floorLabel = createLabel(
 	"Floor",
-	UDim2.new(0.5, 0, 0, 10),
+	UDim2.new(0.5, 0, 0, 5),
 	Vector2.new(0.5, 0),
 	COLOR_PRIMARY,
-	26
+	28
 )
 floorLabel.TextXAlignment = Enum.TextXAlignment.Center
 
@@ -118,7 +115,14 @@ local function updateHealth()
 	local health = math.floor(humanoid.Health)
 	local maxHealth = math.floor(humanoid.MaxHealth)
 
-	healthLabel.Text = string.format("HP: %d / %d", health, maxHealth)
+	healthLabel.Text = string.format("SHIELD/HP: %d / %d", health, maxHealth)
+
+	-- Change color if health is low
+	if health / maxHealth <= 0.25 then
+		healthLabel.TextColor3 = Color3.fromRGB(255, 50, 50) -- Red for critical health
+	else
+		healthLabel.TextColor3 = COLOR_HEALTH
+	end
 end
 
 local function updateSouls()
@@ -128,7 +132,7 @@ local function updateSouls()
 	local soulsValue = playerStats:FindFirstChild("Souls")
 	if not soulsValue then return end
 
-	soulsLabel.Text = string.format("⚡ %d Souls", soulsValue.Value)
+	soulsLabel.Text = string.format("⚡ %d E-Bits", soulsValue.Value)
 end
 
 local function updateFloor()
@@ -141,9 +145,9 @@ local function updateFloor()
 	local floor = floorValue.Value
 
 	if floor == 0 then
-		floorLabel.Text = "⛪ Church"
+		floorLabel.Text = "[ZONE: SANCTUARY]"
 	else
-		floorLabel.Text = string.format("🏰 Floor %d", floor)
+		floorLabel.Text = string.format("[ZONE: THE VAULT - LVL %d]", floor)
 	end
 end
 
@@ -156,23 +160,21 @@ local currentAmmoData = {
 
 local function updateAmmo()
 	if currentAmmoData.IsReloading then
-		ammoLabel.Text = "⟳ Reloading..."
+		ammoLabel.Text = "RELOADING"
 		ammoLabel.TextColor3 = COLOR_SECONDARY
 	elseif currentAmmoData.MagSize == 0 then
-		-- No weapon equipped
-		ammoLabel.Text = "No Weapon"
+		ammoLabel.Text = "FISTS READY"
 		ammoLabel.TextColor3 = COLOR_SECONDARY
 	else
-		-- Show mag / pool
 		ammoLabel.Text = string.format("%d / %d", currentAmmoData.MagAmmo, currentAmmoData.PoolAmmo)
 
 		-- Color based on ammo status
 		if currentAmmoData.MagAmmo == 0 then
-			ammoLabel.TextColor3 = COLOR_HEALTH -- Red when empty
+			ammoLabel.TextColor3 = Color3.fromRGB(255, 50, 50) -- Red when empty
 		elseif currentAmmoData.MagAmmo <= currentAmmoData.MagSize * 0.3 then
-			ammoLabel.TextColor3 = COLOR_ACCENT -- Gold when low
+			ammoLabel.TextColor3 = COLOR_ACCENT -- Orange/Yellow when low
 		else
-			ammoLabel.TextColor3 = COLOR_PRIMARY -- Normal color
+			ammoLabel.TextColor3 = COLOR_PRIMARY -- White/Normal color
 		end
 	end
 end
