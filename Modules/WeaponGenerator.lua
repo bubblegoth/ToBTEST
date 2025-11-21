@@ -83,14 +83,28 @@ function WeaponGenerator:RarityValue(rarity)
 	return values[rarity] or 1
 end
 
-function WeaponGenerator:GetRandomPart(partType, maxRarity)
+function WeaponGenerator:GetRandomPart(partType, maxRarity, weaponTypeName)
 	local parts = WeaponParts[partType]
 	if not parts then return nil end
 
-	-- Filter by rarity
+	-- Filter by rarity and weapon type compatibility
 	local validParts = {}
 	for _, part in ipairs(parts) do
-		if self:RarityValue(part.Rarity or "Common") <= self:RarityValue(maxRarity) then
+		local rarityValid = self:RarityValue(part.Rarity or "Common") <= self:RarityValue(maxRarity)
+		local typeValid = true
+
+		-- Check if part has CompatibleTypes restriction
+		if part.CompatibleTypes and weaponTypeName then
+			typeValid = false
+			for _, compatibleType in ipairs(part.CompatibleTypes) do
+				if compatibleType == weaponTypeName then
+					typeValid = true
+					break
+				end
+			end
+		end
+
+		if rarityValid and typeValid then
 			table.insert(validParts, part)
 		end
 	end
@@ -142,16 +156,16 @@ function WeaponGenerator:GenerateWeapon(level, baseTypeName, forcedRarity)
 		base = baseTypes[rng:NextInteger(1, #baseTypes)]
 	end
 
-	-- Select parts
+	-- Select parts (filtered by weapon type for compatibility)
 	local parts = {
 		Base = base,
 		Manufacturer = WeaponParts.Manufacturers[rng:NextInteger(1, #WeaponParts.Manufacturers)],
-		Stock = self:GetRandomPart("Stocks", maxRarity),
-		Body = self:GetRandomPart("Bodies", maxRarity),
-		Barrel = self:GetRandomPart("Barrels", maxRarity),
-		Magazine = self:GetRandomPart("Magazines", maxRarity),
-		Sight = self:GetRandomPart("Sights", maxRarity),
-		Accessory = self:GetRandomPart("Accessories", maxRarity)
+		Stock = self:GetRandomPart("Stocks", maxRarity, base.Name),
+		Body = self:GetRandomPart("Bodies", maxRarity, base.Name),
+		Barrel = self:GetRandomPart("Barrels", maxRarity, base.Name),
+		Magazine = self:GetRandomPart("Magazines", maxRarity, base.Name),
+		Sight = self:GetRandomPart("Sights", maxRarity, base.Name),
+		Accessory = self:GetRandomPart("Accessories", maxRarity, base.Name)
 	}
 
 	-- Build weapon stats

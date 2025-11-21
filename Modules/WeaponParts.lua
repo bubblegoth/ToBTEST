@@ -149,6 +149,7 @@ WeaponParts.Stocks = {
 	{
 		Name = "Heavy Stock",
 		Rarity = "Common",
+		CompatibleTypes = {"Assault Rifle", "Sniper Rifle", "Shotgun"},
 		Modifiers = {
 			Stability = 30,
 			Accuracy = 20,
@@ -161,6 +162,7 @@ WeaponParts.Stocks = {
 	{
 		Name = "Standard Stock",
 		Rarity = "Common",
+		CompatibleTypes = {"Assault Rifle", "SMG", "Sniper Rifle", "Shotgun"},
 		Modifiers = {
 			Stability = 15,
 			Accuracy = 10,
@@ -171,6 +173,7 @@ WeaponParts.Stocks = {
 	{
 		Name = "Light Stock",
 		Rarity = "Uncommon",
+		CompatibleTypes = {"SMG", "Assault Rifle"},
 		Modifiers = {
 			Stability = 5,
 			ReloadSpeed = 15,
@@ -181,6 +184,7 @@ WeaponParts.Stocks = {
 	{
 		Name = "Skeleton Stock",
 		Rarity = "Rare",
+		CompatibleTypes = {"SMG", "Assault Rifle"},
 		Modifiers = {
 			Stability = -5,
 			Accuracy = -10,
@@ -192,6 +196,7 @@ WeaponParts.Stocks = {
 	{
 		Name = "No Stock",
 		Rarity = "Epic",
+		CompatibleTypes = {"SMG"},
 		Modifiers = {
 			Stability = -20,
 			Accuracy = -20,
@@ -205,6 +210,7 @@ WeaponParts.Stocks = {
 	{
 		Name = "Cursed Bone Stock",
 		Rarity = "Legendary",
+		CompatibleTypes = {"Sniper Rifle", "Assault Rifle"},
 		Modifiers = {
 			Stability = 40,
 			Accuracy = 30,
@@ -212,6 +218,51 @@ WeaponParts.Stocks = {
 			CritChance = 10
 		},
 		Description = "Ancient bones whisper of precision"
+	},
+	-- Pistol/Revolver Grips (no stocks for handguns)
+	{
+		Name = "Standard Grip",
+		Rarity = "Common",
+		CompatibleTypes = {"Pistol", "Revolver"},
+		Modifiers = {
+			Stability = 10,
+			Accuracy = 5
+		},
+		Description = "Comfortable ergonomic grip"
+	},
+	{
+		Name = "Rubberized Grip",
+		Rarity = "Uncommon",
+		CompatibleTypes = {"Pistol", "Revolver"},
+		Modifiers = {
+			Stability = 15,
+			RecoilReduction = 10,
+			Accuracy = 8
+		},
+		Description = "Enhanced recoil control"
+	},
+	{
+		Name = "Competition Grip",
+		Rarity = "Rare",
+		CompatibleTypes = {"Pistol", "Revolver"},
+		Modifiers = {
+			Stability = 20,
+			Accuracy = 15,
+			CritChance = 5
+		},
+		Description = "Precision shooting grip"
+	},
+	{
+		Name = "Cursed Bone Grip",
+		Rarity = "Legendary",
+		CompatibleTypes = {"Pistol", "Revolver"},
+		Modifiers = {
+			Stability = 25,
+			Accuracy = 20,
+			CritChance = 10,
+			CritDamage = 15
+		},
+		Description = "Whispers guide your aim"
 	}
 }
 
