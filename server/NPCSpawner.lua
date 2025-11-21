@@ -22,8 +22,7 @@ if not Modules then
 	return
 end
 
-local NPCGenerator = require(Modules:WaitForChild("NPCGenerator"))
-local NPCConfig = require(Modules:WaitForChild("NPCConfig"))
+local MobGenerator = require(Modules:WaitForChild("MobGenerator"))
 local ChurchSystem = require(Modules:WaitForChild("ChurchSystem"))
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -130,59 +129,54 @@ local function SpawnSoulVendor()
 		return workspace:FindFirstChild("Soul Keeper")
 	end
 
-	print("[NPCSpawner] Generating Soul Vendor NPC...")
+	print("[NPCSpawner] Generating Soul Vendor NPC using MobGenerator...")
 
-	-- Generate Soul Vendor data
-	local vendorData = NPCGenerator.GenerateNPC("SOUL_VENDOR")
-	if not vendorData then
-		warn("[NPCSpawner] Failed to generate Soul Vendor data!")
-		return nil
-	end
+	-- Generate Soul Vendor with ghostly/mystical appearance using MobGenerator
+	local vendorModel, stats = MobGenerator.Generate({
+		name = "Soul Keeper",
+		color = Color3.fromRGB(150, 100, 200), -- Purple/ghostly color
+		material = Enum.Material.Neon, -- Ethereal glow
+		scale = 1.2, -- Slightly larger than normal mobs
+	})
 
-	-- Build the actual model
-	local vendorModel = NPCGenerator.BuildNPCModel(vendorData, workspace)
 	if not vendorModel then
-		warn("[NPCSpawner] Failed to build Soul Vendor model!")
+		warn("[NPCSpawner] Failed to generate Soul Vendor!")
 		return nil
 	end
 
 	-- Position vendor in Church (ON TOP of spawn part)
 	local vendorSpawnPoint = workspace:FindFirstChild(Config.VendorSpawnName)
 	if vendorSpawnPoint and vendorSpawnPoint:IsA("BasePart") then
-		local rootPart = vendorModel:FindFirstChild("HumanoidRootPart")
-		if rootPart then
-			-- First, temporarily position the model at origin to measure it
-			vendorModel:SetPrimaryPartCFrame(CFrame.new(0, 100, 0))
-			task.wait()
+		-- Parent to workspace first so physics can settle
+		vendorModel.Parent = workspace
+		task.wait(0.1) -- Let physics settle
 
-			-- Get bounding box of the model to find the actual bottom
-			local modelCFrame, modelSize = vendorModel:GetBoundingBox()
-			local modelBottomY = modelCFrame.Y - (modelSize.Y / 2) -- Lowest point of model
+		-- Get model's actual size using GetExtentsSize
+		local modelSize = vendorModel:GetExtentsSize()
+		local modelBottomOffset = modelSize.Y / 2
 
-			-- Calculate how far the bottom is below the HumanoidRootPart
-			local rootPartY = rootPart.Position.Y
-			local bottomOffset = rootPartY - modelBottomY
+		-- Calculate target position on top of spawn part
+		local spawnPartTop = vendorSpawnPoint.Position.Y + (vendorSpawnPoint.Size.Y / 2)
 
-			-- Calculate target position on top of spawn part
-			local spawnPartTop = vendorSpawnPoint.Position.Y + (vendorSpawnPoint.Size.Y / 2)
+		-- Position HumanoidRootPart so bottom of model sits on spawn part surface
+		local targetPosition = Vector3.new(
+			vendorSpawnPoint.Position.X,
+			spawnPartTop + modelBottomOffset, -- Feet on top surface
+			vendorSpawnPoint.Position.Z
+		)
 
-			-- Position HumanoidRootPart so bottom of model sits on spawn part
-			local targetPosition = Vector3.new(
-				vendorSpawnPoint.Position.X,
-				spawnPartTop + bottomOffset, -- Root positioned so feet are on top
-				vendorSpawnPoint.Position.Z
-			)
-
-			-- Set final position with rotation from spawn part
-			vendorModel:SetPrimaryPartCFrame(CFrame.new(targetPosition) * (vendorSpawnPoint.CFrame - vendorSpawnPoint.Position))
-			print("[NPCSpawner] Soul Vendor positioned ON TOP of", Config.VendorSpawnName, "- Bottom offset:", bottomOffset)
-		else
-			warn("[NPCSpawner] No HumanoidRootPart found in vendor model")
-		end
+		-- Set final position with rotation from spawn part
+		vendorModel:SetPrimaryPartCFrame(CFrame.new(targetPosition) * (vendorSpawnPoint.CFrame - vendorSpawnPoint.Position))
+		print(string.format("[NPCSpawner] Soul Vendor positioned ON TOP of %s (Height: %.2f)",
+			Config.VendorSpawnName, modelSize.Y))
 	else
+		vendorModel.Parent = workspace
 		vendorModel:SetPrimaryPartCFrame(Config.DefaultPosition)
 		warn("[NPCSpawner]", Config.VendorSpawnName, "not found, using default position")
 	end
+
+	-- Remove IsEnemy attribute (MobGenerator sets this, but vendor is not an enemy)
+	vendorModel:SetAttribute("IsEnemy", nil)
 
 	-- Make vendor invincible and stationary
 	local humanoid = vendorModel:FindFirstChildOfClass("Humanoid")
