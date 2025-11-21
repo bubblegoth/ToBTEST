@@ -69,6 +69,7 @@ local reloadProgress = 0
 local isReloading = false
 local meleeProgress = 0
 local isMelee = false
+local isAiming = false
 
 local ViewmodelController = {}
 
@@ -103,6 +104,7 @@ end
 
 -- Set ADS state
 function ViewmodelController:SetAiming(aimState)
+	isAiming = aimState
 	if aimState then
 		-- Transition to ADS offset
 		Config.TargetOffset = Config.ADSOffset
@@ -286,14 +288,17 @@ local function calculateBob(dt)
 	local character = player.Character
 	if not character then return CFrame.new() end
 
+	-- Reduce bob significantly when aiming
+	local bobMultiplier = isAiming and 0.1 or 1.0
+
 	local velocity = character:FindFirstChild("HumanoidRootPart")
 	if velocity then
 		local speed = velocity.AssemblyLinearVelocity.Magnitude
 		if speed > 1 then
 			bobOffset = bobOffset + dt * Config.BobSpeed * (speed / 16)
-			local bobY = math.sin(bobOffset) * Config.BobAmount
-			local bobX = math.cos(bobOffset * 0.5) * Config.BobAmount * 0.5
-			local bobZ = math.sin(bobOffset * 0.5) * Config.BobAmount * 0.3 -- Forward/back movement
+			local bobY = math.sin(bobOffset) * Config.BobAmount * bobMultiplier
+			local bobX = math.cos(bobOffset * 0.5) * Config.BobAmount * 0.5 * bobMultiplier
+			local bobZ = math.sin(bobOffset * 0.5) * Config.BobAmount * 0.3 * bobMultiplier -- Forward/back movement
 			return CFrame.new(bobX, bobY, bobZ)
 		end
 	end
