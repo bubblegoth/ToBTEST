@@ -423,4 +423,8 @@ player.CharacterAdded:Connect(function(character)
 end)
 
 print("[Viewmodel] System ready")
+
+-- Export to global for access from other LocalScripts
+_G.ViewmodelController = ViewmodelController
+
 return ViewmodelController

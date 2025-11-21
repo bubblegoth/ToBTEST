@@ -18,8 +18,12 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local camera = workspace.CurrentCamera
 
--- Get ViewmodelController for animations
-local ViewmodelController = require(player.PlayerScripts:WaitForChild("ViewmodelController"))
+-- Get ViewmodelController for animations (from global, set by ViewmodelController LocalScript)
+local ViewmodelController
+repeat
+	ViewmodelController = _G.ViewmodelController
+	if not ViewmodelController then task.wait(0.1) end
+until ViewmodelController
 
 -- ============================================================
 -- CONFIGURATION
