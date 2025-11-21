@@ -213,6 +213,10 @@ function ModularLootGen:SpawnLootFromEnemy(enemy, playerLevel, floorNumber)
 	local position = enemy.PrimaryPart.Position
 	local enemyLevel = enemy:GetAttribute("Level") or floorNumber or 1
 
+	-- Debug: Log floor number
+	print(string.format("[ModularLootGen] SpawnLootFromEnemy called - floorNumber=%s (type=%s)",
+		tostring(floorNumber), type(floorNumber)))
+
 	-- FLOOR 1: Only drop health/shields/ammo (no weapons until Floor 2)
 	if (floorNumber or 1) == 1 then
 		print("[ModularLootGen] Floor 1 - No weapon drops (health/shields/ammo only)")
