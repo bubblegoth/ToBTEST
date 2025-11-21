@@ -46,6 +46,21 @@ local function giveStartingWeapon(player, character)
 	-- Wait a moment for character to settle
 	task.wait(0.5)
 
+	-- Check if player is on Floor 1+ (not in Church/Floor 0)
+	local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
+	if playerStats then
+		local currentFloor = playerStats:GetCurrentFloor()
+		if currentFloor == 0 then
+			print("[PlayerWeapon]", player.Name, "is in Church (Floor 0) - no starting weapon")
+			return
+		end
+		print("[PlayerWeapon]", player.Name, "is on Floor", currentFloor)
+	else
+		-- If no PlayerStats yet, assume Floor 0 and don't give weapon
+		print("[PlayerWeapon] No PlayerStats for", player.Name, "- assuming Church, no weapon")
+		return
+	end
+
 	-- Check if player already has a weapon
 	local existingTool = character:FindFirstChildOfClass("Tool")
 	if existingTool then
