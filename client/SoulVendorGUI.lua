@@ -145,9 +145,8 @@ local function createVendorGUI()
 	closeStroke.Thickness = 2
 	closeStroke.Parent = closeButton
 
-	closeButton.MouseButton1Click:Connect(function()
-		hideVendorGUI()
-	end)
+	-- NOTE: Close button handler will be connected AFTER hideVendorGUI is defined
+	-- to avoid nil reference issues during script load
 
 	return screenGui
 end
@@ -364,6 +363,17 @@ end
 
 -- Create GUI (now hideVendorGUI is defined and can be referenced by close button)
 vendorGUI = createVendorGUI()
+
+-- Connect close button handler NOW (after both GUI and hideVendorGUI exist)
+local closeButton = vendorGUI.DialogFrame:FindFirstChild("CloseButton")
+if closeButton then
+	closeButton.MouseButton1Click:Connect(function()
+		hideVendorGUI()
+	end)
+	print("[SoulVendorGUI] Close button handler connected")
+else
+	warn("[SoulVendorGUI] Close button not found!")
+end
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- SERVER COMMUNICATION
