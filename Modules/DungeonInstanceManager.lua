@@ -134,12 +134,14 @@ function DungeonInstanceManager.GetOrGenerateFloor(player, floorNumber)
 	print("[DungeonInstanceManager] ✓ Dungeon model created:", dungeonModel.Name)
 
 	-- Position the dungeon at the correct offset for this floor
-	local floorOffset = Vector3.new(0, -1000 * floorNumber, 0)
+	-- Use horizontal spacing instead of vertical (Y) to avoid Roblox's kill plane at Y = -500
+	-- Each floor is offset 10,000 studs to the side to prevent overlap
+	local floorOffset = Vector3.new(floorNumber * 10000, 0, 0)
 	print("[DungeonInstanceManager] Moving dungeon to offset:", floorOffset)
 	print("[DungeonInstanceManager] Dungeon current pivot:", dungeonModel:GetPivot().Position)
 
 	-- Use PivotTo for reliable model positioning (MoveTo doesn't work well with complex models)
-	-- Get the current pivot, then ADD the floor offset to move it down
+	-- Get the current pivot, then ADD the floor offset to move it horizontally
 	local currentPivot = dungeonModel:GetPivot()
 	local newPosition = currentPivot.Position + floorOffset
 	local targetPivot = CFrame.new(newPosition) * (currentPivot - currentPivot.Position)
@@ -253,8 +255,8 @@ function DungeonInstanceManager.TeleportToFloor(player, floorNumber)
 
 	if not playerSpawn then
 		warn("[DungeonInstanceManager] ⚠ No PlayerSpawn found in dungeon floor", floorNumber, "- using fallback position")
-		-- Fallback to dungeon center
-		local floorOffset = Vector3.new(0, -1000 * floorNumber, 0)
+		-- Fallback to dungeon center (using horizontal offset to avoid kill plane)
+		local floorOffset = Vector3.new(floorNumber * 10000, 0, 0)
 		local targetPos = floorOffset + SPAWN_OFFSET
 		print("[DungeonInstanceManager] Teleporting to fallback position:", targetPos)
 		humanoidRootPart.CFrame = CFrame.new(targetPos)

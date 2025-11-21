@@ -90,10 +90,10 @@ local function Initialize()
 	-- Wait for workspace to load
 	wait(1)
 
-	-- CRITICAL: Disable Roblox's kill plane for deep dungeons
-	-- Dungeons go down to Y = -666000 (Floor 666), default kill plane is Y = -500
-	workspace.FallenPartsDestroyHeight = -700000
-	print("[ServerInit] Set FallenPartsDestroyHeight to -700000 (dungeons go to Y = -666000)")
+	-- NOTE: Dungeons are positioned horizontally (X-axis) instead of vertically (Y-axis)
+	-- to avoid Roblox's FallenPartsDestroyHeight limitation in Studio Play mode
+	-- Floor N is at position X = N * 10000, Y = 0, Z = 0
+	print("[ServerInit] Dungeon positioning: Horizontal offset (Floor N at X = N * 10000)")
 
 	-- Spawn Soul Vendor
 	SpawnSoulVendor()
