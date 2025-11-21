@@ -212,6 +212,13 @@ function ViewmodelController:EquipViewmodel(tool)
 
 	currentTool = tool
 
+	-- Hide the tool's parts so only the viewmodel shows
+	for _, part in ipairs(tool:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.LocalTransparencyModifier = 1
+		end
+	end
+
 	-- Create gothic pistol
 	local model = createGothicPistol()
 	if not model then
@@ -272,6 +279,15 @@ function ViewmodelController:UnequipViewmodel()
 
 		currentViewmodel:Destroy()
 		currentViewmodel = nil
+	end
+
+	-- Restore tool visibility
+	if currentTool then
+		for _, part in ipairs(currentTool:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.LocalTransparencyModifier = 0
+			end
+		end
 	end
 
 	currentTool = nil

@@ -167,6 +167,7 @@ vigourText.TextStrokeTransparency = 0.5
 vigourText.TextStrokeColor3 = C.Abyss
 vigourText.Text = "VIGOUR"
 vigourText.TextXAlignment = Enum.TextXAlignment.Left
+vigourText.ZIndex = 3
 vigourText.Parent = vigourScroll
 
 local vigourNums = Instance.new("TextLabel")
@@ -180,6 +181,7 @@ vigourNums.TextStrokeTransparency = 0.4
 vigourNums.TextStrokeColor3 = C.Abyss
 vigourNums.Text = "66 / 100"
 vigourNums.TextXAlignment = Enum.TextXAlignment.Right
+vigourNums.ZIndex = 3
 vigourNums.Parent = vigourScroll
 
 print("🗡️ [HUD] Creating POWDER counter...")
@@ -199,6 +201,7 @@ quartersBig.TextStrokeColor3 = C.Abyss
 quartersBig.Text = "33"
 quartersBig.TextXAlignment = Enum.TextXAlignment.Right
 quartersBig.TextYAlignment = Enum.TextYAlignment.Bottom
+quartersBig.ZIndex = 3
 quartersBig.Parent = quartersScroll
 
 local quartersRes = Instance.new("TextLabel")
@@ -212,6 +215,7 @@ quartersRes.TextStrokeTransparency = 0.6
 quartersRes.TextStrokeColor3 = C.Abyss
 quartersRes.Text = "POWDER"
 quartersRes.TextXAlignment = Enum.TextXAlignment.Center
+quartersRes.ZIndex = 3
 quartersRes.Parent = quartersScroll
 
 local quartersPool = Instance.new("TextLabel")
@@ -223,6 +227,7 @@ quartersPool.TextSize = 12
 quartersPool.TextColor3 = C.LightInk
 quartersPool.Text = "/ 240"
 quartersPool.TextXAlignment = Enum.TextXAlignment.Right
+quartersPool.ZIndex = 3
 quartersPool.Parent = quartersScroll
 
 print("🗡️ [HUD] Creating ESTEEM display...")
@@ -240,6 +245,7 @@ esteemText.TextStrokeTransparency = 0.5
 esteemText.TextStrokeColor3 = C.Abyss
 esteemText.Text = "ESTEEM: 66,666"
 esteemText.TextXAlignment = Enum.TextXAlignment.Right
+esteemText.ZIndex = 3
 esteemText.Parent = esteemScroll
 
 print("🗡️ [HUD] Creating REGION banner...")
@@ -258,6 +264,7 @@ regionText.TextStrokeTransparency = 0.3
 regionText.TextStrokeColor3 = C.Abyss
 regionText.Text = "CRYPT OF THE BLOOD SAINT — REGION XIII"
 regionText.TextXAlignment = Enum.TextXAlignment.Center
+regionText.ZIndex = 3
 regionText.Parent = regionBanner
 
 print("🗡️ [HUD] Setting up torch flicker effect...")
