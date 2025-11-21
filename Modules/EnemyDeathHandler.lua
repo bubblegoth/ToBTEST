@@ -20,15 +20,15 @@ local ModularLootGen = nil
 local WeaponGenerator = nil
 
 local function loadModules()
-	-- Try to load from src folder (our structure)
-	local src = ReplicatedStorage:FindFirstChild("src")
-	if src then
-		if src:FindFirstChild("ModularLootGen") then
-			ModularLootGen = require(src.ModularLootGen)
+	-- Try to load from Modules folder (our structure)
+	local Modules = ReplicatedStorage:FindFirstChild("Modules")
+	if Modules then
+		if Modules:FindFirstChild("ModularLootGen") then
+			ModularLootGen = require(Modules.ModularLootGen)
 			print("[EnemyDeath] Loaded ModularLootGen")
 		end
-		if src:FindFirstChild("WeaponGenerator") then
-			WeaponGenerator = require(src.WeaponGenerator)
+		if Modules:FindFirstChild("WeaponGenerator") then
+			WeaponGenerator = require(Modules.WeaponGenerator)
 			print("[EnemyDeath] Loaded WeaponGenerator")
 		end
 	end
@@ -158,6 +158,14 @@ local function rollForDrops(enemyModel, position, parent)
 	local level = enemyModel:GetAttribute("Level") or 1
 	local isBoss = enemyModel:GetAttribute("IsBoss") or false
 
+	-- FLOOR 1: Only drop health/shields (no weapons until Floor 2)
+	if level == 1 then
+		print("[EnemyDeath] Floor 1 - No weapon drops (health/shields only)")
+		-- TODO: Add health/shield drops here when system is implemented
+		return drops
+	end
+
+	-- FLOOR 2+: Normal weapon drops
 	-- Determine drop chance
 	local dropChance = Config.BaseDropChance
 	if isBoss then

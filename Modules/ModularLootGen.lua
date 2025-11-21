@@ -213,6 +213,13 @@ function ModularLootGen:SpawnLootFromEnemy(enemy, playerLevel, floorNumber)
 	local position = enemy.PrimaryPart.Position
 	local enemyLevel = enemy:GetAttribute("Level") or floorNumber or 1
 
+	-- FLOOR 1: Only drop health/shields/ammo (no weapons until Floor 2)
+	if (floorNumber or 1) == 1 then
+		print("[ModularLootGen] Floor 1 - No weapon drops (health/shields/ammo only)")
+		-- TODO: Add health/shield/ammo drops here when system is implemented
+		return
+	end
+
 	-- Drop chance based on floor number (increases with progression)
 	local baseDropChance = 0.3
 	local floorBonus = (floorNumber or 1) * 0.005 -- +0.5% per floor
