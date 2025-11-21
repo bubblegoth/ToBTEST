@@ -138,37 +138,6 @@ local function stopSprint()
 	print("[PlayerMovement] Sprint stopped")
 end
 
-local function startCrouch()
-	if state.isSliding then return end
-
-	-- Check if we should slide instead
-	if canSlide() then
-		startSlide()
-		return
-	end
-
-	local humanoid = getHumanoid()
-	if not humanoid then return end
-
-	state.isCrouching = true
-	state.isSprinting = false
-	humanoid.WalkSpeed = Config.CrouchSpeed
-
-	print("[PlayerMovement] Crouch started")
-end
-
-local function stopCrouch()
-	if not state.isCrouching then return end
-
-	local humanoid = getHumanoid()
-	if not humanoid then return end
-
-	state.isCrouching = false
-	humanoid.WalkSpeed = Config.NormalSpeed
-
-	print("[PlayerMovement] Crouch stopped")
-end
-
 local function startSlide()
 	if state.isSliding then return end
 
@@ -218,6 +187,37 @@ local function startSlide()
 
 		print("[PlayerMovement] Slide ended")
 	end)
+end
+
+local function startCrouch()
+	if state.isSliding then return end
+
+	-- Check if we should slide instead
+	if canSlide() then
+		startSlide()
+		return
+	end
+
+	local humanoid = getHumanoid()
+	if not humanoid then return end
+
+	state.isCrouching = true
+	state.isSprinting = false
+	humanoid.WalkSpeed = Config.CrouchSpeed
+
+	print("[PlayerMovement] Crouch started")
+end
+
+local function stopCrouch()
+	if not state.isCrouching then return end
+
+	local humanoid = getHumanoid()
+	if not humanoid then return end
+
+	state.isCrouching = false
+	humanoid.WalkSpeed = Config.NormalSpeed
+
+	print("[PlayerMovement] Crouch stopped")
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
