@@ -120,20 +120,24 @@ function Combat:HandleDeath(killer, enemy, weaponData)
 
 	print(string.format("[Combat] %s killed %s", killer.Name, enemy.Name))
 
-	-- Grant souls
+	-- Grant souls (BOSS ONLY to prevent soul inflation)
+	local isBoss = enemy:GetAttribute("IsBoss") or false
 	local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(killer)
-	if playerStats then
-		local baseSouls = enemy:GetAttribute("SoulValue") or 10
+
+	if playerStats and isBoss then
+		local baseSouls = enemy:GetAttribute("SoulValue") or 100 -- Bosses give more souls
 		local soulBonus = weaponData and weaponData.SoulGain or 0
 		local totalSouls = baseSouls + soulBonus
 
 		playerStats:AddSouls(totalSouls)
-		print(string.format("[Combat] %s gained %d Souls", killer.Name, totalSouls))
+		print(string.format("[Combat] 💀 BOSS KILL! %s gained %d Souls", killer.Name, totalSouls))
 
 		-- Update player values
 		if _G.UpdatePlayerValues then
 			_G.UpdatePlayerValues(killer)
 		end
+	elseif playerStats and not isBoss then
+		print(string.format("[Combat] Regular enemy kill - no souls (bosses only)"))
 	end
 
 	-- Spawn loot
