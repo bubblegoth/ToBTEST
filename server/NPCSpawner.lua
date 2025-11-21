@@ -64,24 +64,33 @@ local function SpawnSoulVendor()
 	-- Position vendor in Church (ON TOP of spawn part)
 	local vendorSpawnPoint = workspace:FindFirstChild(Config.VendorSpawnName)
 	if vendorSpawnPoint and vendorSpawnPoint:IsA("BasePart") then
-		-- Get vendor's full bounding box to find the lowest point (feet)
-		local modelCFrame, modelSize = vendorModel:GetBoundingBox()
-		local modelBottomOffset = modelSize.Y / 2 -- Distance from model center to feet
-
-		-- Calculate position on top of the spawn part
-		local spawnPartTop = vendorSpawnPoint.Position.Y + (vendorSpawnPoint.Size.Y / 2)
-
-		-- Position vendor so feet are on top of spawn part
 		local rootPart = vendorModel:FindFirstChild("HumanoidRootPart")
 		if rootPart then
+			-- First, temporarily position the model at origin to measure it
+			vendorModel:SetPrimaryPartCFrame(CFrame.new(0, 100, 0))
+			task.wait()
+
+			-- Get bounding box of the model to find the actual bottom
+			local modelCFrame, modelSize = vendorModel:GetBoundingBox()
+			local modelBottomY = modelCFrame.Y - (modelSize.Y / 2) -- Lowest point of model
+
+			-- Calculate how far the bottom is below the HumanoidRootPart
+			local rootPartY = rootPart.Position.Y
+			local bottomOffset = rootPartY - modelBottomY
+
+			-- Calculate target position on top of spawn part
+			local spawnPartTop = vendorSpawnPoint.Position.Y + (vendorSpawnPoint.Size.Y / 2)
+
+			-- Position HumanoidRootPart so bottom of model sits on spawn part
 			local targetPosition = Vector3.new(
 				vendorSpawnPoint.Position.X,
-				spawnPartTop + modelBottomOffset, -- Feet on top
+				spawnPartTop + bottomOffset, -- Root positioned so feet are on top
 				vendorSpawnPoint.Position.Z
 			)
 
+			-- Set final position with rotation from spawn part
 			vendorModel:SetPrimaryPartCFrame(CFrame.new(targetPosition) * (vendorSpawnPoint.CFrame - vendorSpawnPoint.Position))
-			print("[NPCSpawner] Soul Vendor positioned ON TOP of", Config.VendorSpawnName, "at Y:", targetPosition.Y)
+			print("[NPCSpawner] Soul Vendor positioned ON TOP of", Config.VendorSpawnName, "- Bottom offset:", bottomOffset)
 		else
 			warn("[NPCSpawner] No HumanoidRootPart found in vendor model")
 		end
