@@ -16,6 +16,17 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local PathfindingService = game:GetService("PathfindingService")
 local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Load weapon generation modules (optional - for giving enemies actual weapons)
+local WeaponGenerator, WeaponToolBuilder
+pcall(function()
+	local Modules = ReplicatedStorage:WaitForChild("Modules", 2)
+	if Modules then
+		WeaponGenerator = require(Modules:FindFirstChild("WeaponGenerator"))
+		WeaponToolBuilder = require(Modules:FindFirstChild("WeaponToolBuilder"))
+	end
+end)
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- GLOBAL ATTACK TOKEN SYSTEM
@@ -87,34 +98,43 @@ end
 -- ════════════════════════════════════════════════════════════════════════════
 local EnemyArchetypes = {
 	Melee = {
-		optimalRange = 5, minRange = 0, maxRange = 8,
-		moveSpeed = 18, attackCooldown = 1.2, damage = 15,
+		optimalRange = 4, minRange = 0, maxRange = 10,
+		moveSpeed = 20, attackCooldown = 1.0, damage = 15,
 		aggressionLevel = 0.9, flankingTendency = 0.6,
-		retreatThreshold = 0.2, attackRange = 6,
+		retreatThreshold = 0.2, attackRange = 10,  -- Increased from 6 to 10
 	},
 	Ranged = {
 		optimalRange = 25, minRange = 15, maxRange = 35,
-		moveSpeed = 14, attackCooldown = 2.0, damage = 20,
+		moveSpeed = 14, attackCooldown = 1.5, damage = 12,  -- Faster fire rate, lower damage per shot
 		aggressionLevel = 0.4, flankingTendency = 0.3,
 		retreatThreshold = 0.4, attackRange = 40,
+		spread = 0.15,  -- Accuracy: 0 = perfect, 1 = very inaccurate
+		burstCount = 3,  -- Fire in bursts
+		burstDelay = 0.1,  -- Time between shots in burst
 	},
 	Heavy = {
-		optimalRange = 10, minRange = 0, maxRange = 15,
-		moveSpeed = 10, attackCooldown = 3.0, damage = 35,
+		optimalRange = 8, minRange = 0, maxRange = 15,
+		moveSpeed = 12, attackCooldown = 2.5, damage = 35,
 		aggressionLevel = 1.0, flankingTendency = 0.2,
 		retreatThreshold = 0.1, attackRange = 12,
 	},
 	Flanker = {
 		optimalRange = 12, minRange = 8, maxRange = 20,
-		moveSpeed = 22, attackCooldown = 1.5, damage = 12,
+		moveSpeed = 22, attackCooldown = 1.2, damage = 12,
 		aggressionLevel = 0.7, flankingTendency = 0.95,
 		retreatThreshold = 0.3, attackRange = 15,
+		spread = 0.2,  -- Less accurate while moving
+		burstCount = 2,
+		burstDelay = 0.15,
 	},
 	Sniper = {
 		optimalRange = 50, minRange = 30, maxRange = 70,
-		moveSpeed = 12, attackCooldown = 4.0, damage = 40,
+		moveSpeed = 12, attackCooldown = 3.0, damage = 30,  -- Reduced from 40
 		aggressionLevel = 0.2, flankingTendency = 0.5,
 		retreatThreshold = 0.5, attackRange = 80,
+		spread = 0.05,  -- Very accurate
+		burstCount = 1,  -- Single shot
+		burstDelay = 0,
 	},
 }
 
@@ -196,9 +216,54 @@ function EnemyAI.new(enemyModel)
 	-- Configure humanoid
 	self.humanoid.WalkSpeed = self.archetype.moveSpeed
 
+	-- Give weapon to ranged enemies
+	local isRangedEnemy = (self.archetypeName == "Ranged" or self.archetypeName == "Sniper" or self.archetypeName == "Flanker")
+	if isRangedEnemy and WeaponGenerator and WeaponToolBuilder then
+		task.spawn(function()
+			self:equipWeapon()
+		end)
+	end
+
 	print(string.format("[EnemyAI] Attached %s AI to %s", self.archetypeName, enemyModel.Name))
 
 	return self
+end
+
+function EnemyAI:equipWeapon()
+	-- Get enemy level from attributes or default to 1
+	local level = self.model:GetAttribute("Level") or 1
+
+	-- Generate appropriate weapon for enemy archetype
+	local weaponType
+	if self.archetypeName == "Sniper" then
+		weaponType = "Rifle"
+	elseif self.archetypeName == "Flanker" then
+		weaponType = math.random() > 0.5 and "SMG" or "Shotgun"
+	else  -- Ranged
+		weaponType = "Pistol"
+	end
+
+	local rarity = math.random() > 0.7 and "Uncommon" or "Common"
+
+	local weapon = WeaponGenerator:GenerateWeapon(level, weaponType, rarity)
+	if not weapon then
+		warn("[EnemyAI] Failed to generate weapon for", self.model.Name)
+		return
+	end
+
+	-- Mark as enemy weapon
+	weapon.IsEnemyWeapon = true
+
+	-- Create weapon tool and equip it
+	local weaponTool = WeaponToolBuilder:BuildWeaponTool(weapon)
+	if weaponTool then
+		weaponTool.Parent = self.model
+		self.humanoid:EquipTool(weaponTool)
+		self.equippedWeapon = weaponTool
+		self.weaponData = weapon
+		print(string.format("[EnemyAI] Equipped %s with %s (%s %s)",
+			self.model.Name, weapon.Name, rarity, weaponType))
+	end
 end
 
 function EnemyAI:findNearestPlayer()
@@ -346,12 +411,30 @@ function EnemyAI:performAttack()
 	self.rootPart.CFrame = CFrame.new(self.rootPart.Position,
 		Vector3.new(targetRoot.Position.X, self.rootPart.Position.Y, targetRoot.Position.Z))
 
-	-- RANGED ATTACK: Projectile with red flash warning
-	if self.archetypeName == "Ranged" or self.archetypeName == "Sniper" then
+	-- RANGED ATTACK: Projectile with spread and bursts
+	if self.archetypeName == "Ranged" or self.archetypeName == "Sniper" or self.archetypeName == "Flanker" then
 		self:performRangedAttack(targetRoot, targetHumanoid)
 	else
-		-- MELEE ATTACK: Instant damage (as before)
-		targetHumanoid:TakeDamage(self.archetype.damage)
+		-- MELEE ATTACK: Improved hit detection with range check
+		local distance = (targetRoot.Position - self.rootPart.Position).Magnitude
+		if distance <= self.archetype.attackRange then
+			-- Verify target is still in front of us
+			local toTarget = (targetRoot.Position - self.rootPart.Position).Unit
+			local lookDirection = self.rootPart.CFrame.LookVector
+			local dot = toTarget:Dot(lookDirection)
+
+			if dot > 0.5 then  -- Target is in front (within 60 degree cone)
+				targetHumanoid:TakeDamage(self.archetype.damage)
+				print(string.format("[EnemyAI] %s melee hit %s for %d damage (dist: %.1f)",
+					self.archetypeName, self.target.Name, self.archetype.damage, distance))
+			else
+				print(string.format("[EnemyAI] %s melee MISSED - target not in front (dot: %.2f)",
+					self.archetypeName, dot))
+			end
+		else
+			print(string.format("[EnemyAI] %s melee MISSED - out of range (dist: %.1f > %.1f)",
+				self.archetypeName, distance, self.archetype.attackRange))
+		end
 	end
 
 	self.lastAttackTime = tick()
@@ -365,96 +448,100 @@ function EnemyAI:performAttack()
 end
 
 function EnemyAI:performRangedAttack(targetRoot, targetHumanoid)
-	-- RED FLASH WARNING (telegraph attack)
-	local warningFlash = Instance.new("Part")
-	warningFlash.Name = "AttackWarning"
-	warningFlash.Shape = Enum.PartType.Ball
-	warningFlash.Size = Vector3.new(1, 1, 1)
-	warningFlash.Color = Color3.fromRGB(255, 50, 50) -- Bright red
-	warningFlash.Material = Enum.Material.Neon
-	warningFlash.Anchored = true
-	warningFlash.CanCollide = false
-	warningFlash.Transparency = 0.3
-	warningFlash.CFrame = self.rootPart.CFrame + Vector3.new(0, 2, 0)
-	warningFlash.Parent = workspace
+	local burstCount = self.archetype.burstCount or 1
+	local burstDelay = self.archetype.burstDelay or 0
+	local spread = self.archetype.spread or 0.05
 
-	-- Pulse effect
-	local pulse = game:GetService("TweenService"):Create(
-		warningFlash,
-		TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-		{Transparency = 0.8, Size = Vector3.new(2, 2, 2)}
-	)
-	pulse:Play()
-
-	-- Wait for warning, then fire
-	task.wait(0.5)
-	warningFlash:Destroy()
-
-	-- Calculate aim (lead target slightly for moving players)
-	local targetVelocity = targetRoot.AssemblyLinearVelocity or targetRoot.Velocity or Vector3.zero
-	local projectileSpeed = 100
-	local distance = (targetRoot.Position - self.rootPart.Position).Magnitude
-	local timeToHit = distance / projectileSpeed
-	local leadPosition = targetRoot.Position + (targetVelocity * timeToHit * 0.5)
-
-	-- Spawn projectile
-	local projectile = Instance.new("Part")
-	projectile.Name = "EnemyProjectile"
-	projectile.Shape = Enum.PartType.Ball
-	projectile.Size = Vector3.new(0.8, 0.8, 0.8)
-	projectile.Color = Color3.fromRGB(255, 80, 80) -- Red projectile
-	projectile.Material = Enum.Material.Neon
-	projectile.Anchored = false
-	projectile.CanCollide = false
-	projectile.CFrame = self.rootPart.CFrame + Vector3.new(0, 2, 0)
-	projectile.Parent = workspace
-
-	-- Add glow effect
-	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(255, 50, 50)
-	light.Brightness = 5
-	light.Range = 10
-	light.Parent = projectile
-
-	-- Store damage data
-	projectile:SetAttribute("Damage", self.archetype.damage)
-	projectile:SetAttribute("IsEnemyProjectile", true)
-	projectile:SetAttribute("OwnerID", self.id)
-
-	-- Launch projectile
-	local bodyVelocity = Instance.new("BodyVelocity")
-	bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-	bodyVelocity.Velocity = (leadPosition - projectile.Position).Unit * projectileSpeed
-	bodyVelocity.Parent = projectile
-
-	-- Collision detection
-	local hitConnection
-	hitConnection = projectile.Touched:Connect(function(hit)
-		if hit:IsDescendantOf(self.model) then return end -- Don't hit self
-
-		-- Check if hit player
-		local hitModel = hit.Parent
-		if hitModel and hitModel:FindFirstChild("Humanoid") then
-			local hitHumanoid = hitModel:FindFirstChild("Humanoid")
-			if hitHumanoid and hitHumanoid.Health > 0 then
-				-- Deal damage
-				hitHumanoid:TakeDamage(self.archetype.damage)
-				print(string.format("[EnemyAI] %s projectile hit %s for %d damage",
-					self.archetypeName, hitModel.Name, self.archetype.damage))
+	-- Fire burst
+	for shotNum = 1, burstCount do
+		task.spawn(function()
+			-- Slight delay for each shot in burst
+			if shotNum > 1 then
+				task.wait(burstDelay * (shotNum - 1))
 			end
-		end
 
-		-- Destroy projectile on any hit
-		hitConnection:Disconnect()
-		projectile:Destroy()
-	end)
+			-- Calculate aim with target leading
+			local targetVelocity = targetRoot.AssemblyLinearVelocity or targetRoot.Velocity or Vector3.zero
+			local projectileSpeed = 120
+			local distance = (targetRoot.Position - self.rootPart.Position).Magnitude
+			local timeToHit = distance / projectileSpeed
+			local leadPosition = targetRoot.Position + (targetVelocity * timeToHit * 0.4)
 
-	-- Auto-destroy after 5 seconds (missed shots)
-	task.delay(5, function()
-		if projectile.Parent then
-			projectile:Destroy()
-		end
-	end)
+			-- Apply spread/inaccuracy
+			local spreadX = (math.random() - 0.5) * spread * distance
+			local spreadY = (math.random() - 0.5) * spread * distance
+			local spreadZ = (math.random() - 0.5) * spread * distance
+			local aimPosition = leadPosition + Vector3.new(spreadX, spreadY, spreadZ)
+
+			-- Spawn muzzle flash
+			local muzzleFlash = Instance.new("Part")
+			muzzleFlash.Name = "MuzzleFlash"
+			muzzleFlash.Shape = Enum.PartType.Ball
+			muzzleFlash.Size = Vector3.new(1, 1, 1)
+			muzzleFlash.Color = Color3.fromRGB(255, 200, 100)
+			muzzleFlash.Material = Enum.Material.Neon
+			muzzleFlash.Anchored = true
+			muzzleFlash.CanCollide = false
+			muzzleFlash.Transparency = 0.3
+			muzzleFlash.CFrame = self.rootPart.CFrame * CFrame.new(0, 1.5, -1)
+			muzzleFlash.Parent = workspace
+			game:GetService("Debris"):AddItem(muzzleFlash, 0.1)
+
+			-- Spawn projectile
+			local projectile = Instance.new("Part")
+			projectile.Name = "EnemyProjectile"
+			projectile.Shape = Enum.PartType.Ball
+			projectile.Size = Vector3.new(0.5, 0.5, 0.5)
+			projectile.Color = Color3.fromRGB(255, 100, 100)
+			projectile.Material = Enum.Material.Neon
+			projectile.Anchored = false
+			projectile.CanCollide = false
+			projectile.CFrame = self.rootPart.CFrame * CFrame.new(0, 1.5, -1)
+			projectile.Parent = workspace
+
+			-- Add glow
+			local light = Instance.new("PointLight")
+			light.Color = Color3.fromRGB(255, 80, 80)
+			light.Brightness = 3
+			light.Range = 8
+			light.Parent = projectile
+
+			-- Store damage data
+			projectile:SetAttribute("Damage", self.archetype.damage)
+			projectile:SetAttribute("IsEnemyProjectile", true)
+			projectile:SetAttribute("OwnerID", self.id)
+
+			-- Launch
+			local bodyVelocity = Instance.new("BodyVelocity")
+			bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+			bodyVelocity.Velocity = (aimPosition - projectile.Position).Unit * projectileSpeed
+			bodyVelocity.Parent = projectile
+
+			-- Collision detection
+			local hitConnection
+			hitConnection = projectile.Touched:Connect(function(hit)
+				if hit:IsDescendantOf(self.model) then return end
+
+				local hitModel = hit.Parent
+				if hitModel and hitModel:FindFirstChild("Humanoid") then
+					local hitHumanoid = hitModel:FindFirstChild("Humanoid")
+					if hitHumanoid and hitHumanoid.Health > 0 then
+						hitHumanoid:TakeDamage(self.archetype.damage)
+						print(string.format("[EnemyAI] %s projectile hit %s for %d damage",
+							self.archetypeName, hitModel.Name, self.archetype.damage))
+					end
+				end
+
+				hitConnection:Disconnect()
+				projectile:Destroy()
+			end)
+
+			-- Auto-destroy after 3 seconds
+			task.delay(3, function()
+				if projectile.Parent then projectile:Destroy() end
+			end)
+		end)
+	end
 end
 
 function EnemyAI:changeState(newState)
