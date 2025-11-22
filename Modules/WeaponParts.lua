@@ -448,18 +448,18 @@ WeaponParts.Magazines = {
 		Name = "Drum Magazine",
 		Rarity = "Common",
 		Modifiers = {
-			Capacity = 100,
+			Capacity = 6, -- +50% for pistol (12→18), balanced for all weapon types
 			ReloadSpeed = -40,
 			EquipSpeed = -30,
 			Weight = 25
 		},
-		Description = "Never-ending firepower"
+		Description = "Extended firepower, slower handling"
 	},
 	{
 		Name = "Extended Magazine",
 		Rarity = "Common",
 		Modifiers = {
-			Capacity = 50,
+			Capacity = 4, -- +33% for pistol (12→16)
 			ReloadSpeed = -20,
 			EquipSpeed = -15,
 			Weight = 10
@@ -480,21 +480,21 @@ WeaponParts.Magazines = {
 		Name = "Compact Magazine",
 		Rarity = "Uncommon",
 		Modifiers = {
-			Capacity = -30,
+			Capacity = -3, -- -25% for pistol (12→9)
 			ReloadSpeed = 25,
 			EquipSpeed = 20,
-			Damage = 10
+			Damage = 2 -- Reduced from 10
 		},
-		Description = "Quick handling, less rounds"
+		Description = "Quick handling, fewer rounds"
 	},
 	{
 		Name = "Speed Loader",
 		Rarity = "Rare",
 		Modifiers = {
-			Capacity = -20,
+			Capacity = -4, -- -33% for pistol (12→8)
 			ReloadSpeed = 50,
 			EquipSpeed = 30,
-			Damage = 15
+			Damage = 3 -- Reduced from 15
 		},
 		Description = "Lightning fast reloads"
 	},
@@ -502,7 +502,7 @@ WeaponParts.Magazines = {
 		Name = "Soul Reservoir",
 		Rarity = "Epic",
 		Modifiers = {
-			Capacity = 80,
+			Capacity = 8, -- +66% for pistol (12→20)
 			ReloadSpeed = 20,
 			SoulGain = 5
 		},
@@ -512,7 +512,7 @@ WeaponParts.Magazines = {
 		Name = "Infinite Coil",
 		Rarity = "Legendary",
 		Modifiers = {
-			Capacity = 150,
+			Capacity = 12, -- +100% for pistol (12→24)
 			ReloadSpeed = 40,
 			NoReloadChance = 25
 		},
