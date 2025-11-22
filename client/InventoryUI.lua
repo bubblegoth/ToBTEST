@@ -215,6 +215,37 @@ local function updateInventoryDisplay(screenGui)
 			slotCorner.CornerRadius = UDim.new(0, 4)
 			slotCorner.Parent = slotLabel
 
+			-- Add unequip button (top-right)
+			local unequipButton = Instance.new("TextButton")
+			unequipButton.Size = UDim2.new(0, 60, 0, 20)
+			unequipButton.Position = UDim2.new(1, -65, 0, 5)
+			unequipButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+			unequipButton.BackgroundTransparency = 0.2
+			unequipButton.BorderSizePixel = 0
+			unequipButton.Text = "STASH"
+			unequipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			unequipButton.Font = Enum.Font.GothamBold
+			unequipButton.TextSize = 9
+			unequipButton.TextStrokeTransparency = 0.5
+			unequipButton.AutoButtonColor = true
+			unequipButton.Parent = card
+
+			local unequipCorner = Instance.new("UICorner")
+			unequipCorner.CornerRadius = UDim.new(0, 4)
+			unequipCorner.Parent = unequipButton
+
+			-- Click handler
+			unequipButton.MouseButton1Click:Connect(function()
+				local unequipEvent = ReplicatedStorage:WaitForChild("UnequipToBackpack")
+				unequipEvent:FireServer("weapon", i)
+
+				-- Refresh UI after short delay
+				task.wait(0.1)
+				if isOpen then
+					updateInventoryDisplay(screenGui)
+				end
+			end)
+
 			-- Add equipped indicator
 			if i == currentWeaponSlot then
 				local equippedLabel = Instance.new("TextLabel")
@@ -283,6 +314,37 @@ local function updateInventoryDisplay(screenGui)
 	local shield = inventory:GetShield()
 	if shield then
 		local card = ShieldCard.CreateCompact(shield, shieldContainer)
+
+		-- Add unequip button (top-right)
+		local unequipButton = Instance.new("TextButton")
+		unequipButton.Size = UDim2.new(0, 60, 0, 20)
+		unequipButton.Position = UDim2.new(1, -65, 0, 5)
+		unequipButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+		unequipButton.BackgroundTransparency = 0.2
+		unequipButton.BorderSizePixel = 0
+		unequipButton.Text = "STASH"
+		unequipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		unequipButton.Font = Enum.Font.GothamBold
+		unequipButton.TextSize = 9
+		unequipButton.TextStrokeTransparency = 0.5
+		unequipButton.AutoButtonColor = true
+		unequipButton.Parent = card
+
+		local unequipCorner = Instance.new("UICorner")
+		unequipCorner.CornerRadius = UDim.new(0, 4)
+		unequipCorner.Parent = unequipButton
+
+		-- Click handler
+		unequipButton.MouseButton1Click:Connect(function()
+			local unequipEvent = ReplicatedStorage:WaitForChild("UnequipToBackpack")
+			unequipEvent:FireServer("shield", 1)
+
+			-- Refresh UI after short delay
+			task.wait(0.1)
+			if isOpen then
+				updateInventoryDisplay(screenGui)
+			end
+		end)
 
 		-- Add equipped indicator
 		local equippedLabel = Instance.new("TextLabel")
