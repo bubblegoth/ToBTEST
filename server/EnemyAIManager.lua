@@ -57,8 +57,8 @@ local ArchetypeAnimations = {
 		Run = "rbxassetid://657564596",        -- Knight run
 		Jump = "rbxassetid://658409194",       -- Knight jump
 		Fall = "rbxassetid://657600338",       -- Knight fall
-		MeleeAttack1 = "rbxassetid://657611290", -- Knight slash
-		MeleeAttack2 = "rbxassetid://657611290", -- Knight slash
+		MeleeAttack1 = "rbxassetid://658409194", -- Knight jump (lunge attack)
+		MeleeAttack2 = "rbxassetid://657568135", -- Knight idle variation 2 (swing pose)
 		Hit = "rbxassetid://657600338",        -- Hit reaction
 		Death = "rbxassetid://657595757",      -- Death
 	},
