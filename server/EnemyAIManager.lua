@@ -424,7 +424,18 @@ function EnemyAI:performAttack()
 			local dot = toTarget:Dot(lookDirection)
 
 			if dot > 0.5 then  -- Target is in front (within 60 degree cone)
-				targetHumanoid:TakeDamage(self.archetype.damage)
+				-- Deal damage through shield system if player has shield
+				local damage = self.archetype.damage
+				if _G.AbsorbShieldDamage and game.Players:GetPlayerFromCharacter(self.target) then
+					local player = game.Players:GetPlayerFromCharacter(self.target)
+					damage = _G.AbsorbShieldDamage(player, damage)
+				end
+
+				-- Apply remaining damage to health
+				if damage > 0 then
+					targetHumanoid:TakeDamage(damage)
+				end
+
 				print(string.format("[EnemyAI] %s melee hit %s for %d damage (dist: %.1f)",
 					self.archetypeName, self.target.Name, self.archetype.damage, distance))
 			else
@@ -526,7 +537,18 @@ function EnemyAI:performRangedAttack(targetRoot, targetHumanoid)
 				if hitModel and hitModel:FindFirstChild("Humanoid") then
 					local hitHumanoid = hitModel:FindFirstChild("Humanoid")
 					if hitHumanoid and hitHumanoid.Health > 0 then
-						hitHumanoid:TakeDamage(self.archetype.damage)
+						-- Deal damage through shield system if player has shield
+						local damage = self.archetype.damage
+						if _G.AbsorbShieldDamage and game.Players:GetPlayerFromCharacter(hitModel) then
+							local player = game.Players:GetPlayerFromCharacter(hitModel)
+							damage = _G.AbsorbShieldDamage(player, damage)
+						end
+
+						-- Apply remaining damage to health
+						if damage > 0 then
+							hitHumanoid:TakeDamage(damage)
+						end
+
 						print(string.format("[EnemyAI] %s projectile hit %s for %d damage",
 							self.archetypeName, hitModel.Name, self.archetype.damage))
 					end
