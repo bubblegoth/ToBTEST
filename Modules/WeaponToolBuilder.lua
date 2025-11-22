@@ -88,6 +88,7 @@ function WeaponToolBuilder:CreateWeaponTool(weaponData)
 	tool:SetAttribute("Damage", weaponData.Damage)
 	tool:SetAttribute("FireRate", weaponData.FireRate)
 	tool:SetAttribute("Capacity", weaponData.Capacity)
+	tool:SetAttribute("CurrentAmmo", weaponData.CurrentAmmo or weaponData.Capacity) -- Initialize with full mag
 	tool:SetAttribute("Accuracy", weaponData.Accuracy)
 	tool:SetAttribute("Spread", weaponData.Spread or 5) -- Cone-of-fire spread in degrees
 	tool:SetAttribute("Range", weaponData.Range)

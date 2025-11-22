@@ -194,6 +194,7 @@ function WeaponGenerator:BuildWeaponStats(parts, level)
 		Damage = base.Damage,
 		FireRate = base.FireRate,
 		Capacity = base.Capacity,
+		CurrentAmmo = base.Capacity, -- Initialize with full magazine
 		Accuracy = base.Accuracy,
 		Spread = base.Spread or 5, -- Base spread in degrees (cone-of-fire)
 		Range = base.Range,
