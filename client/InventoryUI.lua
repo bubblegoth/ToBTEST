@@ -185,37 +185,38 @@ local function updateInventoryDisplay(screenGui)
 		end
 	end
 
-	-- Add weapon cards
-	local backpack = player:FindFirstChild("Backpack")
-	local character = player.Character
-
-	-- Get all weapons from backpack and character
-	local allWeapons = {}
-
-	if backpack then
-		for _, tool in ipairs(backpack:GetChildren()) do
-			if tool:IsA("Tool") and tool:GetAttribute("UniqueID") then
-				table.insert(allWeapons, tool)
-			end
-		end
-	end
-
-	if character then
-		local equippedTool = character:FindFirstChildOfClass("Tool")
-		if equippedTool and equippedTool:GetAttribute("UniqueID") then
-			table.insert(allWeapons, equippedTool)
-		end
-	end
+	-- Get all weapons from inventory (stored as data, not Tools)
+	local allWeapons = inventory:GetAllWeapons()
+	local currentWeaponIndex = inventory.CurrentWeaponIndex
 
 	-- Create weapon cards
-	for i, weaponTool in ipairs(allWeapons) do
-		local weaponData = WeaponToolBuilder:GetWeaponDataFromTool(weaponTool)
+	for i = 1, 4 do
+		local weaponData = allWeapons[i]
+
 		if weaponData then
+			-- Create weapon card
 			local card = WeaponCard.CreateCompact(weaponData, weaponsContainer)
 			card.LayoutOrder = i
 
+			-- Add slot number
+			local slotLabel = Instance.new("TextLabel")
+			slotLabel.Size = UDim2.new(0, 25, 0, 25)
+			slotLabel.Position = UDim2.new(0, 5, 0, 5)
+			slotLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+			slotLabel.BackgroundTransparency = 0.5
+			slotLabel.Text = tostring(i)
+			slotLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+			slotLabel.Font = Enum.Font.GothamBold
+			slotLabel.TextSize = 14
+			slotLabel.BorderSizePixel = 0
+			slotLabel.Parent = card
+
+			local slotCorner = Instance.new("UICorner")
+			slotCorner.CornerRadius = UDim.new(0, 4)
+			slotCorner.Parent = slotLabel
+
 			-- Add equipped indicator
-			if character and character:FindFirstChild(weaponTool.Name) then
+			if i == currentWeaponIndex then
 				local equippedLabel = Instance.new("TextLabel")
 				equippedLabel.Size = UDim2.new(1, 0, 0, 15)
 				equippedLabel.Position = UDim2.new(0, 0, 1, -15)
@@ -229,38 +230,53 @@ local function updateInventoryDisplay(screenGui)
 				equippedLabel.BorderSizePixel = 0
 				equippedLabel.Parent = card
 			end
+		else
+			-- Empty slot
+			local emptySlot = Instance.new("Frame")
+			emptySlot.Name = "EmptySlot"
+			emptySlot.Size = UDim2.new(0, 200, 0, 120)
+			emptySlot.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+			emptySlot.BorderSizePixel = 0
+			emptySlot.LayoutOrder = i
+			emptySlot.Parent = weaponsContainer
+
+			local emptyCorner = Instance.new("UICorner")
+			emptyCorner.CornerRadius = UDim.new(0, 6)
+			emptyCorner.Parent = emptySlot
+
+			local emptyBorder = Instance.new("UIStroke")
+			emptyBorder.Color = Color3.fromRGB(80, 80, 80)
+			emptyBorder.Thickness = 2
+			emptyBorder.Transparency = 0.5
+			emptyBorder.Parent = emptySlot
+
+			-- Slot number for empty slot
+			local slotLabel = Instance.new("TextLabel")
+			slotLabel.Size = UDim2.new(0, 25, 0, 25)
+			slotLabel.Position = UDim2.new(0, 5, 0, 5)
+			slotLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+			slotLabel.BackgroundTransparency = 0.5
+			slotLabel.Text = tostring(i)
+			slotLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
+			slotLabel.Font = Enum.Font.GothamBold
+			slotLabel.TextSize = 14
+			slotLabel.BorderSizePixel = 0
+			slotLabel.Parent = emptySlot
+
+			local slotCorner = Instance.new("UICorner")
+			slotCorner.CornerRadius = UDim.new(0, 4)
+			slotCorner.Parent = slotLabel
+
+			local emptyLabel = Instance.new("TextLabel")
+			emptyLabel.Size = UDim2.new(1, 0, 1, 0)
+			emptyLabel.BackgroundTransparency = 1
+			emptyLabel.Text = "EMPTY"
+			emptyLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
+			emptyLabel.Font = Enum.Font.GothamBold
+			emptyLabel.TextSize = 16
+			emptyLabel.TextStrokeTransparency = 0.7
+			emptyLabel.Parent = emptySlot
 		end
-	end
-
-	-- Add empty slot placeholders for remaining weapon slots
-	for i = #allWeapons + 1, 4 do
-		local emptySlot = Instance.new("Frame")
-		emptySlot.Name = "EmptySlot"
-		emptySlot.Size = UDim2.new(0, 200, 0, 120)
-		emptySlot.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-		emptySlot.BorderSizePixel = 0
-		emptySlot.LayoutOrder = i
-		emptySlot.Parent = weaponsContainer
-
-		local emptyCorner = Instance.new("UICorner")
-		emptyCorner.CornerRadius = UDim.new(0, 6)
-		emptyCorner.Parent = emptySlot
-
-		local emptyBorder = Instance.new("UIStroke")
-		emptyBorder.Color = Color3.fromRGB(80, 80, 80)
-		emptyBorder.Thickness = 2
-		emptyBorder.Transparency = 0.5
-		emptyBorder.Parent = emptySlot
-
-		local emptyLabel = Instance.new("TextLabel")
-		emptyLabel.Size = UDim2.new(1, 0, 1, 0)
-		emptyLabel.BackgroundTransparency = 1
-		emptyLabel.Text = "EMPTY"
-		emptyLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
-		emptyLabel.Font = Enum.Font.GothamBold
-		emptyLabel.TextSize = 16
-		emptyLabel.TextStrokeTransparency = 0.7
-		emptyLabel.Parent = emptySlot
 	end
 
 	-- Add shield card

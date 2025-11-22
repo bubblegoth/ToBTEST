@@ -22,6 +22,8 @@ local Modules = ReplicatedStorage:WaitForChild("Modules")
 local WeaponGenerator = require(Modules:WaitForChild("WeaponGenerator"))
 local WeaponToolBuilder = require(Modules:WaitForChild("WeaponToolBuilder"))
 local WeaponModelBuilder = require(Modules:WaitForChild("WeaponModelBuilder"))
+local PlayerInventory = require(Modules:WaitForChild("PlayerInventory"))
+local ModularLootGen = require(Modules:WaitForChild("ModularLootGen"))
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- CONFIG
@@ -161,6 +163,23 @@ local function dropWeapon(player, tool)
 		return false
 	end
 
+	-- Get inventory and remove weapon data from current slot
+	local inventory = PlayerInventory.GetInventory(player)
+	local currentWeaponData = inventory:GetCurrentWeapon()
+
+	if not currentWeaponData then
+		warn("[WeaponDrop] No weapon in current inventory slot")
+		return false
+	end
+
+	-- Remove from inventory
+	inventory:RemoveWeapon(inventory.CurrentWeaponIndex)
+
+	-- Clear equipped tool reference
+	if inventory.EquippedWeaponTool == tool then
+		inventory.EquippedWeaponTool = nil
+	end
+
 	local character = player.Character
 	if not character then return false end
 
@@ -169,40 +188,14 @@ local function dropWeapon(player, tool)
 
 	-- Calculate drop position (in front of player)
 	local dropPosition = rootPart.Position + (rootPart.CFrame.LookVector * Config.DropDistance)
-	dropPosition = Vector3.new(dropPosition.X, dropPosition.Y + 1, dropPosition.Z) -- Slight elevation
 
-	-- Create dropped weapon model
-	local droppedModel, prompt = createDroppedWeaponModel(weaponData, dropPosition)
-
-	if not droppedModel then
-		warn("[WeaponDrop] Failed to create dropped weapon model")
-		return false
-	end
-
-	-- Parent to workspace
-	droppedModel.Parent = workspace
-
-	-- Start floating animation
-	animateDroppedWeapon(droppedModel)
-
-	-- Handle pickup
-	prompt.Triggered:Connect(function(playerWhoTriggered)
-		if playerWhoTriggered ~= player and player.Parent then
-			-- Different player can pick it up
-			pickupWeapon(playerWhoTriggered, droppedModel, weaponData)
-		elseif playerWhoTriggered == player then
-			-- Original player picking up their own weapon
-			pickupWeapon(player, droppedModel, weaponData)
-		end
-	end)
-
-	-- Auto-cleanup after lifetime
-	Debris:AddItem(droppedModel, Config.DropLifetime)
+	-- Use ModularLootGen to spawn the dropped weapon (includes tap/hold pickup mechanics)
+	ModularLootGen:SpawnWeaponLoot(dropPosition, weaponData.Level, weaponData.Rarity)
 
 	-- Destroy the original tool
 	tool:Destroy()
 
-	print(string.format("[WeaponDrop] %s dropped %s", player.Name, weaponData.Name))
+	print(string.format("[WeaponDrop] %s dropped %s (removed from inventory slot %d)", player.Name, weaponData.Name, inventory.CurrentWeaponIndex))
 	return true
 end
 

@@ -205,7 +205,7 @@ end
 -- ============================================================
 
 --[[
-	Stash weapon in backpack without equipping
+	Stash weapon in inventory without equipping
 	Used when player taps E
 ]]
 function ModularLootGen:StashWeapon(player, lootDrop, weaponData)
@@ -214,7 +214,7 @@ function ModularLootGen:StashWeapon(player, lootDrop, weaponData)
 	-- Get player inventory
 	local inventory = PlayerInventory.GetInventory(player)
 
-	-- Check if backpack has space
+	-- Check if inventory has space
 	if inventory:IsWeaponSlotFull() then
 		warn(string.format("[ModularLootGen] %s weapon slots full!", player.Name))
 
@@ -229,20 +229,10 @@ function ModularLootGen:StashWeapon(player, lootDrop, weaponData)
 		return
 	end
 
-	-- Create weapon tool
-	local weaponTool = WeaponToolBuilder:BuildWeaponTool(weaponData)
-	if not weaponTool then
-		warn("[ModularLootGen] Failed to build weapon tool")
-		return
-	end
-
-	-- Add to inventory (backpack)
-	local success = inventory:AddWeapon(weaponTool)
+	-- Add weapon DATA to inventory (no Tool created yet)
+	local success, slotIndex = inventory:AddWeapon(weaponData)
 	if success then
-		-- Parent to player's backpack
-		weaponTool.Parent = player:FindFirstChild("Backpack")
-
-		print(string.format("[ModularLootGen] Stashed %s to %s's backpack", weaponData.Name, player.Name))
+		print(string.format("[ModularLootGen] Stashed %s to %s's inventory slot %d", weaponData.Name, player.Name, slotIndex))
 
 		-- Play pickup sound
 		local pickupSound = Instance.new("Sound")
@@ -257,7 +247,6 @@ function ModularLootGen:StashWeapon(player, lootDrop, weaponData)
 		lootDrop:Destroy()
 	else
 		warn("[ModularLootGen] Failed to add weapon to inventory")
-		weaponTool:Destroy()
 	end
 end
 
@@ -271,69 +260,60 @@ function ModularLootGen:EquipWeapon(player, lootDrop, weaponData)
 	-- Get player inventory
 	local inventory = PlayerInventory.GetInventory(player)
 
-	-- Create weapon tool
-	local weaponTool = WeaponToolBuilder:BuildWeaponTool(weaponData)
-	if not weaponTool then
-		warn("[ModularLootGen] Failed to build weapon tool")
-		return
-	end
-
 	-- Check if inventory is full
 	if inventory:IsWeaponSlotFull() then
 		-- Inventory full - swap with currently equipped weapon
-		local character = player.Character
-		if character then
-			local equippedWeapon = character:FindFirstChildOfClass("Tool")
+		local currentWeaponData = inventory:GetCurrentWeapon()
+		if currentWeaponData then
+			-- Drop current weapon at pickup location
+			local dropPos = lootDrop.Position
+			task.spawn(function()
+				self:SpawnWeaponLoot(dropPos, currentWeaponData.Level, currentWeaponData.Rarity)
+			end)
 
-			if equippedWeapon then
-				-- Drop currently equipped weapon
-				local equippedData = WeaponToolBuilder:GetWeaponDataFromTool(equippedWeapon)
-				if equippedData then
-					-- Spawn dropped weapon at pickup location
-					local dropPos = lootDrop.Position
-					task.spawn(function()
-						self:SpawnWeaponLoot(dropPos, equippedData.Level, equippedData.Rarity)
-					end)
-				end
+			-- Remove from inventory
+			inventory:RemoveWeapon(inventory.CurrentWeaponIndex)
 
-				-- Remove from inventory and destroy
-				for i = 1, inventory:GetWeaponCount() do
-					if inventory:GetWeapon(i) == equippedWeapon then
-						inventory:RemoveWeapon(i)
-						break
-					end
-				end
-				equippedWeapon:Destroy()
+			print(string.format("[ModularLootGen] Swapped equipped weapon for %s", weaponData.Name))
+		else
+			-- No current weapon but full inventory - swap with first slot
+			local firstWeaponData = inventory:GetWeapon(1)
+			if firstWeaponData then
+				local dropPos = lootDrop.Position
+				task.spawn(function()
+					self:SpawnWeaponLoot(dropPos, firstWeaponData.Level, firstWeaponData.Rarity)
+				end)
 
-				print(string.format("[ModularLootGen] Swapped equipped weapon for %s", weaponData.Name))
-			else
-				-- No equipped weapon, but backpack is full - swap with first weapon in backpack
-				local firstWeapon = inventory:GetWeapon(1)
-				if firstWeapon then
-					local firstWeaponData = WeaponToolBuilder:GetWeaponDataFromTool(firstWeapon)
-					if firstWeaponData then
-						local dropPos = lootDrop.Position
-						task.spawn(function()
-							self:SpawnWeaponLoot(dropPos, firstWeaponData.Level, firstWeaponData.Rarity)
-						end)
-					end
+				inventory:RemoveWeapon(1)
 
-					inventory:RemoveWeapon(1)
-					firstWeapon:Destroy()
-
-					print(string.format("[ModularLootGen] Swapped backpack weapon for %s", weaponData.Name))
-				end
+				print(string.format("[ModularLootGen] Swapped inventory weapon for %s", weaponData.Name))
 			end
 		end
 	end
 
-	-- Add to inventory and equip
-	local success = inventory:AddWeapon(weaponTool)
+	-- Add weapon DATA to inventory
+	local success, slotIndex = inventory:AddWeapon(weaponData)
 	if success then
-		-- Parent to character (equip immediately)
+		-- Set as current weapon
+		inventory:SwitchWeapon(slotIndex)
+
+		-- Create weapon tool
+		local weaponTool = WeaponToolBuilder:BuildWeaponTool(weaponData)
+		if not weaponTool then
+			warn("[ModularLootGen] Failed to build weapon tool")
+			return
+		end
+
+		-- Destroy old equipped tool if exists
+		if inventory.EquippedWeaponTool then
+			inventory.EquippedWeaponTool:Destroy()
+		end
+
+		-- Store tool reference and equip to character
+		inventory.EquippedWeaponTool = weaponTool
 		weaponTool.Parent = player.Character
 
-		print(string.format("[ModularLootGen] Equipped %s to %s", weaponData.Name, player.Name))
+		print(string.format("[ModularLootGen] Equipped %s to %s (slot %d)", weaponData.Name, player.Name, slotIndex))
 
 		-- Play pickup sound
 		local pickupSound = Instance.new("Sound")
@@ -348,7 +328,6 @@ function ModularLootGen:EquipWeapon(player, lootDrop, weaponData)
 		lootDrop:Destroy()
 	else
 		warn("[ModularLootGen] Failed to add weapon to inventory")
-		weaponTool:Destroy()
 	end
 end
 

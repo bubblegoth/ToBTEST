@@ -34,31 +34,53 @@ function PlayerInventory.new(player)
 	local self = setmetatable({}, PlayerInventory)
 
 	self.Player = player
-	self.Weapons = {} -- Array of weapon Tools (max 4)
-	self.Shield = nil -- Single shield (nil = no shield equipped)
+	self.Weapons = {} -- Array of weapon DATA (max 4) - NOT Tools, just data tables
+	self.Shield = nil -- Single shield data (nil = no shield equipped)
 	self.CurrentWeaponIndex = 1 -- Which weapon slot is currently equipped (1-4)
+	self.EquippedWeaponTool = nil -- The actual Tool instance for currently equipped weapon
 
 	return self
 end
 
 -- ============================================================
--- WEAPON MANAGEMENT
+-- WEAPON MANAGEMENT (Stores weapon DATA, not Tools)
 -- ============================================================
 
-function PlayerInventory:AddWeapon(weaponTool)
+--[[
+	Add weapon data to inventory
+	@param weaponData - Complete weapon data table (NOT a Tool)
+	@param slotIndex - Optional specific slot to add to (1-4)
+	@return success, slotIndex
+]]
+function PlayerInventory:AddWeapon(weaponData, slotIndex)
 	-- Check if inventory is full
-	if #self.Weapons >= Config.MaxWeaponSlots then
+	if #self.Weapons >= Config.MaxWeaponSlots and not slotIndex then
 		warn("[PlayerInventory] Weapon slots full! Cannot add weapon.")
-		return false
+		return false, nil
 	end
 
-	-- Add to first empty slot
-	table.insert(self.Weapons, weaponTool)
-	print(string.format("[PlayerInventory] Added weapon to slot %d: %s", #self.Weapons, weaponTool.Name))
-
-	return true
+	-- Add to specific slot or first empty slot
+	if slotIndex then
+		if slotIndex < 1 or slotIndex > Config.MaxWeaponSlots then
+			warn("[PlayerInventory] Invalid slot index:", slotIndex)
+			return false, nil
+		end
+		self.Weapons[slotIndex] = weaponData
+		print(string.format("[PlayerInventory] Added weapon to slot %d: %s", slotIndex, weaponData.Name))
+		return true, slotIndex
+	else
+		table.insert(self.Weapons, weaponData)
+		local addedSlot = #self.Weapons
+		print(string.format("[PlayerInventory] Added weapon to slot %d: %s", addedSlot, weaponData.Name))
+		return true, addedSlot
+	end
 end
 
+--[[
+	Remove weapon data from inventory slot
+	@param slotIndex - Slot to remove from (1-4)
+	@return weaponData - The removed weapon data
+]]
 function PlayerInventory:RemoveWeapon(slotIndex)
 	if slotIndex < 1 or slotIndex > #self.Weapons then
 		warn("[PlayerInventory] Invalid weapon slot:", slotIndex)
@@ -74,22 +96,55 @@ function PlayerInventory:RemoveWeapon(slotIndex)
 		self.CurrentWeaponIndex = 1
 	end
 
+	-- Unequip tool if this was the equipped weapon
+	if slotIndex == self.CurrentWeaponIndex and self.EquippedWeaponTool then
+		self.EquippedWeaponTool:Destroy()
+		self.EquippedWeaponTool = nil
+	end
+
 	print(string.format("[PlayerInventory] Removed weapon from slot %d", slotIndex))
 	return weapon
 end
 
+--[[
+	Get weapon data from specific slot
+	@param slotIndex - Slot to get (1-4)
+	@return weaponData
+]]
 function PlayerInventory:GetWeapon(slotIndex)
 	return self.Weapons[slotIndex]
 end
 
+--[[
+	Get currently equipped weapon data
+	@return weaponData
+]]
 function PlayerInventory:GetCurrentWeapon()
 	return self.Weapons[self.CurrentWeaponIndex]
 end
 
-function PlayerInventory:SwapWeapon(slotIndex)
+--[[
+	Get currently equipped weapon Tool instance
+	@return Tool
+]]
+function PlayerInventory:GetEquippedTool()
+	return self.EquippedWeaponTool
+end
+
+--[[
+	Switch to different weapon slot
+	@param slotIndex - Slot to switch to (1-4)
+	@return success
+]]
+function PlayerInventory:SwitchWeapon(slotIndex)
 	if slotIndex < 1 or slotIndex > #self.Weapons then
-		warn("[PlayerInventory] Cannot swap to slot:", slotIndex)
+		warn("[PlayerInventory] Cannot switch to slot:", slotIndex)
 		return false
+	end
+
+	if slotIndex == self.CurrentWeaponIndex then
+		print("[PlayerInventory] Already on slot", slotIndex)
+		return true
 	end
 
 	self.CurrentWeaponIndex = slotIndex
@@ -103,6 +158,14 @@ end
 
 function PlayerInventory:IsWeaponSlotFull()
 	return #self.Weapons >= Config.MaxWeaponSlots
+end
+
+--[[
+	Get all weapon data in inventory
+	@return table - Array of weapon data
+]]
+function PlayerInventory:GetAllWeapons()
+	return self.Weapons
 end
 
 -- ============================================================
