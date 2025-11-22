@@ -29,6 +29,222 @@ pcall(function()
 end)
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- ANIMATION SYSTEM
+-- ════════════════════════════════════════════════════════════════════════════
+
+--[[
+	Default Roblox Animation IDs - These are fallback animations
+	Replace these with your custom animation IDs for better results
+]]
+local DefaultAnimations = {
+	-- Universal animations
+	Idle = "rbxassetid://507766388",      -- Default idle
+	Walk = "rbxassetid://507777826",      -- Default walk
+	Run = "rbxassetid://507767714",       -- Default run
+	Jump = "rbxassetid://507765000",      -- Default jump
+	Fall = "rbxassetid://507767968",      -- Default fall
+
+	-- Combat animations
+	MeleeAttack1 = "rbxassetid://522635514",  -- Slash animation
+	MeleeAttack2 = "rbxassetid://522638767",  -- Punch animation
+	RangedAttack = "rbxassetid://522639910",  -- Point/shoot animation
+
+	-- Reactions
+	Hit = "rbxassetid://507768133",       -- Getting hit
+	Death = "rbxassetid://507766951",     -- Death/ragdoll
+}
+
+--[[
+	Animation Controller Class
+	Manages animation playback for an enemy
+]]
+local AnimationController = {}
+AnimationController.__index = AnimationController
+
+function AnimationController.new(humanoid, archetypeName)
+	local self = setmetatable({}, AnimationController)
+
+	self.humanoid = humanoid
+	self.animator = humanoid:FindFirstChildOfClass("Animator")
+
+	-- Create Animator if it doesn't exist
+	if not self.animator then
+		self.animator = Instance.new("Animator")
+		self.animator.Parent = humanoid
+	end
+
+	self.archetypeName = archetypeName
+	self.loadedAnimations = {}
+	self.currentAnimation = nil
+	self.currentTrack = nil
+
+	-- Load all animations
+	self:loadAnimations()
+
+	return self
+end
+
+function AnimationController:loadAnimations()
+	-- Load animation tracks
+	for animName, animId in pairs(DefaultAnimations) do
+		local animation = Instance.new("Animation")
+		animation.AnimationId = animId
+		animation.Name = animName
+
+		local success, track = pcall(function()
+			return self.animator:LoadAnimation(animation)
+		end)
+
+		if success and track then
+			self.loadedAnimations[animName] = track
+		else
+			warn("[AnimationController] Failed to load animation:", animName)
+		end
+	end
+
+	-- Set animation priorities
+	if self.loadedAnimations.Idle then
+		self.loadedAnimations.Idle.Priority = Enum.AnimationPriority.Idle
+	end
+	if self.loadedAnimations.Walk then
+		self.loadedAnimations.Walk.Priority = Enum.AnimationPriority.Movement
+	end
+	if self.loadedAnimations.Run then
+		self.loadedAnimations.Run.Priority = Enum.AnimationPriority.Movement
+	end
+
+	-- Attack animations should override movement
+	for _, animName in ipairs({"MeleeAttack1", "MeleeAttack2", "RangedAttack"}) do
+		if self.loadedAnimations[animName] then
+			self.loadedAnimations[animName].Priority = Enum.AnimationPriority.Action
+		end
+	end
+
+	-- Death should override everything
+	if self.loadedAnimations.Death then
+		self.loadedAnimations.Death.Priority = Enum.AnimationPriority.Action4
+	end
+end
+
+function AnimationController:play(animationName, fadeTime, speed, looped)
+	fadeTime = fadeTime or 0.1
+	speed = speed or 1.0
+	looped = looped ~= false -- Default true
+
+	local track = self.loadedAnimations[animationName]
+	if not track then
+		return
+	end
+
+	-- Don't restart if already playing the same animation
+	if self.currentTrack == track and self.currentTrack.IsPlaying then
+		return
+	end
+
+	-- Stop current animation
+	if self.currentTrack and self.currentTrack.IsPlaying then
+		self.currentTrack:Stop(fadeTime)
+	end
+
+	-- Play new animation
+	track.Looped = looped
+	track:Play(fadeTime)
+	track:AdjustSpeed(speed)
+
+	self.currentAnimation = animationName
+	self.currentTrack = track
+
+	return track
+end
+
+function AnimationController:stop(animationName, fadeTime)
+	fadeTime = fadeTime or 0.1
+
+	if animationName then
+		local track = self.loadedAnimations[animationName]
+		if track and track.IsPlaying then
+			track:Stop(fadeTime)
+		end
+	else
+		-- Stop all animations
+		for _, track in pairs(self.loadedAnimations) do
+			if track.IsPlaying then
+				track:Stop(fadeTime)
+			end
+		end
+	end
+end
+
+function AnimationController:playAttack(isMelee)
+	local attackAnim
+
+	if isMelee then
+		-- Alternate between melee attacks for variety
+		attackAnim = math.random() > 0.5 and "MeleeAttack1" or "MeleeAttack2"
+	else
+		attackAnim = "RangedAttack"
+	end
+
+	local track = self:play(attackAnim, 0.05, 1.2, false) -- Fast fade, 20% faster, non-looping
+
+	return track
+end
+
+function AnimationController:playMovement(speed)
+	-- Determine animation based on movement speed
+	local animToPlay
+
+	if speed < 1 then
+		animToPlay = "Idle"
+	elseif speed < 18 then
+		animToPlay = "Walk"
+	else
+		animToPlay = "Run"
+	end
+
+	-- Adjust animation speed based on actual walk speed
+	local animSpeed = 1.0
+	if animToPlay == "Walk" then
+		animSpeed = speed / 16 -- Normalize to default walk speed
+	elseif animToPlay == "Run" then
+		animSpeed = speed / 20 -- Normalize to default run speed
+	end
+
+	local track = self:play(animToPlay, 0.2, animSpeed, true)
+	return track
+end
+
+function AnimationController:playDeath()
+	self:stop(nil, 0.1) -- Stop all animations quickly
+	local track = self:play("Death", 0.05, 1.0, false)
+	return track
+end
+
+function AnimationController:playHitReaction()
+	-- Brief hit reaction without stopping current animation
+	local track = self.loadedAnimations.Hit
+	if track then
+		track.Looped = false
+		track.Priority = Enum.AnimationPriority.Action2 -- High priority but not highest
+		track:Play(0.05)
+		track:AdjustSpeed(1.5) -- Play faster for snappy reaction
+	end
+end
+
+function AnimationController:getCurrentAnimationName()
+	return self.currentAnimation
+end
+
+function AnimationController:destroy()
+	self:stop(nil, 0)
+	for _, track in pairs(self.loadedAnimations) do
+		track:Destroy()
+	end
+	self.loadedAnimations = {}
+	self.currentTrack = nil
+end
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- GLOBAL ATTACK TOKEN SYSTEM
 -- ════════════════════════════════════════════════════════════════════════════
 local AttackTokenManager = {
@@ -215,6 +431,10 @@ function EnemyAI.new(enemyModel)
 
 	-- Configure humanoid
 	self.humanoid.WalkSpeed = self.archetype.moveSpeed
+
+	-- Create animation controller
+	self.animController = AnimationController.new(self.humanoid, self.archetypeName)
+	print(string.format("[EnemyAI] Created animation controller for %s", enemyModel.Name))
 
 	-- Give weapon to ranged enemies
 	local isRangedEnemy = (self.archetypeName == "Ranged" or self.archetypeName == "Sniper" or self.archetypeName == "Flanker")
@@ -413,39 +633,21 @@ function EnemyAI:performAttack()
 
 	-- RANGED ATTACK: Projectile with spread and bursts
 	if self.archetypeName == "Ranged" or self.archetypeName == "Sniper" or self.archetypeName == "Flanker" then
-		self:performRangedAttack(targetRoot, targetHumanoid)
+		-- Play ranged attack animation
+		local attackTrack = self.animController:playAttack(false)
+
+		-- Small delay before firing for animation windup
+		task.delay(0.15, function()
+			self:performRangedAttack(targetRoot, targetHumanoid)
+		end)
 	else
-		-- MELEE ATTACK: Improved hit detection with range check
-		local distance = (targetRoot.Position - self.rootPart.Position).Magnitude
-		if distance <= self.archetype.attackRange then
-			-- Verify target is still in front of us
-			local toTarget = (targetRoot.Position - self.rootPart.Position).Unit
-			local lookDirection = self.rootPart.CFrame.LookVector
-			local dot = toTarget:Dot(lookDirection)
+		-- MELEE ATTACK: Play animation and deal damage at peak
+		local attackTrack = self.animController:playAttack(true)
 
-			if dot > 0.5 then  -- Target is in front (within 60 degree cone)
-				-- Deal damage through shield system if player has shield
-				local damage = self.archetype.damage
-				if _G.AbsorbShieldDamage and game.Players:GetPlayerFromCharacter(self.target) then
-					local player = game.Players:GetPlayerFromCharacter(self.target)
-					damage = _G.AbsorbShieldDamage(player, damage)
-				end
-
-				-- Apply remaining damage to health
-				if damage > 0 then
-					targetHumanoid:TakeDamage(damage)
-				end
-
-				print(string.format("[EnemyAI] %s melee hit %s for %d damage (dist: %.1f)",
-					self.archetypeName, self.target.Name, self.archetype.damage, distance))
-			else
-				print(string.format("[EnemyAI] %s melee MISSED - target not in front (dot: %.2f)",
-					self.archetypeName, dot))
-			end
-		else
-			print(string.format("[EnemyAI] %s melee MISSED - out of range (dist: %.1f > %.1f)",
-				self.archetypeName, distance, self.archetype.attackRange))
-		end
+		-- Deal damage at animation peak (around 40% through animation)
+		task.delay(0.25, function()
+			self:performMeleeDamage(targetRoot, targetHumanoid)
+		end)
 	end
 
 	self.lastAttackTime = tick()
@@ -455,6 +657,50 @@ function EnemyAI:performAttack()
 			AttackTokenManager:releaseToken(self.id)
 			self.hasAttackToken = false
 		end)
+	end
+end
+
+function EnemyAI:performMeleeDamage(targetRoot, targetHumanoid)
+	-- Check if target still exists
+	if not self.target or not self.target.Parent then return end
+	if not targetRoot or not targetRoot.Parent then return end
+	if not targetHumanoid or targetHumanoid.Health <= 0 then return end
+
+	-- MELEE ATTACK: Improved hit detection with range check
+	local distance = (targetRoot.Position - self.rootPart.Position).Magnitude
+	if distance <= self.archetype.attackRange then
+		-- Verify target is still in front of us
+		local toTarget = (targetRoot.Position - self.rootPart.Position).Unit
+		local lookDirection = self.rootPart.CFrame.LookVector
+		local dot = toTarget:Dot(lookDirection)
+
+		if dot > 0.5 then  -- Target is in front (within 60 degree cone)
+			-- Deal damage through shield system if player has shield
+			local damage = self.archetype.damage
+			if _G.AbsorbShieldDamage and game.Players:GetPlayerFromCharacter(self.target) then
+				local player = game.Players:GetPlayerFromCharacter(self.target)
+				damage = _G.AbsorbShieldDamage(player, damage)
+			end
+
+			-- Apply remaining damage to health
+			if damage > 0 then
+				targetHumanoid:TakeDamage(damage)
+
+				-- Play hit reaction on player if they have animation controller
+				if self.target:FindFirstChild("Humanoid") then
+					-- Could trigger player hit reaction here
+				end
+			end
+
+			print(string.format("[EnemyAI] %s melee hit %s for %d damage (dist: %.1f)",
+				self.archetypeName, self.target.Name, self.archetype.damage, distance))
+		else
+			print(string.format("[EnemyAI] %s melee MISSED - target not in front (dot: %.2f)",
+				self.archetypeName, dot))
+		end
+	else
+		print(string.format("[EnemyAI] %s melee MISSED - out of range (dist: %.1f > %.1f)",
+			self.archetypeName, distance, self.archetype.attackRange))
 	end
 end
 
@@ -568,16 +814,33 @@ end
 
 function EnemyAI:changeState(newState)
 	if self.currentState == newState then return end
+
+	local oldState = self.currentState
 	self.currentState = newState
 	self.stateTime = 0
 
+	-- Update walk speed based on state
 	if newState == AIStates.ATTACK then
 		self.humanoid.WalkSpeed = 0
 	elseif newState == AIStates.CHASE then
 		self.humanoid.WalkSpeed = self.archetype.moveSpeed * 1.2
+	elseif newState == AIStates.RETREAT then
+		self.humanoid.WalkSpeed = self.archetype.moveSpeed * 1.1 -- Faster retreat
+	elseif newState == AIStates.DEAD then
+		self.humanoid.WalkSpeed = 0
+		-- Play death animation
+		self.animController:playDeath()
+		print(string.format("[EnemyAI] %s died - playing death animation", self.model.Name))
 	else
 		self.humanoid.WalkSpeed = self.archetype.moveSpeed
 	end
+
+	-- Update movement animation immediately when state changes
+	if newState ~= AIStates.ATTACK and newState ~= AIStates.DEAD then
+		self.animController:playMovement(self.humanoid.WalkSpeed)
+	end
+
+	print(string.format("[EnemyAI] %s: %s → %s", self.model.Name, oldState, newState))
 end
 
 function EnemyAI:update(deltaTime)
@@ -587,6 +850,14 @@ function EnemyAI:update(deltaTime)
 		self:changeState(AIStates.DEAD)
 		AttackTokenManager:removeEnemy(self.id)
 		return
+	end
+
+	-- Update movement animation periodically (every 0.5 seconds)
+	if self.currentState ~= AIStates.ATTACK and self.currentState ~= AIStates.DEAD then
+		if not self.lastAnimUpdate or tick() - self.lastAnimUpdate > 0.5 then
+			self.animController:playMovement(self.humanoid.WalkSpeed)
+			self.lastAnimUpdate = tick()
+		end
 	end
 
 	if not self.target or not self.target.Parent then
@@ -687,6 +958,13 @@ end
 
 function EnemyAI:destroy()
 	AttackTokenManager:removeEnemy(self.id)
+
+	-- Cleanup animation controller
+	if self.animController then
+		self.animController:destroy()
+		self.animController = nil
+	end
+
 	self.target = nil
 	self.model = nil
 end
