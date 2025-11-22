@@ -326,13 +326,20 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 		print("[SoulVendorGUI] Setting up mouse/camera unlock")
 		-- Unlock mouse and camera for GUI interaction
 		local function forceUnlock()
+			-- CRITICAL: Unlock mouse for GUI interaction
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 			UserInputService.MouseIconEnabled = true
-			Camera.CameraType = Enum.CameraType.Custom -- Camera uses CameraType, not CameraMode
-			Player.CameraMode = Enum.CameraMode.Classic -- Player uses CameraMode
+
+			-- Unlock camera
+			Camera.CameraType = Enum.CameraType.Custom
+			Player.CameraMode = Enum.CameraMode.Classic
 		end
 
-		-- Force unlock immediately
+		-- Force unlock immediately (multiple times to ensure it takes)
+		forceUnlock()
+		task.wait()
+		forceUnlock()
+		task.wait()
 		forceUnlock()
 
 		-- Continuously enforce unlock while GUI is open (in case something tries to re-lock)
@@ -340,9 +347,13 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 		if unlockConnection then
 			unlockConnection:Disconnect()
 		end
-		unlockConnection = game:GetService("RunService").RenderStepped:Connect(function()
-			if isGUIOpen then
-				forceUnlock()
+
+		-- Use Heartbeat instead of RenderStepped for more reliable execution
+		unlockConnection = game:GetService("RunService").Heartbeat:Connect(function()
+			if isGUIOpen and vendorGUI and vendorGUI.Enabled then
+				-- Re-enforce unlock every frame
+				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+				UserInputService.MouseIconEnabled = true
 			end
 		end)
 
@@ -397,6 +408,13 @@ SoulVendorRemote.OnClientEvent:Connect(function(action, ...)
 			warn("[SoulVendorGUI] ✗ Purchase failed:", message)
 		end
 	elseif action == "Close" then
+		hideVendorGUI()
+	end
+end)
+
+-- ESC key to close GUI
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if input.KeyCode == Enum.KeyCode.Escape and isGUIOpen then
 		hideVendorGUI()
 	end
 end)
