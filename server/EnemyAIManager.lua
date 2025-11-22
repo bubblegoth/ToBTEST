@@ -245,6 +245,212 @@ function AnimationController:destroy()
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- RAGDOLL SYSTEM
+-- ════════════════════════════════════════════════════════════════════════════
+
+--[[
+	Ragdoll System
+	Converts humanoid into physics-based ragdoll on death
+]]
+local RagdollSystem = {}
+
+function RagdollSystem.CreateRagdoll(character, humanoid)
+	if not character or not humanoid then return end
+
+	-- Prevent multiple ragdoll attempts
+	if character:GetAttribute("IsRagdolled") then return end
+	character:SetAttribute("IsRagdolled", true)
+
+	print(string.format("[Ragdoll] Creating ragdoll for %s", character.Name))
+
+	-- Set humanoid state to physics
+	humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+	humanoid.AutoRotate = false
+	humanoid.PlatformStand = true
+	humanoid.RequiresNeck = false
+
+	-- Get all body parts
+	local parts = {}
+	for _, part in ipairs(character:GetDescendants()) do
+		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+			table.insert(parts, part)
+		end
+	end
+
+	-- Unanchor and enable physics for all parts
+	for _, part in ipairs(parts) do
+		part.Anchored = false
+		part.CanCollide = true
+		part.Massless = false
+	end
+
+	-- Create Ball Socket Constraints for realistic ragdoll joints
+	local function createBallSocket(part0, part1, attachmentName0, attachmentName1)
+		if not part0 or not part1 then return end
+
+		-- Find or create attachments
+		local att0 = part0:FindFirstChild(attachmentName0)
+		local att1 = part1:FindFirstChild(attachmentName1)
+
+		if not att0 then
+			att0 = Instance.new("Attachment")
+			att0.Name = attachmentName0
+			att0.Parent = part0
+
+			-- Position attachment at natural joint location
+			if attachmentName0:find("Shoulder") then
+				att0.Position = Vector3.new(part0.Size.X/2, part0.Size.Y/2, 0)
+			elseif attachmentName0:find("Hip") then
+				att0.Position = Vector3.new(0, -part0.Size.Y/2, 0)
+			elseif attachmentName0:find("Neck") then
+				att0.Position = Vector3.new(0, part0.Size.Y/2, 0)
+			elseif attachmentName0:find("Elbow") or attachmentName0:find("Knee") then
+				att0.Position = Vector3.new(0, -part0.Size.Y/2, 0)
+			end
+		end
+
+		if not att1 then
+			att1 = Instance.new("Attachment")
+			att1.Name = attachmentName1
+			att1.Parent = part1
+
+			-- Position attachment at natural joint location
+			if attachmentName1:find("Shoulder") then
+				att1.Position = Vector3.new(0, part1.Size.Y/2, 0)
+			elseif attachmentName1:find("Hip") then
+				att1.Position = Vector3.new(0, part1.Size.Y/2, 0)
+			elseif attachmentName1:find("Neck") then
+				att1.Position = Vector3.new(0, -part1.Size.Y/2, 0)
+			elseif attachmentName1:find("Elbow") or attachmentName1:find("Knee") then
+				att1.Position = Vector3.new(0, part1.Size.Y/2, 0)
+			end
+		end
+
+		-- Create BallSocketConstraint
+		local constraint = Instance.new("BallSocketConstraint")
+		constraint.Attachment0 = att0
+		constraint.Attachment1 = att1
+		constraint.LimitsEnabled = true
+		constraint.UpperAngle = 45 -- Limit joint rotation for more realistic movement
+		constraint.TwistLimitsEnabled = true
+		constraint.TwistLowerAngle = -45
+		constraint.TwistUpperAngle = 45
+		constraint.Parent = part0
+
+		return constraint
+	end
+
+	-- Get character parts
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+	local head = character:FindFirstChild("Head")
+	local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+	local leftArm = character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftUpperArm")
+	local rightArm = character:FindFirstChild("Right Arm") or character:FindFirstChild("RightUpperArm")
+	local leftLeg = character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftUpperLeg")
+	local rightLeg = character:FindFirstChild("Right Leg") or character:FindFirstChild("RightUpperLeg")
+
+	-- R15 additional parts
+	local leftLowerArm = character:FindFirstChild("LeftLowerArm")
+	local rightLowerArm = character:FindFirstChild("RightLowerArm")
+	local leftLowerLeg = character:FindFirstChild("LeftLowerLeg")
+	local rightLowerLeg = character:FindFirstChild("RightLowerLeg")
+	local lowerTorso = character:FindFirstChild("LowerTorso")
+
+	-- Destroy existing Motor6D joints (they conflict with physics)
+	for _, joint in ipairs(character:GetDescendants()) do
+		if joint:IsA("Motor6D") or joint:IsA("Motor") or joint:IsA("Weld") then
+			joint:Destroy()
+		end
+	end
+
+	-- Create ragdoll joints
+	if torso and rootPart then
+		-- Connect torso to root
+		createBallSocket(rootPart, torso, "RootAttachment", "TorsoAttachment")
+	end
+
+	if head and torso then
+		-- Connect head to torso
+		createBallSocket(torso, head, "NeckAttachment", "HeadAttachment")
+	end
+
+	if leftArm and torso then
+		-- Connect left arm to torso
+		createBallSocket(torso, leftArm, "LeftShoulderAttachment", "ArmAttachment")
+	end
+
+	if rightArm and torso then
+		-- Connect right arm to torso
+		createBallSocket(torso, rightArm, "RightShoulderAttachment", "ArmAttachment")
+	end
+
+	if leftLeg and (torso or lowerTorso) then
+		-- Connect left leg to torso/lower torso
+		local hipPart = lowerTorso or torso
+		createBallSocket(hipPart, leftLeg, "LeftHipAttachment", "LegAttachment")
+	end
+
+	if rightLeg and (torso or lowerTorso) then
+		-- Connect right leg to torso/lower torso
+		local hipPart = lowerTorso or torso
+		createBallSocket(hipPart, rightLeg, "RightHipAttachment", "LegAttachment")
+	end
+
+	-- R15: Connect upper and lower limbs
+	if leftLowerArm and leftArm then
+		createBallSocket(leftArm, leftLowerArm, "ElbowAttachment", "WristAttachment")
+	end
+
+	if rightLowerArm and rightArm then
+		createBallSocket(rightArm, rightLowerArm, "ElbowAttachment", "WristAttachment")
+	end
+
+	if leftLowerLeg and leftLeg then
+		createBallSocket(leftLeg, leftLowerLeg, "KneeAttachment", "AnkleAttachment")
+	end
+
+	if rightLowerLeg and rightLeg then
+		createBallSocket(rightLeg, rightLowerLeg, "KneeAttachment", "AnkleAttachment")
+	end
+
+	if lowerTorso and torso then
+		createBallSocket(torso, lowerTorso, "WaistAttachment", "SpineAttachment")
+	end
+
+	-- Make root part unanchored and give it some initial velocity for dramatic death
+	if rootPart then
+		rootPart.Anchored = false
+		rootPart.CanCollide = true
+
+		-- Add a small upward impulse for dramatic effect
+		local bodyVelocity = Instance.new("BodyVelocity")
+		bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
+		bodyVelocity.Velocity = Vector3.new(0, 5, 0) + (humanoid.MoveDirection * 3)
+		bodyVelocity.Parent = rootPart
+
+		-- Remove after brief moment
+		game:GetService("Debris"):AddItem(bodyVelocity, 0.1)
+	end
+
+	-- Cleanup ragdoll after 5 seconds
+	task.delay(5, function()
+		if character and character.Parent then
+			for _, part in ipairs(character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.Transparency = 1
+					part.CanCollide = false
+				end
+			end
+
+			task.wait(0.5)
+			character:Destroy()
+		end
+	end)
+
+	print(string.format("[Ragdoll] Ragdoll created for %s", character.Name))
+end
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- GLOBAL ATTACK TOKEN SYSTEM
 -- ════════════════════════════════════════════════════════════════════════════
 local AttackTokenManager = {
@@ -828,9 +1034,18 @@ function EnemyAI:changeState(newState)
 		self.humanoid.WalkSpeed = self.archetype.moveSpeed * 1.1 -- Faster retreat
 	elseif newState == AIStates.DEAD then
 		self.humanoid.WalkSpeed = 0
-		-- Play death animation
+
+		-- Play death animation briefly, then ragdoll
 		self.animController:playDeath()
-		print(string.format("[EnemyAI] %s died - playing death animation", self.model.Name))
+
+		-- Trigger ragdoll after short delay for death animation to start
+		task.delay(0.2, function()
+			if self.model and self.model.Parent then
+				RagdollSystem.CreateRagdoll(self.model, self.humanoid)
+			end
+		end)
+
+		print(string.format("[EnemyAI] %s died - ragdolling", self.model.Name))
 	else
 		self.humanoid.WalkSpeed = self.archetype.moveSpeed
 	end
