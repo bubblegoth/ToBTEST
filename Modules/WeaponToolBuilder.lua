@@ -47,13 +47,11 @@ function WeaponToolBuilder:CreateWeaponTool(weaponData)
 			local partClone = part:Clone()
 			partClone.Parent = tool
 
-			-- Recreate welds
-			if part:FindFirstChild("WeldConstraint") then
-				local weld = Instance.new("WeldConstraint")
-				weld.Part0 = handle
-				weld.Part1 = partClone
-				weld.Parent = partClone
-			end
+			-- Create weld to preserve position relative to handle
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = handle
+			weld.Part1 = partClone
+			weld.Parent = partClone
 		end
 	end
 
