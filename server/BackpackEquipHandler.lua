@@ -41,7 +41,7 @@ local function equipWeaponFromBackpack(player, backpackIndex)
 	end
 
 	-- Get weapon from backpack
-	local weaponData = inventory.BackpackWeapons[backpackIndex]
+	local weaponData = inventory.Backpack.Weapons[backpackIndex]
 	if not weaponData then
 		warn("[BackpackEquip] No weapon at backpack index", backpackIndex)
 		return false
@@ -50,7 +50,7 @@ local function equipWeaponFromBackpack(player, backpackIndex)
 	-- Find empty inventory slot (or use slot 1 if full)
 	local targetSlot = nil
 	for i = 1, 4 do
-		if not inventory.EquippedWeapons[i] then
+		if not inventory.Inventory.Weapons[i] then
 			targetSlot = i
 			break
 		end
@@ -70,7 +70,7 @@ local function equipWeaponFromBackpack(player, backpackIndex)
 	end
 
 	-- Remove from backpack
-	table.remove(inventory.BackpackWeapons, backpackIndex)
+	table.remove(inventory.Backpack.Weapons, backpackIndex)
 
 	-- Equip to inventory slot
 	local success = inventory:EquipWeaponToSlot(targetSlot, weaponData)
@@ -86,7 +86,7 @@ local function equipWeaponFromBackpack(player, backpackIndex)
 	else
 		warn("[BackpackEquip] Failed to equip weapon to slot", targetSlot)
 		-- Put it back in backpack
-		table.insert(inventory.BackpackWeapons, backpackIndex, weaponData)
+		table.insert(inventory.Backpack.Weapons, backpackIndex, weaponData)
 		return false
 	end
 end
@@ -104,7 +104,7 @@ local function equipShieldFromBackpack(player, backpackIndex)
 	end
 
 	-- Get shield from backpack
-	local shieldData = inventory.BackpackShields[backpackIndex]
+	local shieldData = inventory.Backpack.Shields[backpackIndex]
 	if not shieldData then
 		warn("[BackpackEquip] No shield at backpack index", backpackIndex)
 		return false
@@ -118,7 +118,7 @@ local function equipShieldFromBackpack(player, backpackIndex)
 	end
 
 	-- Remove from backpack
-	table.remove(inventory.BackpackShields, backpackIndex)
+	table.remove(inventory.Backpack.Shields, backpackIndex)
 
 	-- Equip shield
 	local success = inventory:EquipShield(shieldData)
@@ -130,7 +130,7 @@ local function equipShieldFromBackpack(player, backpackIndex)
 	else
 		warn("[BackpackEquip] Failed to equip shield")
 		-- Put it back in backpack
-		table.insert(inventory.BackpackShields, backpackIndex, shieldData)
+		table.insert(inventory.Backpack.Shields, backpackIndex, shieldData)
 		return false
 	end
 end
@@ -178,7 +178,7 @@ local function unequipWeaponToBackpack(player, inventorySlot)
 	end
 
 	-- Check backpack space
-	if #inventory.BackpackWeapons >= 30 then
+	if #inventory.Backpack.Weapons >= 30 then
 		warn("[BackpackEquip] Backpack full! Cannot unequip weapon")
 		return false
 	end
@@ -237,7 +237,7 @@ local function unequipShieldToBackpack(player)
 	end
 
 	-- Check backpack space
-	if #inventory.BackpackShields >= 10 then
+	if #inventory.Backpack.Shields >= 10 then
 		warn("[BackpackEquip] Backpack full! Cannot unequip shield")
 		return false
 	end

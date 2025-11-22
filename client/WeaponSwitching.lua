@@ -54,7 +54,7 @@ local function switchToWeapon(slotIndex)
 	end
 
 	-- Create new weapon tool
-	local weaponTool = WeaponToolBuilder:BuildWeaponTool(weaponData)
+	local weaponTool = WeaponToolBuilder:CreateWeaponTool(weaponData)
 	if not weaponTool then
 		warn(string.format("[WeaponSwitching] Failed to build weapon tool for slot %d", slotIndex))
 		return

@@ -300,7 +300,7 @@ function ModularLootGen:EquipWeapon(player, lootDrop, weaponData)
 		inventory:SwitchToSlot(targetSlot)
 
 		-- Create weapon tool
-		local weaponTool = WeaponToolBuilder:BuildWeaponTool(weaponData)
+		local weaponTool = WeaponToolBuilder:CreateWeaponTool(weaponData)
 		if not weaponTool then
 			warn("[ModularLootGen] Failed to build weapon tool")
 			return

@@ -601,8 +601,8 @@ local function updateDisplay(screenGui)
 	end
 
 	-- Get backpack items
-	local backpackWeapons = inventory.BackpackWeapons or {}
-	local backpackShields = inventory.BackpackShields or {}
+	local backpackWeapons = inventory.Backpack.Weapons or {}
+	local backpackShields = inventory.Backpack.Shields or {}
 
 	-- Update labels
 	mainFrame.WeaponsLabel.Text = string.format("WEAPONS (%d/30)", #backpackWeapons)
