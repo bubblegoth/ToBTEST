@@ -358,6 +358,20 @@ function ViewmodelController:playReloadAnimation()
 	end)
 end
 
+function ViewmodelController:playMelee()
+	if not self.viewmodel then return end
+
+	-- Punch weapon forward quickly
+	self.targetOffset = Vector3.new(0, 0, -0.4) -- Forward thrust
+
+	-- Return to normal position after melee
+	task.delay(0.15, function()
+		if self and self.enabled then
+			self.targetOffset = Vector3.new(0, 0, 0)
+		end
+	end)
+end
+
 -- ════════════════════════════════════════════════════════════════════════════
 -- RENDER LOOP
 -- ════════════════════════════════════════════════════════════════════════════

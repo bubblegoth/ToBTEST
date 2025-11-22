@@ -60,10 +60,27 @@ local function createViewmodel(tool)
 	-- Enable the viewmodel
 	currentViewModel:enable()
 
+	-- Hide the Tool's 3D parts (only show viewmodel, not the actual tool)
+	-- Use LocalTransparencyModifier so it only hides on client (other players can still see it)
+	for _, part in pairs(tool:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.LocalTransparencyModifier = 1 -- Make invisible on local client
+		end
+	end
+
 	print(string.format("[ViewmodelManager] Created viewmodel for %s", tool.Name))
 end
 
 local function destroyViewmodel()
+	-- Restore Tool's parts visibility before destroying viewmodel
+	if currentWeapon then
+		for _, part in pairs(currentWeapon:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.LocalTransparencyModifier = 0 -- Restore visibility
+			end
+		end
+	end
+
 	if currentViewModel then
 		currentViewModel:destroy()
 		currentViewModel = nil
