@@ -185,9 +185,9 @@ local function updateInventoryDisplay(screenGui)
 		end
 	end
 
-	-- Get all weapons from inventory (stored as data, not Tools)
-	local allWeapons = inventory:GetAllWeapons()
-	local currentWeaponIndex = inventory.CurrentWeaponIndex
+	-- Get all equipped weapons from inventory (stored as data, not Tools)
+	local allWeapons = inventory:GetAllEquippedWeapons()
+	local currentWeaponSlot = inventory.CurrentWeaponSlot
 
 	-- Create weapon cards
 	for i = 1, 4 do
@@ -216,7 +216,7 @@ local function updateInventoryDisplay(screenGui)
 			slotCorner.Parent = slotLabel
 
 			-- Add equipped indicator
-			if i == currentWeaponIndex then
+			if i == currentWeaponSlot then
 				local equippedLabel = Instance.new("TextLabel")
 				equippedLabel.Size = UDim2.new(1, 0, 0, 15)
 				equippedLabel.Position = UDim2.new(0, 0, 1, -15)

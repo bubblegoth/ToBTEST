@@ -31,21 +31,21 @@ local WeaponToolBuilder = require(Modules:WaitForChild("WeaponToolBuilder"))
 local function switchToWeapon(slotIndex)
 	local inventory = PlayerInventory.GetInventory(player)
 
-	-- Check if slot has a weapon
-	local weaponData = inventory:GetWeapon(slotIndex)
+	-- Check if slot has a weapon equipped
+	local weaponData = inventory:GetEquippedWeapon(slotIndex)
 	if not weaponData then
 		print(string.format("[WeaponSwitching] Slot %d is empty", slotIndex))
 		return
 	end
 
-	-- Check if already equipped
-	if inventory.CurrentWeaponIndex == slotIndex then
-		print(string.format("[WeaponSwitching] Weapon slot %d already equipped", slotIndex))
+	-- Check if already on this slot
+	if inventory.CurrentWeaponSlot == slotIndex then
+		print(string.format("[WeaponSwitching] Weapon slot %d already active", slotIndex))
 		return
 	end
 
-	-- Switch to new weapon
-	inventory:SwitchWeapon(slotIndex)
+	-- Switch to new weapon slot
+	inventory:SwitchToSlot(slotIndex)
 
 	-- Destroy old equipped tool
 	if inventory.EquippedWeaponTool then
