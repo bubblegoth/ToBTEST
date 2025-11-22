@@ -22,6 +22,9 @@ screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.Parent = PlayerGui
 
+-- Export HUD reference globally so other systems can hide/show it
+_G.DarkestHUD = screenGui
+
 print("🗡️ [HUD] ScreenGui created")
 
 -- DARKEST DUNGEON PALETTE: Sepia, torchlight, blood ink

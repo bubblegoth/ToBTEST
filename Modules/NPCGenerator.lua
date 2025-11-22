@@ -198,9 +198,18 @@ function NPCGenerator.BuildNPCModel(npcData, parent)
 	head.Parent = model
 	parts.Head = head
 
-	-- Torso (HumanoidRootPart)
+	-- HumanoidRootPart (transparent anchor point for R6 rig)
+	local rootPart = Instance.new("Part")
+	rootPart.Name = "HumanoidRootPart"
+	rootPart.Size = NPCConfig.DefaultSize.Torso
+	rootPart.Transparency = 1  -- Always transparent
+	rootPart.CanCollide = false
+	rootPart.Parent = model
+	parts.HumanoidRootPart = rootPart
+
+	-- Torso (visible body part with color/material)
 	local torso = Instance.new("Part")
-	torso.Name = "HumanoidRootPart"
+	torso.Name = "Torso"
 	torso.Size = NPCConfig.DefaultSize.Torso
 	torso.Color = npcData.Parts.Torso.Color
 	torso.Material = npcData.Parts.Torso.Material
@@ -208,7 +217,7 @@ function NPCGenerator.BuildNPCModel(npcData, parent)
 	torso.Parent = model
 	parts.Torso = torso
 
-	model.PrimaryPart = torso
+	model.PrimaryPart = rootPart
 
 	-- Arms
 	local leftArm = Instance.new("Part")
@@ -248,13 +257,15 @@ function NPCGenerator.BuildNPCModel(npcData, parent)
 	rightLeg.Parent = model
 	parts.RightLeg = rightLeg
 
-	-- Position parts (basic R15 positions)
-	torso.CFrame = CFrame.new(0, 3, 0)
-	head.CFrame = torso.CFrame + Vector3.new(0, 2.5, 0)
-	leftArm.CFrame = torso.CFrame + Vector3.new(-1.5, 0, 0)
-	rightArm.CFrame = torso.CFrame + Vector3.new(1.5, 0, 0)
-	leftLeg.CFrame = torso.CFrame + Vector3.new(-0.5, -2, 0)
-	rightLeg.CFrame = torso.CFrame + Vector3.new(0.5, -2, 0)
+	-- Position parts (basic R6 positions)
+	local baseCFrame = CFrame.new(0, 3, 0)
+	rootPart.CFrame = baseCFrame
+	torso.CFrame = baseCFrame  -- Torso at same position as root
+	head.CFrame = baseCFrame + Vector3.new(0, 2.5, 0)
+	leftArm.CFrame = baseCFrame + Vector3.new(-1.5, 0, 0)
+	rightArm.CFrame = baseCFrame + Vector3.new(1.5, 0, 0)
+	leftLeg.CFrame = baseCFrame + Vector3.new(-0.5, -2, 0)
+	rightLeg.CFrame = baseCFrame + Vector3.new(0.5, -2, 0)
 
 	-- Create welds (Motor6D for animation support)
 	NPCGenerator.CreateJoints(model, parts)
@@ -293,14 +304,18 @@ function NPCGenerator.CreateJoints(model, parts)
 		return motor
 	end
 
-	-- Neck (Head to Torso)
+	-- CRITICAL: Root Joint connects HumanoidRootPart to Torso
+	-- This allows animations to work properly in R6 rigs
+	createMotor6D("Root Hip", parts.HumanoidRootPart, parts.Torso, CFrame.new(0, 0, 0), CFrame.new(0, 0, 0))
+
+	-- Neck (Torso to Head)
 	createMotor6D("Neck", parts.Torso, parts.Head, CFrame.new(0, 1, 0), CFrame.new(0, -0.5, 0))
 
-	-- Shoulders
+	-- Shoulders (Torso to Arms)
 	createMotor6D("Left Shoulder", parts.Torso, parts.LeftArm, CFrame.new(-1, 0.5, 0), CFrame.new(0, 0.5, 0))
 	createMotor6D("Right Shoulder", parts.Torso, parts.RightArm, CFrame.new(1, 0.5, 0), CFrame.new(0, 0.5, 0))
 
-	-- Hips
+	-- Hips (Torso to Legs)
 	createMotor6D("Left Hip", parts.Torso, parts.LeftLeg, CFrame.new(-0.5, -1, 0), CFrame.new(0, 1, 0))
 	createMotor6D("Right Hip", parts.Torso, parts.RightLeg, CFrame.new(0.5, -1, 0), CFrame.new(0, 1, 0))
 end

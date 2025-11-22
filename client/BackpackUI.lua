@@ -772,6 +772,11 @@ local function toggleBackpack()
 	if isOpen then
 		updateDisplay(backpackUI)
 
+		-- Hide gameplay HUD for cleaner interface
+		if _G.DarkestHUD then
+			_G.DarkestHUD.Enabled = false
+		end
+
 		print("[BackpackUI] Setting up mouse/camera unlock")
 		-- Unlock mouse and camera for GUI interaction
 		local function forceUnlock()
@@ -813,6 +818,11 @@ local function toggleBackpack()
 		if unlockConnection then
 			unlockConnection:Disconnect()
 			unlockConnection = nil
+		end
+
+		-- Show gameplay HUD again
+		if _G.DarkestHUD then
+			_G.DarkestHUD.Enabled = true
 		end
 
 		-- Restore FPS mouse lock and camera mode
