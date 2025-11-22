@@ -18,6 +18,7 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
 
 print("[BackpackUI] Initializing...")
 
@@ -757,6 +758,7 @@ end
 
 local backpackUI = createBackpackUI()
 isOpen = false
+local unlockConnection = nil
 
 -- Toggle backpack
 local function toggleBackpack()
@@ -765,6 +767,59 @@ local function toggleBackpack()
 
 	if isOpen then
 		updateDisplay(backpackUI)
+
+		print("[BackpackUI] Setting up mouse/camera unlock")
+		-- Unlock mouse and camera for GUI interaction
+		local function forceUnlock()
+			-- CRITICAL: Unlock mouse for GUI interaction
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+			UserInputService.MouseIconEnabled = true
+
+			-- Unlock camera
+			Camera.CameraType = Enum.CameraType.Custom
+			player.CameraMode = Enum.CameraMode.Classic
+		end
+
+		-- Force unlock immediately (multiple times to ensure it takes)
+		forceUnlock()
+		task.wait()
+		forceUnlock()
+		task.wait()
+		forceUnlock()
+
+		-- Continuously enforce unlock while GUI is open (in case something tries to re-lock)
+		if unlockConnection then
+			unlockConnection:Disconnect()
+		end
+
+		-- Use Heartbeat for reliable execution
+		unlockConnection = RunService.Heartbeat:Connect(function()
+			if isOpen and backpackUI.Overlay.Visible then
+				-- Re-enforce unlock every frame
+				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+				UserInputService.MouseIconEnabled = true
+			end
+		end)
+
+		print("[BackpackUI] ✓ Backpack opened - mouse unlocked, GUI visible")
+		print("  Camera.CameraType:", Camera.CameraType)
+		print("  Player.CameraMode:", player.CameraMode)
+	else
+		-- Close: restore FPS mouse lock
+		if unlockConnection then
+			unlockConnection:Disconnect()
+			unlockConnection = nil
+		end
+
+		-- Restore FPS mouse lock and camera mode
+		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+		UserInputService.MouseIconEnabled = false
+		Camera.CameraType = Enum.CameraType.Custom
+		player.CameraMode = Enum.CameraMode.LockFirstPerson
+
+		print("[BackpackUI] Backpack closed - mouse LOCKED")
+		print("  Camera.CameraType:", Camera.CameraType)
+		print("  Player.CameraMode:", player.CameraMode)
 	end
 end
 
@@ -777,10 +832,12 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		toggleBackpack()
 	end
 
-	-- ESC to cancel drag
+	-- ESC to cancel drag or close backpack
 	if input.KeyCode == Enum.KeyCode.Escape then
 		if DragController.IsDragging() then
 			DragController.CancelDrag()
+		elseif isOpen then
+			toggleBackpack()
 		end
 	end
 end)
