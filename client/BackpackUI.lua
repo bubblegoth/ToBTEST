@@ -18,7 +18,6 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local playerScripts = player:WaitForChild("PlayerScripts")
 
 print("[BackpackUI] Initializing...")
 
@@ -27,7 +26,7 @@ local Modules = ReplicatedStorage:WaitForChild("Modules")
 local WeaponCard = require(Modules:WaitForChild("WeaponCard"))
 local ShieldCard = require(Modules:WaitForChild("ShieldCard"))
 local PlayerInventory = require(Modules:WaitForChild("PlayerInventory"))
-local DragController = require(playerScripts:WaitForChild("DragController"))
+local DragController = require(Modules:WaitForChild("DragController"))
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- UI CREATION
