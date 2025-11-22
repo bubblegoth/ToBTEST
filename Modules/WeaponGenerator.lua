@@ -273,34 +273,34 @@ function WeaponGenerator:GenerateDescription(weapon)
 		string.format("  Reload: %.1fs", weapon.ReloadTime)
 	}
 
-	-- Add special stats if they exist
-	if weapon.CritChance > 0 then
+	-- Add special stats if they exist (default to 0 if nil)
+	if (weapon.CritChance or 0) > 0 then
 		table.insert(lines, string.format("  Crit Chance: +%.0f%%", weapon.CritChance))
 	end
-	if weapon.CritDamage > 0 then
+	if (weapon.CritDamage or 0) > 0 then
 		table.insert(lines, string.format("  Crit Damage: +%.0f%%", weapon.CritDamage))
 	end
-	if weapon.SoulGain > 0 then
+	if (weapon.SoulGain or 0) > 0 then
 		table.insert(lines, string.format("  Soul Gain: +%.0f", weapon.SoulGain))
 	end
-	if weapon.KillHeal > 0 then
+	if (weapon.KillHeal or 0) > 0 then
 		table.insert(lines, string.format("  Heal on Kill: +%.0f", weapon.KillHeal))
 	end
 
-	-- Add elemental damage
-	if weapon.FireDamage > 0 then
+	-- Add elemental damage (default to 0 if nil to prevent comparison errors)
+	if (weapon.FireDamage or 0) > 0 then
 		table.insert(lines, string.format("  Fire Damage: +%.0f%%", weapon.FireDamage))
 	end
-	if weapon.FrostDamage > 0 then
+	if (weapon.FrostDamage or 0) > 0 then
 		table.insert(lines, string.format("  Frost Damage: +%.0f%%", weapon.FrostDamage))
 	end
-	if weapon.ShadowDamage > 0 then
+	if (weapon.ShadowDamage or 0) > 0 then
 		table.insert(lines, string.format("  Shadow Damage: +%.0f%%", weapon.ShadowDamage))
 	end
-	if weapon.LightDamage > 0 then
+	if (weapon.LightDamage or 0) > 0 then
 		table.insert(lines, string.format("  Light Damage: +%.0f%%", weapon.LightDamage))
 	end
-	if weapon.VoidDamage > 0 then
+	if (weapon.VoidDamage or 0) > 0 then
 		table.insert(lines, string.format("  Void Damage: +%.0f%%", weapon.VoidDamage))
 	end
 
