@@ -393,27 +393,24 @@ end
 -- ============================================================
 
 function ModularLootGen:PickupShield(player, lootDrop, shieldData)
-	print(string.format("[ModularLootGen] %s picked up: %s", player.Name, shieldData.Name))
+	print(string.format("[ModularLootGen] %s attempting to pick up: %s", player.Name, shieldData.Name))
 
 	-- Get player inventory
 	local inventory = PlayerInventory.GetInventory(player)
 
 	-- Check if player already has a shield
 	if inventory:HasShield() then
-		-- Drop current shield at pickup location
-		local currentShield = inventory:UnequipShield()
-		if currentShield then
-			-- Unequip from visual/gameplay
-			if _G.UnequipPlayerShield then
-				_G.UnequipPlayerShield(player)
-			end
+		warn(string.format("[ModularLootGen] %s already has a shield equipped. Drop current shield first (X key)", player.Name))
 
-			-- Spawn old shield at current position
-			local dropPos = lootDrop.Position
-			task.delay(0.1, function()
-				self:SpawnShieldLoot(dropPos, currentShield.Level, currentShield.Rarity)
-			end)
+		-- Show feedback to player
+		if player and player:FindFirstChild("PlayerGui") then
+			local message = Instance.new("Message")
+			message.Text = "Shield slot full! Press X to drop current shield"
+			message.Parent = player.PlayerGui
+			Debris:AddItem(message, 3)
 		end
+
+		return
 	end
 
 	-- Add to inventory
@@ -426,21 +423,21 @@ function ModularLootGen:PickupShield(player, lootDrop, shieldData)
 		end
 
 		print(string.format("[ModularLootGen] Equipped %s to %s", shieldData.Name, player.Name))
+
+		-- Play pickup sound
+		local pickupSound = Instance.new("Sound")
+		pickupSound.SoundId = "rbxassetid://876939830"
+		pickupSound.Volume = 0.5
+		pickupSound.Parent = lootDrop
+		pickupSound:Play()
+
+		Debris:AddItem(pickupSound, 1)
+
+		-- Destroy loot drop
+		lootDrop:Destroy()
 	else
 		warn("[ModularLootGen] Failed to equip shield to player")
 	end
-
-	-- Play pickup sound
-	local pickupSound = Instance.new("Sound")
-	pickupSound.SoundId = "rbxassetid://876939830"
-	pickupSound.Volume = 0.5
-	pickupSound.Parent = lootDrop
-	pickupSound:Play()
-
-	Debris:AddItem(pickupSound, 1)
-
-	-- Destroy loot drop
-	lootDrop:Destroy()
 end
 
 -- ============================================================

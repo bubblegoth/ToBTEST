@@ -219,17 +219,17 @@ function pickupShield(player, droppedModel, shieldData)
 	-- Check if player already has a shield
 	local inventory = PlayerInventory.GetInventory(player)
 	if inventory:HasShield() then
-		-- Drop current shield first
-		local currentShield = inventory:UnequipShield()
-		if currentShield then
-			-- Unequip from visual/gameplay
-			if _G.UnequipPlayerShield then
-				_G.UnequipPlayerShield(player)
-			end
+		warn(string.format("[ShieldDrop] %s already has a shield equipped. Drop current shield first (X key)", player.Name))
 
-			-- Drop the old shield at player's position
-			dropShield(player, currentShield)
+		-- Show feedback to player
+		if player and player:FindFirstChild("PlayerGui") then
+			local message = Instance.new("Message")
+			message.Text = "Shield slot full! Press X to drop current shield"
+			message.Parent = player.PlayerGui
+			game:GetService("Debris"):AddItem(message, 3)
 		end
+
+		return
 	end
 
 	-- Add to inventory
