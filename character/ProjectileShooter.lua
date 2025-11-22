@@ -540,8 +540,14 @@ end
 -- SHOOTING
 -- ============================================================
 
+local function isAnyGUIOpen()
+	-- Check if BackpackUI or SoulVendorGUI is open
+	return (_G.BackpackUIOpen == true) or (_G.SoulVendorGUIOpen == true)
+end
+
 local function fireWeapon()
 	if not canFire or isReloading then return end
+	if isAnyGUIOpen() then return end  -- Don't fire if GUI is open
 	if ammoInMag <= 0 then
 		if Config.AutoReload then
 			reload()
@@ -684,6 +690,7 @@ local mouseHeld = false
 table.insert(connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if not _G.ProjectileShooterActive then return end -- Ignore if cleaned up
 	if gameProcessed then return end
+	if isAnyGUIOpen() then return end  -- Ignore input if GUI is open
 
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		-- Left click - Fire
@@ -724,6 +731,12 @@ end))
 -- Continuous fire while mouse held + bloom decay
 table.insert(connections, RunService.RenderStepped:Connect(function()
 	if not _G.ProjectileShooterActive then return end -- Ignore if cleaned up
+
+	-- Clear mouseHeld if GUI is open (prevents firing if GUI opened while holding mouse)
+	if isAnyGUIOpen() then
+		mouseHeld = false
+	end
+
 	-- Update bloom decay (happens continuously)
 	updateBloomDecay()
 

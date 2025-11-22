@@ -760,10 +760,14 @@ local backpackUI = createBackpackUI()
 isOpen = false
 local unlockConnection = nil
 
+-- Export GUI open state for weapon system to check
+_G.BackpackUIOpen = false
+
 -- Toggle backpack
 local function toggleBackpack()
 	isOpen = not isOpen
 	backpackUI.Overlay.Visible = isOpen
+	_G.BackpackUIOpen = isOpen  -- Update global flag
 
 	if isOpen then
 		updateDisplay(backpackUI)

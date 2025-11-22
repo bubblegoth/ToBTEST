@@ -270,10 +270,14 @@ local vendorGUI
 local isGUIOpen = false
 local unlockConnection = nil
 
+-- Export GUI open state for weapon system to check
+_G.SoulVendorGUIOpen = false
+
 -- Define hideVendorGUI BEFORE creating the GUI so the close button can reference it
 local function hideVendorGUI()
 	vendorGUI.Enabled = false
 	isGUIOpen = false
+	_G.SoulVendorGUIOpen = false  -- Update global flag
 
 	-- Disconnect the continuous unlock loop
 	if unlockConnection then
@@ -344,6 +348,7 @@ local function showVendorGUI(upgradeOptions, playerSouls)
 
 		-- Continuously enforce unlock while GUI is open (in case something tries to re-lock)
 		isGUIOpen = true
+		_G.SoulVendorGUIOpen = true  -- Update global flag
 		if unlockConnection then
 			unlockConnection:Disconnect()
 		end

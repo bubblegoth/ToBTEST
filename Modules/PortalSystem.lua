@@ -282,15 +282,16 @@ function PortalSystem:UsePortal(player, targetFloor, portalType)
 	-- Mark cooldown
 	PlayerCooldowns[player.UserId] = tick()
 
-	-- Play portal effect on player
+	-- Play portal effect on player (client-side visual)
 	self:PlayPortalTransition(player)
 
-	-- Teleport player (this will be handled by DungeonInstanceManager)
-	local DungeonInstanceManager = require(ReplicatedStorage.Modules.DungeonInstanceManager)
-	local success = DungeonInstanceManager.TeleportToFloor(player, targetFloor)
-
-	if not success then
-		warn("[PortalSystem] Failed to teleport", player.Name, "to floor", targetFloor)
+	-- Request server to teleport player (server handles dungeon generation and teleportation)
+	local portalTeleportEvent = ReplicatedStorage:WaitForChild("PortalTeleport", 5)
+	if portalTeleportEvent then
+		portalTeleportEvent:FireServer(targetFloor, portalType)
+		print("[PortalSystem] Sent teleport request to server")
+	else
+		warn("[PortalSystem] PortalTeleport RemoteEvent not found!")
 	end
 end
 
