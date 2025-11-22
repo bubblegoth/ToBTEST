@@ -143,22 +143,44 @@ function ModularLootGen:SpawnWeaponLoot(position, level, forcedRarity)
 	levelLabel.TextStrokeTransparency = 0.5
 	levelLabel.Parent = billboardGui
 
-	-- Create proximity prompt
+	-- Create proximity prompt (tap to stash, hold to equip/swap)
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "Pick up"
+	prompt.ActionText = "Stash (tap) | Equip (hold)"
 	prompt.ObjectText = weaponCard.Name
 	prompt.MaxActivationDistance = 10
+	prompt.HoldDuration = 0.7 -- Hold for 0.7s to equip/swap
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = lootDrop
 
+	-- Track if prompt was held or tapped
+	local holdStartTime = nil
+
+	prompt.PromptButtonHoldBegan:Connect(function(player)
+		holdStartTime = tick()
+	end)
+
+	prompt.PromptButtonHoldEnded:Connect(function(player)
+		holdStartTime = nil
+	end)
+
 	prompt.Triggered:Connect(function(player)
-		self:PickupWeapon(player, lootDrop, weapon)
+		local wasHeld = holdStartTime and (tick() - holdStartTime >= prompt.HoldDuration - 0.1)
+
+		if wasHeld then
+			-- Hold: Equip weapon (swap if needed)
+			self:EquipWeapon(player, lootDrop, weapon)
+		else
+			-- Tap: Add to backpack
+			self:StashWeapon(player, lootDrop, weapon)
+		end
+
 		if weaponModel.Parent then
 			weaponModel:Destroy()
 		end
 		if floatConnection then
 			floatConnection:Disconnect()
 		end
+		holdStartTime = nil
 	end)
 
 	-- Auto-despawn after 60 seconds
@@ -182,36 +204,152 @@ end
 -- PICKUP HANDLING
 -- ============================================================
 
-function ModularLootGen:PickupWeapon(player, lootDrop, weaponData)
-	print(string.format("[ModularLootGen] %s picked up: %s", player.Name, weaponData.Name))
+--[[
+	Stash weapon in backpack without equipping
+	Used when player taps E
+]]
+function ModularLootGen:StashWeapon(player, lootDrop, weaponData)
+	print(string.format("[ModularLootGen] %s stashing: %s", player.Name, weaponData.Name))
 
-	-- Add to player's weapons (integrate with PlayerStats)
-	local playerStats = _G.GetPlayerStats and _G.GetPlayerStats(player)
-	if playerStats then
-		-- Add weapon to player's inventory
-		playerStats:AddWeapon(weaponData)
-		print(string.format("[ModularLootGen] Added %s to %s's inventory", weaponData.Name, player.Name))
-	else
-		warn("[ModularLootGen] PlayerStats not found for", player.Name)
+	-- Get player inventory
+	local inventory = PlayerInventory.GetInventory(player)
+
+	-- Check if backpack has space
+	if inventory:IsWeaponSlotFull() then
+		warn(string.format("[ModularLootGen] %s weapon slots full!", player.Name))
+
+		-- Show feedback to player
+		if player and player:FindFirstChild("PlayerGui") then
+			local message = Instance.new("Message")
+			message.Text = "Weapon slots full (4/4)! Drop a weapon (Q key) or hold E to swap"
+			message.Parent = player.PlayerGui
+			Debris:AddItem(message, 3)
+		end
+
+		return
 	end
 
-	-- Give player the actual Tool
-	local success = WeaponToolBuilder:GiveWeaponToPlayer(player, weaponData, false)
+	-- Create weapon tool
+	local weaponTool = WeaponToolBuilder:BuildWeaponTool(weaponData)
+	if not weaponTool then
+		warn("[ModularLootGen] Failed to build weapon tool")
+		return
+	end
+
+	-- Add to inventory (backpack)
+	local success = inventory:AddWeapon(weaponTool)
 	if success then
-		print(string.format("[ModularLootGen] Gave Tool to %s", player.Name))
+		-- Parent to player's backpack
+		weaponTool.Parent = player:FindFirstChild("Backpack")
+
+		print(string.format("[ModularLootGen] Stashed %s to %s's backpack", weaponData.Name, player.Name))
+
+		-- Play pickup sound
+		local pickupSound = Instance.new("Sound")
+		pickupSound.SoundId = "rbxassetid://876939830"
+		pickupSound.Volume = 0.5
+		pickupSound.Parent = lootDrop
+		pickupSound:Play()
+
+		Debris:AddItem(pickupSound, 1)
+
+		-- Destroy loot drop
+		lootDrop:Destroy()
+	else
+		warn("[ModularLootGen] Failed to add weapon to inventory")
+		weaponTool:Destroy()
+	end
+end
+
+--[[
+	Equip weapon immediately (swap if inventory full)
+	Used when player holds E
+]]
+function ModularLootGen:EquipWeapon(player, lootDrop, weaponData)
+	print(string.format("[ModularLootGen] %s equipping: %s", player.Name, weaponData.Name))
+
+	-- Get player inventory
+	local inventory = PlayerInventory.GetInventory(player)
+
+	-- Create weapon tool
+	local weaponTool = WeaponToolBuilder:BuildWeaponTool(weaponData)
+	if not weaponTool then
+		warn("[ModularLootGen] Failed to build weapon tool")
+		return
 	end
 
-	-- Play pickup sound
-	local pickupSound = Instance.new("Sound")
-	pickupSound.SoundId = "rbxassetid://876939830"
-	pickupSound.Volume = 0.5
-	pickupSound.Parent = lootDrop
-	pickupSound:Play()
+	-- Check if inventory is full
+	if inventory:IsWeaponSlotFull() then
+		-- Inventory full - swap with currently equipped weapon
+		local character = player.Character
+		if character then
+			local equippedWeapon = character:FindFirstChildOfClass("Tool")
 
-	Debris:AddItem(pickupSound, 1)
+			if equippedWeapon then
+				-- Drop currently equipped weapon
+				local equippedData = WeaponToolBuilder:GetWeaponDataFromTool(equippedWeapon)
+				if equippedData then
+					-- Spawn dropped weapon at pickup location
+					local dropPos = lootDrop.Position
+					task.spawn(function()
+						self:SpawnWeaponLoot(dropPos, equippedData.Level, equippedData.Rarity)
+					end)
+				end
 
-	-- Destroy loot drop
-	lootDrop:Destroy()
+				-- Remove from inventory and destroy
+				for i = 1, inventory:GetWeaponCount() do
+					if inventory:GetWeapon(i) == equippedWeapon then
+						inventory:RemoveWeapon(i)
+						break
+					end
+				end
+				equippedWeapon:Destroy()
+
+				print(string.format("[ModularLootGen] Swapped equipped weapon for %s", weaponData.Name))
+			else
+				-- No equipped weapon, but backpack is full - swap with first weapon in backpack
+				local firstWeapon = inventory:GetWeapon(1)
+				if firstWeapon then
+					local firstWeaponData = WeaponToolBuilder:GetWeaponDataFromTool(firstWeapon)
+					if firstWeaponData then
+						local dropPos = lootDrop.Position
+						task.spawn(function()
+							self:SpawnWeaponLoot(dropPos, firstWeaponData.Level, firstWeaponData.Rarity)
+						end)
+					end
+
+					inventory:RemoveWeapon(1)
+					firstWeapon:Destroy()
+
+					print(string.format("[ModularLootGen] Swapped backpack weapon for %s", weaponData.Name))
+				end
+			end
+		end
+	end
+
+	-- Add to inventory and equip
+	local success = inventory:AddWeapon(weaponTool)
+	if success then
+		-- Parent to character (equip immediately)
+		weaponTool.Parent = player.Character
+
+		print(string.format("[ModularLootGen] Equipped %s to %s", weaponData.Name, player.Name))
+
+		-- Play pickup sound
+		local pickupSound = Instance.new("Sound")
+		pickupSound.SoundId = "rbxassetid://876939830"
+		pickupSound.Volume = 0.5
+		pickupSound.Parent = lootDrop
+		pickupSound:Play()
+
+		Debris:AddItem(pickupSound, 1)
+
+		-- Destroy loot drop
+		lootDrop:Destroy()
+	else
+		warn("[ModularLootGen] Failed to add weapon to inventory")
+		weaponTool:Destroy()
+	end
 end
 
 -- ============================================================
@@ -353,22 +491,39 @@ function ModularLootGen:SpawnShieldLoot(position, level, forcedRarity)
 	levelLabel.TextStrokeTransparency = 0.5
 	levelLabel.Parent = billboardGui
 
-	-- Create proximity prompt
+	-- Create proximity prompt (tap to equip, hold to swap)
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "Pick up"
+	prompt.ActionText = "Equip (tap) | Swap (hold)"
 	prompt.ObjectText = shield.Name
 	prompt.MaxActivationDistance = 10
+	prompt.HoldDuration = 0.7 -- Hold for 0.7s to swap
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = lootDrop
 
+	-- Track if prompt was held or tapped
+	local holdStartTime = nil
+
+	prompt.PromptButtonHoldBegan:Connect(function(player)
+		holdStartTime = tick()
+	end)
+
+	prompt.PromptButtonHoldEnded:Connect(function(player)
+		holdStartTime = nil
+	end)
+
 	prompt.Triggered:Connect(function(player)
-		self:PickupShield(player, lootDrop, shield)
-		if shieldModel.Parent then
-			shieldModel:Destroy()
+		local wasHeld = holdStartTime and (tick() - holdStartTime >= prompt.HoldDuration - 0.1)
+
+		if wasHeld then
+			-- Hold: Swap shield
+			self:SwapShield(player, lootDrop, shield)
+		else
+			-- Tap: Equip shield (if slot empty)
+			self:EquipShield(player, lootDrop, shield)
 		end
-		if floatConnection then
-			floatConnection:Disconnect()
-		end
+
+		-- Only destroy if pickup was successful
+		holdStartTime = nil
 	end)
 
 	-- Auto-despawn after 60 seconds
@@ -392,20 +547,24 @@ end
 -- SHIELD PICKUP HANDLING
 -- ============================================================
 
-function ModularLootGen:PickupShield(player, lootDrop, shieldData)
-	print(string.format("[ModularLootGen] %s attempting to pick up: %s", player.Name, shieldData.Name))
+--[[
+	Equip shield if slot is empty
+	Used when player taps E
+]]
+function ModularLootGen:EquipShield(player, lootDrop, shieldData)
+	print(string.format("[ModularLootGen] %s equipping shield: %s", player.Name, shieldData.Name))
 
 	-- Get player inventory
 	local inventory = PlayerInventory.GetInventory(player)
 
 	-- Check if player already has a shield
 	if inventory:HasShield() then
-		warn(string.format("[ModularLootGen] %s already has a shield equipped. Drop current shield first (X key)", player.Name))
+		warn(string.format("[ModularLootGen] %s already has a shield equipped. Hold E to swap", player.Name))
 
 		-- Show feedback to player
 		if player and player:FindFirstChild("PlayerGui") then
 			local message = Instance.new("Message")
-			message.Text = "Shield slot full! Press X to drop current shield"
+			message.Text = "Shield slot full! Hold E to swap or press X to drop current shield"
 			message.Parent = player.PlayerGui
 			Debris:AddItem(message, 3)
 		end
@@ -437,6 +596,63 @@ function ModularLootGen:PickupShield(player, lootDrop, shieldData)
 		lootDrop:Destroy()
 	else
 		warn("[ModularLootGen] Failed to equip shield to player")
+	end
+end
+
+--[[
+	Swap current shield with new one
+	Used when player holds E
+]]
+function ModularLootGen:SwapShield(player, lootDrop, shieldData)
+	print(string.format("[ModularLootGen] %s swapping shield: %s", player.Name, shieldData.Name))
+
+	-- Get player inventory
+	local inventory = PlayerInventory.GetInventory(player)
+
+	-- Check if player has a shield to swap
+	if inventory:HasShield() then
+		-- Drop current shield at pickup location
+		local currentShield = inventory:UnequipShield()
+		if currentShield then
+			-- Unequip from visual/gameplay
+			if _G.UnequipPlayerShield then
+				_G.UnequipPlayerShield(player)
+			end
+
+			-- Spawn old shield at current position
+			local dropPos = lootDrop.Position
+			task.spawn(function()
+				self:SpawnShieldLoot(dropPos, currentShield.Level, currentShield.Rarity)
+			end)
+
+			print(string.format("[ModularLootGen] Dropped old shield: %s", currentShield.Name))
+		end
+	end
+
+	-- Equip new shield
+	local success = inventory:EquipShield(shieldData)
+
+	if success then
+		-- Equip shield visually and functionally
+		if _G.EquipPlayerShield then
+			_G.EquipPlayerShield(player, shieldData)
+		end
+
+		print(string.format("[ModularLootGen] Swapped to %s", shieldData.Name))
+
+		-- Play pickup sound
+		local pickupSound = Instance.new("Sound")
+		pickupSound.SoundId = "rbxassetid://876939830"
+		pickupSound.Volume = 0.5
+		pickupSound.Parent = lootDrop
+		pickupSound:Play()
+
+		Debris:AddItem(pickupSound, 1)
+
+		-- Destroy loot drop
+		lootDrop:Destroy()
+	else
+		warn("[ModularLootGen] Failed to swap shield")
 	end
 end
 
