@@ -180,39 +180,40 @@ end
 
 local function getAccuracySpread()
 	--[[
-		Cone-of-fire spread system:
-		1. Base weapon spread (degrees)
-		2. Modified by Accuracy% (higher accuracy = tighter cone)
-		3. Plus current bloom accumulation
-		4. Significantly reduced by ADS
+		BORDERLANDS 2 AUTHENTIC ACCURACY SYSTEM
+
+		Formula: Spread (degrees) = (100 - Accuracy) / 12
+		- 100 Accuracy = 0° base spread (laser accurate)
+		- 88 Accuracy = 1° base spread
+		- 70 Accuracy = 2.5° base spread
+		- 50 Accuracy = 4.17° base spread
+
+		Hip-fire cone: baseSpread + accuracyPool + bloom
+		ADS cone: baseSpread + bloom (accuracyPool removed)
+
+		This matches Borderlands 2's accuracy mechanics exactly.
 	]]
 
-	-- Base spread from weapon (in degrees)
-	local baseSpread = weaponStats.Spread or 5
+	-- Borderlands 2 formula: convert Accuracy stat to spread (degrees)
+	local accuracy = weaponStats.Accuracy or 70
+	local baseSpread = (100 - accuracy) / 12
 
-	-- Accuracy modifier: 100% accuracy = 0.5x spread, 0% accuracy = 2.0x spread
-	-- Formula: AccuracyMult = 2.0 - (Accuracy / 100) * 1.5
-	-- 100 acc: 2.0 - 1.5 = 0.5x (tighter)
-	-- 70 acc:  2.0 - 1.05 = 0.95x
-	-- 50 acc:  2.0 - 0.75 = 1.25x
-	-- 0 acc:   2.0 - 0 = 2.0x (wider)
-	local accuracyMult = 2.0 - (weaponStats.Accuracy / 100) * 1.5
+	-- AccuracyPool: additional hip-fire inaccuracy (removed when ADS)
+	-- Higher values = more penalty for hip-firing
+	local accuracyPool = 2.0 -- degrees (standard for most weapons)
 
-	-- Calculate total spread: base * accuracy modifier + bloom
-	local totalSpread = (baseSpread * accuracyMult) + currentBloom
-
-	-- ADS modifier: significantly reduces spread
-	local adsMultiplier = 1.0
+	-- Calculate total spread
+	local totalSpread
 	if isAiming then
-		-- ADS: Reduce total spread by 65%
-		adsMultiplier = 0.35
+		-- ADS: Base spread + bloom (no accuracy pool)
+		totalSpread = baseSpread + currentBloom
 	else
-		-- Hip fire: Full spread
-		adsMultiplier = 1.0
+		-- Hip-fire: Base spread + accuracy pool + bloom
+		totalSpread = baseSpread + accuracyPool + currentBloom
 	end
 
 	-- Return final spread in radians
-	return math.rad(totalSpread * adsMultiplier)
+	return math.rad(totalSpread)
 end
 
 local function applySpread(direction, spreadRadians)

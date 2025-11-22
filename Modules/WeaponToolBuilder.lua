@@ -90,7 +90,7 @@ function WeaponToolBuilder:CreateWeaponTool(weaponData)
 	tool:SetAttribute("Capacity", weaponData.Capacity)
 	tool:SetAttribute("CurrentAmmo", weaponData.CurrentAmmo or weaponData.Capacity) -- Initialize with full mag
 	tool:SetAttribute("Accuracy", weaponData.Accuracy)
-	tool:SetAttribute("Spread", weaponData.Spread or 5) -- Cone-of-fire spread in degrees
+	-- NOTE: Spread is calculated from Accuracy using BL2 formula: (100 - Accuracy) / 12
 	tool:SetAttribute("Range", weaponData.Range)
 	tool:SetAttribute("ReloadTime", weaponData.ReloadTime)
 	tool:SetAttribute("Pellets", weaponData.Pellets)
@@ -267,7 +267,7 @@ function WeaponToolBuilder:GetWeaponDataFromTool(tool)
 		FireRate = tool:GetAttribute("FireRate"),
 		Capacity = tool:GetAttribute("Capacity"),
 		Accuracy = tool:GetAttribute("Accuracy"),
-		Spread = tool:GetAttribute("Spread"),
+		-- Spread is calculated from Accuracy using BL2 formula, not stored
 		Range = tool:GetAttribute("Range"),
 		ReloadTime = tool:GetAttribute("ReloadTime"),
 		Pellets = tool:GetAttribute("Pellets"),

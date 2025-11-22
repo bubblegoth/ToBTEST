@@ -73,8 +73,7 @@ WeaponParts.BaseTypes = {
 			Damage = 20,
 			FireRate = 0.3,
 			Capacity = 12,
-			Accuracy = 70,
-			Spread = 4, -- Medium spread (degrees)
+			Accuracy = 70, -- BL2 Formula: Spread = (100-70)/12 = 2.5°
 			Range = 300,
 			ReloadTime = 1.5,
 			Pellets = 1,
@@ -88,8 +87,7 @@ WeaponParts.BaseTypes = {
 			Damage = 45,
 			FireRate = 0.6,
 			Capacity = 6,
-			Accuracy = 85,
-			Spread = 2, -- Low spread - accurate deliberate weapon
+			Accuracy = 85, -- BL2 Formula: Spread = (100-85)/12 = 1.25°
 			Range = 400,
 			ReloadTime = 2.5,
 			Pellets = 1,
@@ -103,8 +101,7 @@ WeaponParts.BaseTypes = {
 			Damage = 12,
 			FireRate = 0.08,
 			Capacity = 30,
-			Accuracy = 50,
-			Spread = 8, -- High spread - spray and pray
+			Accuracy = 50, -- BL2 Formula: Spread = (100-50)/12 = 4.17°
 			Range = 200,
 			ReloadTime = 1.8,
 			Pellets = 1,
@@ -118,8 +115,7 @@ WeaponParts.BaseTypes = {
 			Damage = 25,
 			FireRate = 0.15,
 			Capacity = 30,
-			Accuracy = 65,
-			Spread = 5, -- Medium spread - balanced weapon
+			Accuracy = 65, -- BL2 Formula: Spread = (100-65)/12 = 2.92°
 			Range = 500,
 			ReloadTime = 2.0,
 			Pellets = 1,
@@ -133,8 +129,7 @@ WeaponParts.BaseTypes = {
 			Damage = 60,
 			FireRate = 0.8,
 			Capacity = 8,
-			Accuracy = 30,
-			Spread = 15, -- Very high spread - pellet cone
+			Accuracy = 30, -- BL2 Formula: Spread = (100-30)/12 = 5.83°
 			Range = 150,
 			ReloadTime = 3.0,
 			Pellets = 8,
@@ -148,8 +143,7 @@ WeaponParts.BaseTypes = {
 			Damage = 100,
 			FireRate = 1.2,
 			Capacity = 5,
-			Accuracy = 95,
-			Spread = 1, -- Very low spread - precision weapon
+			Accuracy = 95, -- BL2 Formula: Spread = (100-95)/12 = 0.42°
 			Range = 1000,
 			ReloadTime = 2.5,
 			Pellets = 1,
