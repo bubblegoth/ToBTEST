@@ -18,12 +18,9 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local camera = workspace.CurrentCamera
 
--- Get ViewmodelController for animations (from global, set by ViewmodelController LocalScript)
-local ViewmodelController
-repeat
-	ViewmodelController = _G.ViewmodelController
-	if not ViewmodelController then task.wait(0.1) end
-until ViewmodelController
+-- ViewmodelController is set by ViewmodelManager LocalScript
+-- We'll access it via _G.ViewmodelController when needed (it may be nil if no weapon equipped)
+-- No need to block waiting for it - just check before using
 
 -- ============================================================
 -- CONFIGURATION
@@ -429,8 +426,9 @@ local function toggleADS(aimState)
 	isAiming = aimState
 
 	-- Update ViewmodelController offset
-	if ViewmodelController and ViewmodelController.SetAiming then
-		ViewmodelController:SetAiming(isAiming)
+	local viewmodel = _G.ViewmodelController
+	if viewmodel and viewmodel.setAiming then
+		viewmodel:setAiming(isAiming)
 	end
 
 	print(string.format("[ProjectileShooter] ADS: %s", isAiming and "ON" or "OFF"))
@@ -488,8 +486,9 @@ local function meleeAttack()
 	end
 
 	-- Apply melee animation to viewmodel (punch forward)
-	if ViewmodelController and ViewmodelController.PlayMelee then
-		ViewmodelController:PlayMelee()
+	local viewmodel = _G.ViewmodelController
+	if viewmodel and viewmodel.playMelee then
+		viewmodel:playMelee()
 	end
 end
 
@@ -544,8 +543,9 @@ local function fireWeapon()
 	createMuzzleFlash()
 
 	-- Apply recoil animation
-	if ViewmodelController and ViewmodelController.ApplyRecoil then
-		ViewmodelController:ApplyRecoil(1.0) -- Full recoil intensity
+	local viewmodel = _G.ViewmodelController
+	if viewmodel and viewmodel.applyShootKick then
+		viewmodel:applyShootKick()
 	end
 
 	-- Play shoot sound (you can add custom sounds here)
@@ -570,8 +570,9 @@ function reload()
 	canFire = false
 
 	-- Trigger reload animation
-	if ViewmodelController and ViewmodelController.PlayReload then
-		ViewmodelController:PlayReload()
+	local viewmodel = _G.ViewmodelController
+	if viewmodel and viewmodel.playReloadAnimation then
+		viewmodel:playReloadAnimation()
 	end
 
 	print(string.format("[ProjectileShooter] Reloading... (%.1fs)", weaponStats.ReloadTime))

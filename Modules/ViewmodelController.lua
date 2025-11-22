@@ -135,12 +135,18 @@ function ViewmodelController:createProceduralViewmodel()
 
 	-- Reposition welded parts after scaling
 	for _, obj in ipairs(model:GetDescendants()) do
-		if obj:IsA("Weld") or obj:IsA("WeldConstraint") or obj:IsA("Motor6D") then
-			if obj:IsA("Weld") or obj:IsA("Motor6D") then
-				obj.C0 = obj.C0 * CFrame.new(obj.C0.Position * (VIEW_MODEL_SCALE - 1))
-				obj.C1 = obj.C1 * CFrame.new(obj.C1.Position * (VIEW_MODEL_SCALE - 1))
-			end
+		if obj:IsA("Weld") or obj:IsA("Motor6D") then
+			-- Scale weld offsets to match part scaling
+			-- Extract position and rotation components separately
+			local c0Pos = obj.C0.Position
+			local c0Rot = obj.C0 - obj.C0.Position
+			obj.C0 = CFrame.new(c0Pos * VIEW_MODEL_SCALE) * c0Rot
+
+			local c1Pos = obj.C1.Position
+			local c1Rot = obj.C1 - obj.C1.Position
+			obj.C1 = CFrame.new(c1Pos * VIEW_MODEL_SCALE) * c1Rot
 		end
+		-- WeldConstraints don't have C0/C1, they auto-adjust
 	end
 
 	return model
