@@ -14,9 +14,42 @@ local UserInputService = game:GetService("UserInputService")
 local Debris = game:GetService("Debris")
 
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
+local character = script.Parent -- Get character from script parent (more reliable)
 local humanoid = character:WaitForChild("Humanoid")
 local camera = workspace.CurrentCamera
+
+-- ============================================================
+-- SINGLETON PROTECTION - Prevent duplicate instances
+-- ============================================================
+
+if _G.ProjectileShooterActive then
+	warn("[ProjectileShooter] ⚠️ Duplicate instance detected - terminating old instance")
+	if _G.ProjectileShooterCleanup then
+		_G.ProjectileShooterCleanup()
+	end
+end
+
+_G.ProjectileShooterActive = true
+
+-- Store cleanup function for next instance to call
+local connections = {}
+_G.ProjectileShooterCleanup = function()
+	print("[ProjectileShooter] Cleaning up connections...")
+	for _, conn in ipairs(connections) do
+		if conn and conn.Disconnect then
+			conn:Disconnect()
+		end
+	end
+	connections = {}
+	_G.ProjectileShooterActive = false
+end
+
+-- Clean up when character is destroyed
+humanoid.Died:Connect(function()
+	if _G.ProjectileShooterCleanup then
+		_G.ProjectileShooterCleanup()
+	end
+end)
 
 -- ViewmodelController is set by ViewmodelManager LocalScript
 -- We'll access it via _G.ViewmodelController when needed (it may be nil if no weapon equipped)
@@ -637,7 +670,8 @@ end
 
 local mouseHeld = false
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
+table.insert(connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not _G.ProjectileShooterActive then return end -- Ignore if cleaned up
 	if gameProcessed then return end
 
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -662,9 +696,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 			meleeAttack()
 		end
 	end
-end)
+end))
 
-UserInputService.InputEnded:Connect(function(input)
+table.insert(connections, UserInputService.InputEnded:Connect(function(input)
+	if not _G.ProjectileShooterActive then return end -- Ignore if cleaned up
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		mouseHeld = false
 	elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
@@ -673,10 +708,11 @@ UserInputService.InputEnded:Connect(function(input)
 			toggleADS(false)
 		end
 	end
-end)
+end))
 
 -- Continuous fire while mouse held + bloom decay
-RunService.RenderStepped:Connect(function()
+table.insert(connections, RunService.RenderStepped:Connect(function()
+	if not _G.ProjectileShooterActive then return end -- Ignore if cleaned up
 	-- Update bloom decay (happens continuously)
 	updateBloomDecay()
 
@@ -684,24 +720,26 @@ RunService.RenderStepped:Connect(function()
 	if mouseHeld and currentWeapon and canFire then
 		fireWeapon()
 	end
-end)
+end))
 
 -- ============================================================
 -- TOOL DETECTION
 -- ============================================================
 
-character.ChildAdded:Connect(function(child)
+table.insert(connections, character.ChildAdded:Connect(function(child)
+	if not _G.ProjectileShooterActive then return end -- Ignore if cleaned up
 	if child:IsA("Tool") and child:GetAttribute("UniqueID") then
 		task.wait(0.1) -- Wait for tool to fully equip
 		onWeaponEquipped(child)
 	end
-end)
+end))
 
-character.ChildRemoved:Connect(function(child)
+table.insert(connections, character.ChildRemoved:Connect(function(child)
+	if not _G.ProjectileShooterActive then return end -- Ignore if cleaned up
 	if child:IsA("Tool") and child == currentWeapon then
 		onWeaponUnequipped()
 	end
-end)
+end))
 
 -- Check for already equipped weapon
 for _, child in pairs(character:GetChildren()) do
