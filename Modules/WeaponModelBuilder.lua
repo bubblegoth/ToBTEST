@@ -336,8 +336,26 @@ end
 -- ============================================================
 
 function WeaponModelBuilder:BuildWeapon(weaponData)
+	-- Validate weapon data
+	if not weaponData then
+		warn("[WeaponModelBuilder] BuildWeapon called with nil weaponData")
+		return nil
+	end
+
+	if not weaponData.Parts then
+		warn("[WeaponModelBuilder] weaponData missing Parts field - cannot build model")
+		warn("  weaponData.Name:", weaponData.Name or "nil")
+		warn("  This usually means weaponData was reconstructed from attributes without the full Parts table")
+		return nil
+	end
+
+	if not weaponData.Parts.Base then
+		warn("[WeaponModelBuilder] weaponData.Parts missing Base - cannot build model")
+		return nil
+	end
+
 	local weaponModel = Instance.new("Model")
-	weaponModel.Name = weaponData.Name
+	weaponModel.Name = weaponData.Name or "UnknownWeapon"
 
 	local materials = ManufacturerMaterials[weaponData.Manufacturer] or ManufacturerMaterials["Sanctum Armory"]
 

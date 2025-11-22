@@ -15,6 +15,7 @@ local WeaponToolBuilder = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local WeaponModelBuilder = require(script.Parent.WeaponModelBuilder)
+local WeaponParts = require(script.Parent.WeaponParts)
 
 -- ============================================================
 -- TOOL CREATION
@@ -36,27 +37,41 @@ function WeaponToolBuilder:CreateWeaponTool(weaponData)
 	-- Build 3D weapon model
 	local weaponModel = WeaponModelBuilder:BuildWeapon(weaponData)
 
-	-- Use the primary part (body receiver) as the handle
-	local handle = weaponModel.PrimaryPart:Clone()
-	handle.Name = "Handle"
-	handle.Parent = tool
+	if not weaponModel then
+		warn("[WeaponToolBuilder] Failed to build weapon model for", weaponData.Name or "Unknown")
+		warn("  Creating fallback handle instead")
 
-	-- Clone all other parts and weld them to handle
-	for _, part in pairs(weaponModel:GetDescendants()) do
-		if part:IsA("BasePart") and part ~= weaponModel.PrimaryPart then
-			local partClone = part:Clone()
-			partClone.Parent = tool
+		-- Create simple fallback handle
+		local handle = Instance.new("Part")
+		handle.Name = "Handle"
+		handle.Size = Vector3.new(0.2, 0.4, 1)
+		handle.Material = Enum.Material.Metal
+		handle.Color = Color3.fromRGB(100, 100, 100)
+		handle.CanCollide = false
+		handle.Parent = tool
+	else
+		-- Use the primary part (body receiver) as the handle
+		local handle = weaponModel.PrimaryPart:Clone()
+		handle.Name = "Handle"
+		handle.Parent = tool
 
-			-- Create weld to preserve position relative to handle
-			local weld = Instance.new("WeldConstraint")
-			weld.Part0 = handle
-			weld.Part1 = partClone
-			weld.Parent = partClone
+		-- Clone all other parts and weld them to handle
+		for _, part in pairs(weaponModel:GetDescendants()) do
+			if part:IsA("BasePart") and part ~= weaponModel.PrimaryPart then
+				local partClone = part:Clone()
+				partClone.Parent = tool
+
+				-- Create weld to preserve position relative to handle
+				local weld = Instance.new("WeldConstraint")
+				weld.Part0 = handle
+				weld.Part1 = partClone
+				weld.Parent = partClone
+			end
 		end
-	end
 
-	-- Clean up temporary model
-	weaponModel:Destroy()
+		-- Clean up temporary model
+		weaponModel:Destroy()
+	end
 
 	-- ============================================================
 	-- STORE WEAPON DATA AS ATTRIBUTES
@@ -196,6 +211,51 @@ end
 function WeaponToolBuilder:GetWeaponDataFromTool(tool)
 	if not tool:IsA("Tool") then return nil end
 
+	-- Helper function to find part by name
+	local function findPart(partList, name)
+		if not partList or not name then return nil end
+		for _, part in ipairs(partList) do
+			if part.Name == name then
+				return part
+			end
+		end
+		return partList[1] -- Fallback to first part if not found
+	end
+
+	-- Helper function to find manufacturer by name
+	local function findManufacturer(name)
+		if not name then return WeaponParts.Manufacturers[1] end
+		for _, mfg in ipairs(WeaponParts.Manufacturers) do
+			if mfg.Name == name then
+				return mfg
+			end
+		end
+		return WeaponParts.Manufacturers[1]
+	end
+
+	-- Helper function to find base type by name
+	local function findBaseType(name)
+		if not name then return WeaponParts.BaseTypes[1] end
+		for _, base in ipairs(WeaponParts.BaseTypes) do
+			if base.Name == name then
+				return base
+			end
+		end
+		return WeaponParts.BaseTypes[1]
+	end
+
+	-- Reconstruct Parts from stored attributes
+	local Parts = {
+		Base = findBaseType(tool:GetAttribute("WeaponType")),
+		Manufacturer = findManufacturer(tool:GetAttribute("Part_Manufacturer")),
+		Stock = findPart(WeaponParts.Stocks, tool:GetAttribute("Part_Stock")),
+		Body = findPart(WeaponParts.Bodies, tool:GetAttribute("Part_Body")),
+		Barrel = findPart(WeaponParts.Barrels, tool:GetAttribute("Part_Barrel")),
+		Magazine = findPart(WeaponParts.Magazines, tool:GetAttribute("Part_Magazine")),
+		Sight = findPart(WeaponParts.Sights, tool:GetAttribute("Part_Sight")),
+		Accessory = findPart(WeaponParts.Accessories, tool:GetAttribute("Part_Accessory")),
+	}
+
 	local weaponData = {
 		Name = tool.Name,
 		Level = tool:GetAttribute("Level"),
@@ -206,13 +266,17 @@ function WeaponToolBuilder:GetWeaponDataFromTool(tool)
 		FireRate = tool:GetAttribute("FireRate"),
 		Capacity = tool:GetAttribute("Capacity"),
 		Accuracy = tool:GetAttribute("Accuracy"),
+		Spread = tool:GetAttribute("Spread"),
 		Range = tool:GetAttribute("Range"),
 		ReloadTime = tool:GetAttribute("ReloadTime"),
 		Pellets = tool:GetAttribute("Pellets"),
 		DPS = tool:GetAttribute("DPS"),
+		BloomPerShot = tool:GetAttribute("BloomPerShot"),
+		MaxBloom = tool:GetAttribute("MaxBloom"),
 		CritChance = tool:GetAttribute("CritChance") or 0,
 		CritDamage = tool:GetAttribute("CritDamage") or 0,
 		SoulGain = tool:GetAttribute("SoulGain") or 0,
+		Parts = Parts, -- Include reconstructed Parts for model building
 	}
 
 	return weaponData
