@@ -74,9 +74,12 @@ WeaponParts.BaseTypes = {
 			FireRate = 0.3,
 			Capacity = 12,
 			Accuracy = 70,
+			Spread = 4, -- Medium spread (degrees)
 			Range = 300,
 			ReloadTime = 1.5,
-			Pellets = 1
+			Pellets = 1,
+			BloomPerShot = 0.6, -- Moderate bloom per shot
+			MaxBloom = 12 -- Max bloom accumulation
 		}
 	},
 	{
@@ -86,9 +89,12 @@ WeaponParts.BaseTypes = {
 			FireRate = 0.6,
 			Capacity = 6,
 			Accuracy = 85,
+			Spread = 2, -- Low spread - accurate deliberate weapon
 			Range = 400,
 			ReloadTime = 2.5,
-			Pellets = 1
+			Pellets = 1,
+			BloomPerShot = 0.3, -- Low bloom
+			MaxBloom = 6 -- Low max bloom
 		}
 	},
 	{
@@ -98,9 +104,12 @@ WeaponParts.BaseTypes = {
 			FireRate = 0.08,
 			Capacity = 30,
 			Accuracy = 50,
+			Spread = 8, -- High spread - spray and pray
 			Range = 200,
 			ReloadTime = 1.8,
-			Pellets = 1
+			Pellets = 1,
+			BloomPerShot = 1.0, -- High bloom - gets inaccurate quickly
+			MaxBloom = 20 -- High max bloom
 		}
 	},
 	{
@@ -110,9 +119,12 @@ WeaponParts.BaseTypes = {
 			FireRate = 0.15,
 			Capacity = 30,
 			Accuracy = 65,
+			Spread = 5, -- Medium spread - balanced weapon
 			Range = 500,
 			ReloadTime = 2.0,
-			Pellets = 1
+			Pellets = 1,
+			BloomPerShot = 0.7, -- Medium bloom
+			MaxBloom = 15 -- Medium max bloom
 		}
 	},
 	{
@@ -122,9 +134,12 @@ WeaponParts.BaseTypes = {
 			FireRate = 0.8,
 			Capacity = 8,
 			Accuracy = 30,
+			Spread = 15, -- Very high spread - pellet cone
 			Range = 150,
 			ReloadTime = 3.0,
-			Pellets = 8
+			Pellets = 8,
+			BloomPerShot = 0.2, -- Low bloom - already inaccurate
+			MaxBloom = 5 -- Low max bloom
 		}
 	},
 	{
@@ -134,9 +149,12 @@ WeaponParts.BaseTypes = {
 			FireRate = 1.2,
 			Capacity = 5,
 			Accuracy = 95,
+			Spread = 1, -- Very low spread - precision weapon
 			Range = 1000,
 			ReloadTime = 2.5,
-			Pellets = 1
+			Pellets = 1,
+			BloomPerShot = 0.2, -- Very low bloom
+			MaxBloom = 3 -- Very low max bloom
 		}
 	}
 }

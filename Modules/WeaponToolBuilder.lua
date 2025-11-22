@@ -76,10 +76,15 @@ function WeaponToolBuilder:CreateWeaponTool(weaponData)
 	tool:SetAttribute("FireRate", weaponData.FireRate)
 	tool:SetAttribute("Capacity", weaponData.Capacity)
 	tool:SetAttribute("Accuracy", weaponData.Accuracy)
+	tool:SetAttribute("Spread", weaponData.Spread or 5) -- Cone-of-fire spread in degrees
 	tool:SetAttribute("Range", weaponData.Range)
 	tool:SetAttribute("ReloadTime", weaponData.ReloadTime)
 	tool:SetAttribute("Pellets", weaponData.Pellets)
 	tool:SetAttribute("DPS", weaponData.DPS)
+
+	-- Spread bloom system
+	tool:SetAttribute("BloomPerShot", weaponData.BloomPerShot or 0.5)
+	tool:SetAttribute("MaxBloom", weaponData.MaxBloom or 10)
 
 	-- Critical stats
 	if weaponData.CritChance and weaponData.CritChance > 0 then

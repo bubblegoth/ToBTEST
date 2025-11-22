@@ -63,6 +63,11 @@ local canFire = true
 local isAiming = false
 local lastMeleeTime = 0
 
+-- Spread bloom system
+local currentBloom = 0 -- Current bloom accumulation (degrees)
+local bloomDecayRate = 2.0 -- Bloom decay per second when not firing
+local lastBloomDecayTime = tick()
+
 -- ============================================================
 -- AMMO POOL CONFIGURATION (by weapon type)
 -- ============================================================
@@ -121,9 +126,12 @@ local function getWeaponStats(tool)
 		FireRate = tool:GetAttribute("FireRate") or 0.3,
 		Capacity = tool:GetAttribute("Capacity") or 12,
 		Accuracy = tool:GetAttribute("Accuracy") or 70,
+		Spread = tool:GetAttribute("Spread") or 5, -- Base spread in degrees
 		Range = tool:GetAttribute("Range") or 500,
 		ReloadTime = tool:GetAttribute("ReloadTime") or 2,
 		Pellets = tool:GetAttribute("Pellets") or 1,
+		BloomPerShot = tool:GetAttribute("BloomPerShot") or 0.5, -- Degrees added per shot
+		MaxBloom = tool:GetAttribute("MaxBloom") or 10, -- Maximum bloom accumulation
 
 		-- Projectile speed (studs per second)
 		ProjectileSpeed = tool:GetAttribute("Range") or 500, -- Use range as speed baseline
@@ -139,22 +147,41 @@ local function getWeaponStats(tool)
 	}
 end
 
-local function getAccuracySpread(accuracy)
-	-- Convert accuracy (0-100) to spread in degrees
-	-- Increased spread multiplier for more noticeable weapon inaccuracy
-	local baseSpread = (100 - accuracy) * 0.15 -- 0 accuracy = 15 degrees, 100 accuracy = 0 degrees
+local function getAccuracySpread()
+	--[[
+		Cone-of-fire spread system:
+		1. Base weapon spread (degrees)
+		2. Modified by Accuracy% (higher accuracy = tighter cone)
+		3. Plus current bloom accumulation
+		4. Significantly reduced by ADS
+	]]
 
-	-- Hip fire vs ADS spread modifier
-	local spreadMultiplier = 1.0
+	-- Base spread from weapon (in degrees)
+	local baseSpread = weaponStats.Spread or 5
+
+	-- Accuracy modifier: 100% accuracy = 0.5x spread, 0% accuracy = 2.0x spread
+	-- Formula: AccuracyMult = 2.0 - (Accuracy / 100) * 1.5
+	-- 100 acc: 2.0 - 1.5 = 0.5x (tighter)
+	-- 70 acc:  2.0 - 1.05 = 0.95x
+	-- 50 acc:  2.0 - 0.75 = 1.25x
+	-- 0 acc:   2.0 - 0 = 2.0x (wider)
+	local accuracyMult = 2.0 - (weaponStats.Accuracy / 100) * 1.5
+
+	-- Calculate total spread: base * accuracy modifier + bloom
+	local totalSpread = (baseSpread * accuracyMult) + currentBloom
+
+	-- ADS modifier: significantly reduces spread
+	local adsMultiplier = 1.0
 	if isAiming then
-		-- ADS: Reduce spread by 70%
-		spreadMultiplier = 0.3
+		-- ADS: Reduce total spread by 65%
+		adsMultiplier = 0.35
 	else
-		-- Hip fire: Increase spread by 50%
-		spreadMultiplier = 1.5
+		-- Hip fire: Full spread
+		adsMultiplier = 1.0
 	end
 
-	return math.rad(baseSpread * spreadMultiplier)
+	-- Return final spread in radians
+	return math.rad(totalSpread * adsMultiplier)
 end
 
 local function applySpread(direction, spreadRadians)
@@ -171,6 +198,32 @@ local function applySpread(direction, spreadRadians)
 	-- Apply spread
 	local spread = (right * math.cos(randomAngle) + up * math.sin(randomAngle)) * math.tan(randomRadius)
 	return (direction + spread).Unit
+end
+
+local function updateBloomDecay()
+	--[[
+		Bloom decays over time when not firing
+		Called continuously to reduce bloom accumulation
+	]]
+	local now = tick()
+	local deltaTime = now - lastBloomDecayTime
+	lastBloomDecayTime = now
+
+	if currentBloom > 0 then
+		-- Decay bloom over time
+		currentBloom = math.max(0, currentBloom - (bloomDecayRate * deltaTime))
+	end
+end
+
+local function addBloom()
+	--[[
+		Increases bloom when firing
+		Capped at MaxBloom from weapon stats
+	]]
+	local bloomIncrease = weaponStats.BloomPerShot or 0.5
+	local maxBloom = weaponStats.MaxBloom or 10
+
+	currentBloom = math.min(maxBloom, currentBloom + bloomIncrease)
 end
 
 -- ============================================================
@@ -470,8 +523,8 @@ local function fireWeapon()
 	local origin = camera.CFrame.Position
 	local direction = camera.CFrame.LookVector
 
-	-- Apply accuracy spread
-	local spread = getAccuracySpread(weaponStats.Accuracy)
+	-- Calculate spread (includes base spread, accuracy, bloom, and ADS modifier)
+	local spread = getAccuracySpread()
 
 	-- Fire pellets (shotguns fire multiple)
 	for i = 1, weaponStats.Pellets do
@@ -483,6 +536,9 @@ local function fireWeapon()
 		-- Setup hit detection
 		setupProjectileHitDetection(projectile, weaponStats.Damage, weaponStats)
 	end
+
+	-- Add bloom after firing (spread increases with consecutive shots)
+	addBloom()
 
 	-- Muzzle flash
 	createMuzzleFlash()
@@ -496,7 +552,7 @@ local function fireWeapon()
 	-- local shootSound = currentWeapon:FindFirstChild("ShootSound")
 	-- if shootSound then shootSound:Play() end
 
-	print(string.format("[ProjectileShooter] Fired! Ammo: %d/%d", ammoInMag, weaponStats.Capacity))
+	print(string.format("[ProjectileShooter] Fired! Ammo: %d/%d | Bloom: %.2f°", ammoInMag, weaponStats.Capacity, currentBloom))
 end
 
 -- ============================================================
@@ -549,14 +605,19 @@ local function onWeaponEquipped(tool)
 	canFire = true
 	lastFireTime = 0
 
+	-- Reset bloom when equipping new weapon
+	currentBloom = 0
+	lastBloomDecayTime = tick()
+
 	-- Initialize ammo pool based on weapon type
 	local weaponType = tool:GetAttribute("WeaponType") or "Default"
 	ammoPool = AmmoPoolSizes[weaponType] or AmmoPoolSizes.Default
 
 	print(string.format("[ProjectileShooter] Equipped: %s", tool.Name))
-	print(string.format("  Damage: %.0f | Fire Rate: %.2fs | Accuracy: %.0f%%",
-		weaponStats.Damage, weaponStats.FireRate, weaponStats.Accuracy))
-	print(string.format("  Ammo: %d / %d", ammoInMag, ammoPool))
+	print(string.format("  Damage: %.0f | Fire Rate: %.2fs | Accuracy: %.0f%% | Spread: %.1f°",
+		weaponStats.Damage, weaponStats.FireRate, weaponStats.Accuracy, weaponStats.Spread))
+	print(string.format("  Ammo: %d / %d | Bloom: %.1f° per shot (max %.1f°)",
+		ammoInMag, ammoPool, weaponStats.BloomPerShot, weaponStats.MaxBloom))
 
 	updateAmmoDisplay()
 end
@@ -613,8 +674,12 @@ UserInputService.InputEnded:Connect(function(input)
 	end
 end)
 
--- Continuous fire while mouse held
+-- Continuous fire while mouse held + bloom decay
 RunService.RenderStepped:Connect(function()
+	-- Update bloom decay (happens continuously)
+	updateBloomDecay()
+
+	-- Handle continuous fire
 	if mouseHeld and currentWeapon and canFire then
 		fireWeapon()
 	end

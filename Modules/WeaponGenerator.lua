@@ -195,9 +195,14 @@ function WeaponGenerator:BuildWeaponStats(parts, level)
 		FireRate = base.FireRate,
 		Capacity = base.Capacity,
 		Accuracy = base.Accuracy,
+		Spread = base.Spread or 5, -- Base spread in degrees (cone-of-fire)
 		Range = base.Range,
 		ReloadTime = base.ReloadTime,
 		Pellets = base.Pellets or 1,
+
+		-- Spread bloom system
+		BloomPerShot = base.BloomPerShot or 0.5, -- Degrees added per shot
+		MaxBloom = base.MaxBloom or 10, -- Maximum bloom accumulation
 
 		-- Handling stats
 		Stability = 0,
@@ -284,6 +289,9 @@ function WeaponGenerator:BuildWeaponStats(parts, level)
 
 	-- Clamp values to reasonable ranges
 	stats.Accuracy = math.clamp(stats.Accuracy, 0, 100)
+	stats.Spread = math.clamp(stats.Spread, 0.1, 30) -- 0.1° to 30° spread
+	stats.BloomPerShot = math.clamp(stats.BloomPerShot, 0, 5) -- Max 5° per shot
+	stats.MaxBloom = math.clamp(stats.MaxBloom, 0, 30) -- Max 30° total bloom
 	stats.FireRate = math.max(0.05, stats.FireRate)
 	stats.Capacity = math.max(1, math.floor(stats.Capacity))
 	stats.ReloadTime = math.max(0.5, stats.ReloadTime)
