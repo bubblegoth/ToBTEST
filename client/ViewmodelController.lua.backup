@@ -105,8 +105,14 @@ function ViewmodelController:createProceduralViewmodel()
 		return self:createFallbackViewmodel()
 	end
 
-	-- Use WeaponModelBuilder to create procedural model
-	local model = WeaponModelBuilder.BuildWeaponModel(self.weaponData)
+	-- Check if weaponData has Parts field (required for BuildWeapon)
+	if not self.weaponData.Parts then
+		warn("ViewmodelController: weaponData missing Parts field, using fallback")
+		return self:createFallbackViewmodel()
+	end
+
+	-- Use WeaponModelBuilder to create procedural model (correct method name)
+	local model = WeaponModelBuilder:BuildWeapon(self.weaponData)
 	if not model then
 		warn("ViewmodelController: WeaponModelBuilder failed, using fallback")
 		return self:createFallbackViewmodel()

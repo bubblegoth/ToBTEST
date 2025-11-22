@@ -61,12 +61,24 @@ local function giveStartingWeapon(player, character)
 		return
 	end
 
-	-- Check if player already has a weapon
-	local existingTool = character:FindFirstChildOfClass("Tool")
-	if existingTool then
-		print("[PlayerWeapon]", player.Name, "already has weapon:", existingTool.Name)
-		return
+	-- Clear all old weapons from backpack and character on respawn
+	local backpack = player:FindFirstChild("Backpack")
+	if backpack then
+		for _, item in ipairs(backpack:GetChildren()) do
+			if item:IsA("Tool") and item:GetAttribute("UniqueID") then
+				item:Destroy()
+			end
+		end
 	end
+
+	-- Clear weapons from character
+	for _, item in ipairs(character:GetChildren()) do
+		if item:IsA("Tool") and item:GetAttribute("UniqueID") then
+			item:Destroy()
+		end
+	end
+
+	print("[PlayerWeapon] Cleared old weapons for", player.Name, "- giving fresh starting weapon")
 
 	-- Generate Common Level 1 Pistol
 	local weapon = WeaponGenerator:GenerateWeapon(
