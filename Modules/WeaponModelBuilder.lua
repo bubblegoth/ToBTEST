@@ -142,12 +142,24 @@ function WeaponModelBuilder:BuildBody(bodyData, materials, parent, basePos, weap
 	bodyModel.Name = "Body"
 	bodyModel.Parent = parent
 
-	local size = Vector3.new(0.15, 0.2, 0.6)
+	-- Base size varies by weapon type
+	local size = Vector3.new(0.15, 0.2, 0.6) -- Default for Rifle/Assault Rifle
 
+	if weaponType == "Pistol" or weaponType == "Revolver" then
+		size = Vector3.new(0.1, 0.15, 0.35) -- Compact pistol body
+	elseif weaponType == "Shotgun" then
+		size = Vector3.new(0.18, 0.25, 0.7) -- Bulky shotgun body
+	elseif weaponType == "Sniper Rifle" then
+		size = Vector3.new(0.12, 0.18, 0.8) -- Long sniper body
+	elseif weaponType == "SMG" then
+		size = Vector3.new(0.12, 0.16, 0.4) -- Compact SMG body
+	end
+
+	-- Modify size based on body type
 	if bodyData.Name:find("Heavy") or bodyData.Name:find("Reinforced") then
-		size = Vector3.new(0.18, 0.25, 0.7)
+		size = size * Vector3.new(1.2, 1.25, 1.15) -- 20-25% larger
 	elseif bodyData.Name:find("Lightweight") then
-		size = Vector3.new(0.12, 0.15, 0.5)
+		size = size * Vector3.new(0.8, 0.75, 0.85) -- 15-25% smaller
 	end
 
 	local receiver = CreatePart("Receiver", size, basePos, materials.Color1, materials.Primary, bodyModel)

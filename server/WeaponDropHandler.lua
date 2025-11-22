@@ -249,7 +249,7 @@ dropEvent.Name = "DropWeapon"
 dropEvent.Parent = ReplicatedStorage
 
 dropEvent.OnServerEvent:Connect(function(player, tool)
-	if not tool or not tool.Parent == player.Character then
+	if not tool or tool.Parent ~= player.Character then
 		warn("[WeaponDrop] Invalid drop request from", player.Name)
 		return
 	end

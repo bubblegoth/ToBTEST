@@ -325,6 +325,31 @@ function PlayerInventory:HasShield()
 end
 
 -- ============================================================
+-- AMMO MANAGEMENT
+-- ============================================================
+
+--[[
+	Clear all weapon ammo to zero
+	Called on character respawn - player must find ammo for their weapons
+]]
+function PlayerInventory:ResetAllAmmo()
+	-- Clear ammo for all equipped weapons
+	for i = 1, Config.MaxWeaponSlots do
+		local weaponData = self.Inventory.Weapons[i]
+		if weaponData then
+			weaponData.CurrentAmmo = 0
+		end
+	end
+
+	-- Clear ammo for all backpack weapons
+	for _, weaponData in ipairs(self.Backpack.Weapons) do
+		weaponData.CurrentAmmo = 0
+	end
+
+	print("[PlayerInventory] Cleared all weapon ammo for", self.Player.Name)
+end
+
+-- ============================================================
 -- SERIALIZATION (for saving/loading)
 -- ============================================================
 

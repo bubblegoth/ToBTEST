@@ -219,6 +219,7 @@ local function createBackpackUI()
 	weaponsLayout.CellPadding = UDim2.new(0, 10, 0, 10)
 	weaponsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	weaponsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	weaponsLayout.FillDirection = Enum.FillDirection.Horizontal
 	weaponsLayout.Parent = weaponsContainer
 
 	local weaponsPadding = Instance.new("UIPadding")
@@ -271,6 +272,7 @@ local function createBackpackUI()
 	shieldsLayout.CellPadding = UDim2.new(0, 10, 0, 10)
 	shieldsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	shieldsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	shieldsLayout.FillDirection = Enum.FillDirection.Horizontal
 	shieldsLayout.Parent = shieldsContainer
 
 	local shieldsPadding = Instance.new("UIPadding")

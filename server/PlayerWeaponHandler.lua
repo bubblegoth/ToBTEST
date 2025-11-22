@@ -19,6 +19,7 @@ print("[PlayerWeapon] Initializing...")
 local Modules = ReplicatedStorage:WaitForChild("Modules")
 local WeaponGenerator = require(Modules:WaitForChild("WeaponGenerator"))
 local WeaponToolBuilder = require(Modules:WaitForChild("WeaponToolBuilder"))
+local PlayerInventory = require(Modules:WaitForChild("PlayerInventory"))
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- STARTING WEAPON CONFIG
@@ -79,6 +80,12 @@ local function giveStartingWeapon(player, character)
 	end
 
 	print("[PlayerWeapon] Cleared old weapons for", player.Name, "- giving fresh starting weapon")
+
+	-- Clear all ammo from inventory weapons on respawn
+	local inventory = PlayerInventory.GetInventory(player)
+	if inventory then
+		inventory:ResetAllAmmo()
+	end
 
 	-- Generate Common Level 1 Pistol
 	local weapon = WeaponGenerator:GenerateWeapon(
