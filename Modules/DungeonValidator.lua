@@ -28,6 +28,11 @@ local Config = {
 
 	-- Boss room requirements
 	MinBossRoomDistance = 100,    -- Minimum studs from spawn to boss room
+
+	-- Spawn point validation
+	SpawnClearanceRadius = 3,     -- Studs - required clearance around spawn points
+	SpawnHeightCheck = 8,         -- Studs - check this height above spawn
+	MaxObstructionPercent = 0.3,  -- Max 30% obstruction allowed in clearance area
 }
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -186,6 +191,123 @@ local function findBossRoom(rooms)
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- SPAWN POINT VALIDATION
+-- ════════════════════════════════════════════════════════════════════════════
+
+--[[
+	Validates a single spawn point for clearance
+	@param position - Vector3 position to check
+	@param dungeonModel - The dungeon model (to exclude from raycast)
+	@return isValid, obstructionPercent
+]]
+local function validateSpawnPoint(position, dungeonModel)
+	local Region3 = workspace.Region3
+	local raycastParams = RaycastParams.new()
+	raycastParams.FilterDescendantsInstances = {dungeonModel}
+	raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+	-- Check for floor below (raycast down)
+	local floorCheck = workspace:Raycast(
+		position,
+		Vector3.new(0, -10, 0),
+		raycastParams
+	)
+
+	if not floorCheck then
+		return false, 1.0, "No floor beneath spawn point"
+	end
+
+	-- Check clearance in cylinder around spawn point
+	local checkPoints = 12 -- Sample points in circle
+	local obstructedCount = 0
+	local totalChecks = 0
+
+	-- Check horizontal clearance at multiple heights
+	for height = 0, Config.SpawnHeightCheck, 2 do
+		for i = 1, checkPoints do
+			local angle = (i / checkPoints) * math.pi * 2
+			local offset = Vector3.new(
+				math.cos(angle) * Config.SpawnClearanceRadius,
+				height,
+				math.sin(angle) * Config.SpawnClearanceRadius
+			)
+
+			local checkPos = position + offset
+			local result = workspace:Raycast(
+				position + Vector3.new(0, height, 0),
+				offset,
+				raycastParams
+			)
+
+			totalChecks = totalChecks + 1
+			if result and result.Instance and result.Instance:IsDescendantOf(dungeonModel) then
+				-- Hit a wall or obstacle in the dungeon
+				obstructedCount = obstructedCount + 1
+			end
+		end
+	end
+
+	local obstructionPercent = obstructedCount / totalChecks
+
+	local isValid = obstructionPercent <= Config.MaxObstructionPercent
+	local reason = isValid and "Clear" or string.format("%.0f%% obstructed", obstructionPercent * 100)
+
+	return isValid, obstructionPercent, reason
+end
+
+--[[
+	Validates all spawn points in a dungeon
+	@param dungeonModel - The dungeon model
+	@return validSpawns, invalidSpawns, invalidSpawnData
+]]
+local function validateAllSpawnPoints(dungeonModel)
+	local spawnsFolder = dungeonModel:FindFirstChild("Spawns")
+	if not spawnsFolder then
+		warn("[DungeonValidator] No Spawns folder found")
+		return {}, {}, {}
+	end
+
+	local validSpawns = {}
+	local invalidSpawns = {}
+	local invalidSpawnData = {}
+
+	for _, spawn in ipairs(spawnsFolder:GetChildren()) do
+		if spawn:IsA("BasePart") then
+			local spawnType = spawn:GetAttribute("SpawnType") or "Unknown"
+			local isBoss = spawn:GetAttribute("IsBoss") or false
+
+			-- Validate spawn point
+			local isValid, obstructionPercent, reason = validateSpawnPoint(spawn.Position, dungeonModel)
+
+			if isValid then
+				table.insert(validSpawns, spawn)
+			else
+				table.insert(invalidSpawns, spawn)
+				table.insert(invalidSpawnData, {
+					Spawn = spawn,
+					Position = spawn.Position,
+					Type = spawnType,
+					IsBoss = isBoss,
+					Obstruction = obstructionPercent,
+					Reason = reason
+				})
+
+				warn(string.format("[DungeonValidator] Invalid spawn: %s at %s - %s",
+					spawnType,
+					tostring(spawn.Position),
+					reason
+				))
+			end
+		end
+	end
+
+	print(string.format("[DungeonValidator] Spawn validation: %d valid, %d invalid",
+		#validSpawns, #invalidSpawns))
+
+	return validSpawns, invalidSpawns, invalidSpawnData
+end
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- PUBLIC API
 -- ════════════════════════════════════════════════════════════════════════════
 
@@ -264,6 +386,20 @@ function DungeonValidator:ValidateDungeon(dungeonModel, spawnPosition)
 		}
 	end
 
+	-- Validate spawn points (enemies and portals)
+	local validSpawns, invalidSpawns, invalidSpawnData = validateAllSpawnPoints(dungeonModel)
+
+	if #invalidSpawns > 0 then
+		warn(string.format("[DungeonValidator] Found %d invalid spawn points (inside walls or obstructed)", #invalidSpawns))
+		-- Still pass validation but warn - invalid spawns will be skipped during spawning
+		-- Could optionally fail here if you want stricter validation:
+		-- return false, {
+		-- 	Reason = "InvalidSpawnPoints",
+		-- 	InvalidSpawns = #invalidSpawns,
+		-- 	InvalidSpawnData = invalidSpawnData
+		-- }
+	end
+
 	-- Success!
 	print("[DungeonValidator] ✓ Dungeon validation PASSED")
 
@@ -274,6 +410,9 @@ function DungeonValidator:ValidateDungeon(dungeonModel, spawnPosition)
 		SpawnRoom = validatedRooms[spawnRoomId],
 		BossRoom = bossRoom,
 		Rooms = validatedRooms,
+		ValidSpawns = validSpawns,
+		InvalidSpawns = invalidSpawns,
+		InvalidSpawnData = invalidSpawnData,
 	}
 end
 
@@ -364,9 +503,61 @@ function DungeonValidator:PrintReport(validationData)
 		print("Reachable Rooms:", validationData.ReachableRooms)
 		print("Unreachable Rooms:", validationData.UnreachableRooms)
 		print("Boss Room Distance:", validationData.BossRoom.Distance)
+
+		-- Spawn validation results
+		if validationData.ValidSpawns then
+			print("\nSpawn Point Validation:")
+			print("  Valid Spawns:", #validationData.ValidSpawns)
+			print("  Invalid Spawns:", #validationData.InvalidSpawns)
+
+			if #validationData.InvalidSpawns > 0 then
+				print("  ⚠️ WARNING: Some spawns are obstructed or inside walls!")
+				for i, invalidData in ipairs(validationData.InvalidSpawnData) do
+					print(string.format("    - %s: %s (%.0f%% obstructed)",
+						invalidData.Type,
+						invalidData.Reason,
+						invalidData.Obstruction * 100
+					))
+				end
+			else
+				print("  ✓ All spawn points clear")
+			end
+		end
 	end
 
 	print(string.rep("=", 60) .. "\n")
+end
+
+--[[
+	Checks if a specific spawn point is valid (public helper)
+	@param position - Vector3 position to check
+	@param dungeonModel - The dungeon model
+	@return isValid, reason
+]]
+function DungeonValidator:IsSpawnPointValid(position, dungeonModel)
+	local isValid, obstructionPercent, reason = validateSpawnPoint(position, dungeonModel)
+	return isValid, reason
+end
+
+--[[
+	Filters a list of spawn points to only include valid ones
+	@param spawns - Array of spawn parts
+	@param dungeonModel - The dungeon model
+	@return validSpawns array
+]]
+function DungeonValidator:FilterValidSpawns(spawns, dungeonModel)
+	local validSpawns = {}
+
+	for _, spawn in ipairs(spawns) do
+		if spawn:IsA("BasePart") then
+			local isValid = validateSpawnPoint(spawn.Position, dungeonModel)
+			if isValid then
+				table.insert(validSpawns, spawn)
+			end
+		end
+	end
+
+	return validSpawns
 end
 
 return DungeonValidator
