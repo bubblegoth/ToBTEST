@@ -163,17 +163,23 @@ local function dropWeapon(player, tool)
 		return false
 	end
 
-	-- Get inventory and remove weapon data from current slot
+	-- Get inventory and remove weapon data from current equipped slot
 	local inventory = PlayerInventory.GetInventory(player)
-	local currentWeaponData = inventory:GetCurrentWeapon()
+	local currentSlot = inventory.CurrentWeaponSlot
+	local currentWeaponData = inventory:GetEquippedWeapon(currentSlot)
 
 	if not currentWeaponData then
-		warn("[WeaponDrop] No weapon in current inventory slot")
+		warn("[WeaponDrop] No weapon equipped in current slot")
 		return false
 	end
 
-	-- Remove from inventory
-	inventory:RemoveWeapon(inventory.CurrentWeaponIndex)
+	-- Unequip weapon from inventory slot (removes from Inventory, NOT from Backpack)
+	local unequippedData = inventory:UnequipWeaponFromSlot(currentSlot)
+
+	if not unequippedData then
+		warn("[WeaponDrop] Failed to unequip weapon from slot")
+		return false
+	end
 
 	-- Clear equipped tool reference
 	if inventory.EquippedWeaponTool == tool then
@@ -195,7 +201,8 @@ local function dropWeapon(player, tool)
 	-- Destroy the original tool
 	tool:Destroy()
 
-	print(string.format("[WeaponDrop] %s dropped %s (removed from inventory slot %d)", player.Name, weaponData.Name, inventory.CurrentWeaponIndex))
+	print(string.format("[WeaponDrop] %s dropped %s (unequipped from inventory slot %d)",
+		player.Name, weaponData.Name, currentSlot))
 	return true
 end
 
