@@ -201,7 +201,6 @@ end
 	@return isValid, obstructionPercent
 ]]
 local function validateSpawnPoint(position, dungeonModel)
-	local Region3 = workspace.Region3
 	local raycastParams = RaycastParams.new()
 	raycastParams.FilterDescendantsInstances = {dungeonModel}
 	raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
