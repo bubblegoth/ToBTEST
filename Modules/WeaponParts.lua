@@ -14,51 +14,95 @@ Last Updated: 2025-11-21
 local WeaponParts = {}
 
 -- ============================================================
--- MANUFACTURERS (Grips) - Gothic Themed
+-- MANUFACTURERS (Grips) - Gothic Themed with BL2-Accurate Multipliers
 -- ============================================================
+--[[
+	BL2 Grip Multipliers Reference (from bl2.parts):
+	- Jakobs: ×1.12 damage, ×1.09 fire interval
+	- Torgue: ×1.09 damage, ×1.15 impulse accuracy
+	- Vladof: ÷1.06 damage, ÷1.12 fire interval
+	- Dahl: ÷1.06 damage, ÷1.15 impulse accuracy
+	- Hyperion: ÷1.09 damage, ÷1.15 spread
+	- Maliwan: ×1.15 status modifier
+	- Bandit: ×1.35 magazine, ×1.1 reload time
+	- Tediore: ÷1.14 magazine, ÷1.2 reload time
+--]]
 
 WeaponParts.Manufacturers = {
 	{
-		Name = "Sanctum Armory",
-		Bonus = "Precision and reliability",
-		Color = Color3.fromRGB(220, 220, 220),
-		Modifiers = {DamageBonus = 0, CritChance = 5, Accuracy = 10}
-	},
-	{
-		Name = "Bone & Iron Works",
-		Bonus = "Raw destructive power",
-		Color = Color3.fromRGB(80, 60, 50),
-		Modifiers = {DamageBonus = 0.15, Recoil = 10}
-	},
-	{
-		Name = "Crypt Forges",
-		Bonus = "Ancient craftsmanship",
-		Color = Color3.fromRGB(100, 100, 120),
-		Modifiers = {DamageBonus = 0.05, Durability = 20}
-	},
-	{
-		Name = "Reaper Industries",
-		Bonus = "Speed and lethality",
-		Color = Color3.fromRGB(40, 40, 40),
-		Modifiers = {FireRateBonus = 0.2, Damage = -5}
-	},
-	{
-		Name = "Wraith Manufacturing",
-		Bonus = "Spectral efficiency",
-		Color = Color3.fromRGB(150, 180, 200),
-		Modifiers = {ReloadSpeed = 20, EquipSpeed = 15}
-	},
-	{
-		Name = "Cathedral Arms",
-		Bonus = "Divine judgment",
+		Name = "Cathedral Arms", -- Mapped to Jakobs (high damage, accuracy)
+		BL2Style = "Jakobs",
+		Bonus = "Divine judgment - High damage, precision",
 		Color = Color3.fromRGB(255, 215, 0),
-		Modifiers = {CritDamage = 25, Accuracy = 15}
+		Modifiers = {
+			DamageScale = 1.12, -- ×1.12 damage
+			FireRateScale = 1.09, -- ×1.09 fire interval (slower)
+			CritChance = 10 -- Gothic bonus
+		}
 	},
 	{
-		Name = "Tomb Makers",
-		Bonus = "Eternal darkness",
+		Name = "Bone & Iron Works", -- Mapped to Torgue (raw power, explosive)
+		BL2Style = "Torgue",
+		Bonus = "Raw destructive power - Explosive damage",
+		Color = Color3.fromRGB(80, 60, 50),
+		Modifiers = {
+			DamageScale = 1.09, -- ×1.09 damage
+			AccuracyScale = 0.85, -- Worse accuracy (1/1.15)
+			SplashDamage = 15 -- Gothic bonus
+		}
+	},
+	{
+		Name = "Reaper Industries", -- Mapped to Vladof (fire rate)
+		BL2Style = "Vladof",
+		Bonus = "Speed and lethality - Rapid fire",
+		Color = Color3.fromRGB(40, 40, 40),
+		Modifiers = {
+			DamageScale = 0.943, -- ÷1.06 damage (1/1.06 = 0.943)
+			FireRateScale = 0.893 -- ÷1.12 fire interval (faster) (1/1.12 = 0.893)
+		}
+	},
+	{
+		Name = "Sanctum Armory", -- Mapped to Dahl (accuracy, control)
+		BL2Style = "Dahl",
+		Bonus = "Precision and reliability - Controlled bursts",
+		Color = Color3.fromRGB(220, 220, 220),
+		Modifiers = {
+			DamageScale = 0.943, -- ÷1.06 damage
+			AccuracyScale = 1.15, -- Better accuracy (÷spread = better)
+			RecoilReduction = 15 -- Gothic bonus
+		}
+	},
+	{
+		Name = "Crypt Forges", -- Mapped to Hyperion (accuracy gets better)
+		BL2Style = "Hyperion",
+		Bonus = "Ancient craftsmanship - Improves as you fire",
+		Color = Color3.fromRGB(100, 100, 120),
+		Modifiers = {
+			DamageScale = 0.917, -- ÷1.09 damage (1/1.09 = 0.917)
+			AccuracyScale = 1.15, -- Better spread
+			Stability = 20 -- Gothic bonus
+		}
+	},
+	{
+		Name = "Wraith Manufacturing", -- Mapped to Maliwan (elemental)
+		BL2Style = "Maliwan",
+		Bonus = "Spectral efficiency - Elemental mastery",
+		Color = Color3.fromRGB(150, 180, 200),
+		Modifiers = {
+			ElementalChance = 1.15, -- ×1.15 status modifier
+			ElementalDamage = 20, -- Gothic bonus
+			ReloadSpeed = 10
+		}
+	},
+	{
+		Name = "Tomb Makers", -- Mapped to Bandit (big mags, slow reload)
+		BL2Style = "Bandit",
+		Bonus = "Eternal darkness - Massive magazines",
 		Color = Color3.fromRGB(60, 0, 60),
-		Modifiers = {DamageBonus = 0.10, MagazineCapacity = 15}
+		Modifiers = {
+			MagazineScale = 1.35, -- ×1.35 magazine
+			ReloadScale = 1.1 -- ×1.1 reload time (slower)
+		}
 	}
 }
 
@@ -279,58 +323,54 @@ WeaponParts.Stocks = {
 }
 
 -- ============================================================
--- BODIES - Fire Rate and Damage
+-- BODIES - Fire Rate and Damage (BL2-Style Rarity Scaling)
 -- ============================================================
+--[[
+	BL2 Body/Rarity Multipliers (from bl2.parts):
+	- Uncommon: ×1.21 magazine, ×1.24 damage, ÷1.15 spread
+	- Rare: ×1.35 magazine, ×1.48 damage, ÷1.25 spread
+	- Very Rare: ×1.49 magazine, ×1.72 damage, ÷1.35 spread
+
+	Bodies in BL2 determine rarity bonuses. We use similar scaling for gothic bodies.
+--]]
 
 WeaponParts.Bodies = {
-	{
-		Name = "Heavy Frame",
-		Rarity = "Common",
-		Modifiers = {
-			Damage = 5,
-			FireRate = 0.05, -- Slower by 0.05s
-			Weight = 20
-		},
-		Description = "Hits like a battering ram"
-	},
 	{
 		Name = "Standard Frame",
 		Rarity = "Common",
 		Modifiers = {
-			Damage = 0,
-			FireRate = 0,
-			Weight = 0
+			-- No modifiers - baseline
 		},
 		Description = "Reliable and consistent"
 	},
 	{
-		Name = "Lightweight Frame",
+		Name = "Reinforced Frame",
 		Rarity = "Uncommon",
 		Modifiers = {
-			Damage = -3,
-			FireRate = -0.08, -- Faster by 0.08s
-			Weight = -15,
-			Mobility = 10
+			DamageScale = 1.24, -- ×1.24 damage (BL2 Uncommon body)
+			MagazineScale = 1.21, -- ×1.21 magazine
+			AccuracyScale = 1.15 -- ÷1.15 spread (better)
 		},
-		Description = "Rapid fire, lower impact"
+		Description = "Enhanced construction"
 	},
 	{
-		Name = "Reinforced Frame",
+		Name = "Heavy Frame",
 		Rarity = "Rare",
 		Modifiers = {
-			Damage = 8,
-			FireRate = 0.03, -- Slower by 0.03s
-			Durability = 30,
-			Weight = 15
+			DamageScale = 1.48, -- ×1.48 damage (BL2 Rare body)
+			MagazineScale = 1.35, -- ×1.35 magazine
+			AccuracyScale = 1.25, -- ÷1.25 spread (better)
+			FireRateScale = 1.05 -- Slightly slower
 		},
-		Description = "Built to endure and punish"
+		Description = "Built to punish"
 	},
 	{
 		Name = "Revenant Frame",
 		Rarity = "Epic",
 		Modifiers = {
-			Damage = 12,
-			FireRate = -0.05, -- Faster by 0.05s
+			DamageScale = 1.72, -- ×1.72 damage (BL2 Very Rare body)
+			MagazineScale = 1.49, -- ×1.49 magazine
+			AccuracyScale = 1.35, -- ÷1.35 spread (better)
 			CritChance = 10,
 			SoulGain = 2
 		},
@@ -340,101 +380,150 @@ WeaponParts.Bodies = {
 		Name = "Cathedral Frame",
 		Rarity = "Legendary",
 		Modifiers = {
-			Damage = 15,
-			Accuracy = 25,
+			DamageScale = 2.0, -- ×2.0 damage (legendary tier)
+			MagazineScale = 1.6,
+			AccuracyScale = 1.5,
 			CritDamage = 50,
 			Range = 30
 		},
 		Description = "Divine craftsmanship incarnate"
+	},
+	{
+		Name = "Void Frame",
+		Rarity = "Mythic",
+		Modifiers = {
+			DamageScale = 2.5, -- ×2.5 damage (mythic tier)
+			MagazineScale = 1.8,
+			AccuracyScale = 1.8,
+			CritChance = 15,
+			CritDamage = 75,
+			PenetrationChance = 25
+		},
+		Description = "Reality-bending construction"
 	}
 }
 
 -- ============================================================
--- BARRELS - Damage, Accuracy, Range
+-- BARRELS - Damage, Accuracy, Range (BL2-Accurate Multipliers)
 -- ============================================================
+--[[
+	BL2 Barrel Multipliers Reference (from bl2.parts):
+	PISTOLS:
+	- Jakobs: ×1.18 damage, ÷1.4 spread, ×1.36 fire interval
+	- Torgue: ×1.24 damage, ×1.09 fire interval
+	- Vladof: ÷1.3 fire interval, ×1.28 magazine
+	- Dahl: ÷1.09 damage, ×1.2 spread
+	- Hyperion: ÷1.12 damage, ÷1.35 spread
+	- Maliwan: ×1.15 status damage, ÷1.1 spread
+	- Bandit: ×1.06 damage, ×1.15 spread
+
+	RIFLES:
+	- Jakobs: ×1.18 damage, ÷1.3 spread, ×1.18 fire interval
+	- Vladof: ÷1.15 fire interval, ×1.25 spread
+	- Bandit: ×1.06 damage, ×1.15 spread
+	- Dahl: ÷1.09 damage, ×1.2 spread
+
+	Note: In BL2, barrels are manufacturer-specific. For roguelite variety,
+	we use generic barrels with rarity-based scaling.
+--]]
 
 WeaponParts.Barrels = {
 	{
-		Name = "Long Barrel",
-		Rarity = "Common",
-		Modifiers = {
-			Damage = 3,
-			Accuracy = 15,
-			Range = 40,
-			FireRate = 0.05 -- Slower by 0.05s
-		},
-		Description = "Precision at distance"
-	},
-	{
-		Name = "Standard Barrel",
-		Rarity = "Common",
-		Modifiers = {
-			Damage = 0,
-			Accuracy = 5,
-			Range = 15
-		},
-		Description = "Balanced performance"
-	},
-	{
-		Name = "Short Barrel",
-		Rarity = "Uncommon",
-		Modifiers = {
-			Damage = -2,
-			Accuracy = -10,
-			Range = -20,
-			FireRate = -0.06, -- Faster by 0.06s
-			Mobility = 15
-		},
-		Description = "Close quarters combat"
-	},
-	{
-		Name = "Rifled Barrel",
+		Name = "Jakobs Barrel", -- High damage, slow fire, accurate
 		Rarity = "Rare",
 		Modifiers = {
-			Damage = 5,
-			Accuracy = 25,
-			Range = 30,
-			CritChance = 10
+			DamageScale = 1.18, -- ×1.18 damage
+			AccuracyScale = 1.35, -- ÷1.35 spread (better accuracy)
+			FireRateScale = 1.27, -- ×1.27 fire interval (slower)
+			CritChance = 5
 		},
-		Description = "Surgical precision"
+		Description = "High damage, slow fire"
 	},
 	{
-		Name = "Vented Barrel",
-		Rarity = "Epic",
+		Name = "Torgue Barrel", -- Explosive damage
+		Rarity = "Rare",
 		Modifiers = {
-			Damage = 8,
-			Accuracy = 20,
-			FireRate = -0.03, -- Faster by 0.03s
-			RecoilReduction = 20
+			DamageScale = 1.24, -- ×1.24 damage
+			FireRateScale = 1.09, -- ×1.09 fire interval
+			SplashDamage = 20
 		},
-		Description = "Sustained high performance"
+		Description = "Explosive power"
 	},
 	{
-		Name = "Sanctified Barrel",
+		Name = "Vladof Barrel", -- Fast fire rate
+		Rarity = "Uncommon",
+		Modifiers = {
+			FireRateScale = 0.77, -- ÷1.3 fire interval (faster)
+			MagazineScale = 1.28, -- ×1.28 magazine
+			DamageScale = 0.95 -- Slight damage penalty for balance
+		},
+		Description = "Rapid fire"
+	},
+	{
+		Name = "Dahl Barrel", -- Balanced, burst-friendly
+		Rarity = "Common",
+		Modifiers = {
+			DamageScale = 0.917, -- ÷1.09 damage (1/1.09)
+			AccuracyScale = 0.83, -- ×1.2 spread (worse)
+			RecoilReduction = 10
+		},
+		Description = "Controlled bursts"
+	},
+	{
+		Name = "Hyperion Barrel", -- Accuracy focused
+		Rarity = "Uncommon",
+		Modifiers = {
+			DamageScale = 0.893, -- ÷1.12 damage (1/1.12)
+			AccuracyScale = 1.35, -- ÷1.35 spread (very accurate)
+			Stability = 15
+		},
+		Description = "Laser accuracy"
+	},
+	{
+		Name = "Maliwan Barrel", -- Elemental
+		Rarity = "Rare",
+		Modifiers = {
+			ElementalDamage = 15,
+			AccuracyScale = 1.1, -- ÷1.1 spread
+			ElementalChance = 1.15
+		},
+		Description = "Elemental mastery"
+	},
+	{
+		Name = "Bandit Barrel", -- Slight damage boost
+		Rarity = "Common",
+		Modifiers = {
+			DamageScale = 1.06, -- ×1.06 damage
+			AccuracyScale = 0.87 -- ×1.15 spread (worse)
+		},
+		Description = "Raw and unrefined"
+	},
+	{
+		Name = "Sanctified Barrel", -- Legendary crit barrel
 		Rarity = "Legendary",
 		Modifiers = {
-			Damage = 12,
-			Accuracy = 30,
-			Range = 50,
-			CritDamage = 30
+			DamageScale = 1.25,
+			AccuracyScale = 1.4,
+			CritDamage = 30,
+			CritChance = 10
 		},
 		Description = "Blessed by forgotten rites"
 	},
 	{
-		Name = "Void Barrel",
+		Name = "Void Barrel", -- Mythic penetration barrel
 		Rarity = "Mythic",
 		Modifiers = {
-			Damage = 20,
-			Accuracy = 40,
-			Range = 80,
-			PenetrationChance = 50
+			DamageScale = 1.5,
+			AccuracyScale = 1.5,
+			PenetrationChance = 50,
+			Range = 80
 		},
 		Description = "Pierces the veil of reality"
 	}
 }
 
 -- ============================================================
--- MAGAZINES - Capacity, Reload Speed
+-- MAGAZINES - Capacity, Reload Speed (BL2-Style Scaling)
 -- ============================================================
 
 WeaponParts.Magazines = {
@@ -442,10 +531,8 @@ WeaponParts.Magazines = {
 		Name = "Drum Magazine",
 		Rarity = "Common",
 		Modifiers = {
-			Capacity = 6, -- +50% for pistol (12→18), balanced for all weapon types
-			ReloadSpeed = -40,
-			EquipSpeed = -30,
-			Weight = 25
+			MagazineScale = 1.5, -- ×1.5 capacity (+50%)
+			ReloadScale = 1.4 -- ×1.4 reload time (slower)
 		},
 		Description = "Extended firepower, slower handling"
 	},
@@ -453,10 +540,8 @@ WeaponParts.Magazines = {
 		Name = "Extended Magazine",
 		Rarity = "Common",
 		Modifiers = {
-			Capacity = 4, -- +33% for pistol (12→16)
-			ReloadSpeed = -20,
-			EquipSpeed = -15,
-			Weight = 10
+			MagazineScale = 1.33, -- ×1.33 capacity (+33%)
+			ReloadScale = 1.2 -- ×1.2 reload time (slower)
 		},
 		Description = "More ammo, slower handling"
 	},
@@ -464,9 +549,7 @@ WeaponParts.Magazines = {
 		Name = "Standard Magazine",
 		Rarity = "Common",
 		Modifiers = {
-			Capacity = 0,
-			ReloadSpeed = 0,
-			EquipSpeed = 0
+			-- No modifiers - baseline
 		},
 		Description = "Balanced capacity"
 	},
@@ -474,10 +557,9 @@ WeaponParts.Magazines = {
 		Name = "Compact Magazine",
 		Rarity = "Uncommon",
 		Modifiers = {
-			Capacity = -3, -- -25% for pistol (12→9)
-			ReloadSpeed = 25,
-			EquipSpeed = 20,
-			Damage = 2 -- Reduced from 10
+			MagazineScale = 0.75, -- ×0.75 capacity (-25%)
+			ReloadScale = 0.75, -- ÷1.33 reload time (faster)
+			DamageScale = 1.05 -- Small damage boost
 		},
 		Description = "Quick handling, fewer rounds"
 	},
@@ -485,10 +567,9 @@ WeaponParts.Magazines = {
 		Name = "Speed Loader",
 		Rarity = "Rare",
 		Modifiers = {
-			Capacity = -4, -- -33% for pistol (12→8)
-			ReloadSpeed = 50,
-			EquipSpeed = 30,
-			Damage = 3 -- Reduced from 15
+			MagazineScale = 0.67, -- ×0.67 capacity (-33%)
+			ReloadScale = 0.5, -- ÷2 reload time (very fast)
+			DamageScale = 1.08 -- Slight damage boost
 		},
 		Description = "Lightning fast reloads"
 	},
@@ -496,8 +577,8 @@ WeaponParts.Magazines = {
 		Name = "Soul Reservoir",
 		Rarity = "Epic",
 		Modifiers = {
-			Capacity = 8, -- +66% for pistol (12→20)
-			ReloadSpeed = 20,
+			MagazineScale = 1.66, -- ×1.66 capacity (+66%)
+			ReloadScale = 0.8, -- ÷1.25 reload time (faster)
 			SoulGain = 5
 		},
 		Description = "Draws power from fallen enemies"
@@ -506,8 +587,8 @@ WeaponParts.Magazines = {
 		Name = "Infinite Coil",
 		Rarity = "Legendary",
 		Modifiers = {
-			Capacity = 12, -- +100% for pistol (12→24)
-			ReloadSpeed = 40,
+			MagazineScale = 2.0, -- ×2.0 capacity (+100%)
+			ReloadScale = 0.6, -- ÷1.67 reload time (much faster)
 			NoReloadChance = 25
 		},
 		Description = "The magazine that never empties"

@@ -14,6 +14,7 @@ Last Updated: 2025-11-21
 local WeaponGenerator = {}
 
 local WeaponParts = require(script.Parent.WeaponParts)
+local BL2Calculator = require(script.Parent.BL2Calculator)
 
 -- ============================================================
 -- RARITY SYSTEM
@@ -182,123 +183,37 @@ function WeaponGenerator:GenerateWeapon(level, baseTypeName, forcedRarity)
 end
 
 -- ============================================================
--- STAT CALCULATION
+-- STAT CALCULATION (BL2-Accurate with PreAdd/Scale/PostAdd)
 -- ============================================================
 
 function WeaponGenerator:BuildWeaponStats(parts, level)
 	local base = parts.Base.BaseStats
 
-	-- Start with base stats
-	local stats = {
-		-- Core stats
-		Damage = base.Damage,
-		FireRate = base.FireRate,
-		Capacity = base.Capacity,
-		CurrentAmmo = base.Capacity, -- Initialize with full magazine
-		Accuracy = base.Accuracy, -- BL2 converts this to spread: (100 - Accuracy) / 12
-		Range = base.Range,
-		ReloadTime = base.ReloadTime,
-		Pellets = base.Pellets or 1,
-
-		-- Spread bloom system
-		BloomPerShot = base.BloomPerShot or 0.5, -- Degrees added per shot
-		MaxBloom = base.MaxBloom or 10, -- Maximum bloom accumulation
-
-		-- Handling stats
-		Stability = 0,
-		RecoilReduction = 0,
-		EquipSpeed = 0,
-		ReloadSpeed = 0,
-		AimSpeed = 0,
-
-		-- Critical stats
-		CritChance = 0,
-		CritDamage = 0,
-		HeadshotBonus = 0,
-
-		-- Special stats
-		SoulGain = 0,
-		KillHeal = 0,
-
-		-- Elemental damage
-		FireDamage = 0,
-		FrostDamage = 0,
-		ShadowDamage = 0,
-		LightDamage = 0,
-		VoidDamage = 0,
-
-		-- Status effects
-		BurnChance = 0,
-		SlowChance = 0,
-		ChainEffect = 0,
-		PenetrationChance = 0,
-
-		-- Misc
-		Weight = 0,
-		Durability = 0,
-		Mobility = 0
+	-- Collect all parts that modify stats (order matters for BL2 calculations)
+	local partsList = {
+		parts.Manufacturer, -- Grip in BL2
+		parts.Barrel,
+		parts.Stock,
+		parts.Body,
+		parts.Magazine,
+		parts.Sight,
+		parts.Accessory
 	}
 
-	-- Apply all part modifiers
-	for partName, part in pairs(parts) do
-		if part and part.Modifiers then
-			for statName, value in pairs(part.Modifiers) do
-				if stats[statName] ~= nil then
-					-- Percentage modifiers (DamageBonus, FireRateBonus, etc.)
-					if statName:find("Bonus") then
-						local baseStat = statName:gsub("Bonus", "")
-						if stats[baseStat] then
-							stats[baseStat] = stats[baseStat] * (1 + value)
-						end
-					-- Capacity modifiers (percentage if not integer)
-					elseif statName == "Capacity" and type(value) == "number" and math.abs(value) >= 10 then
-						stats.Capacity = stats.Capacity + value
-					-- Additive modifiers
-					else
-						stats[statName] = stats[statName] + value
-					end
-				else
-					-- New stat (special effects)
-					stats[statName] = value
-				end
-			end
-		end
-	end
+	-- Use BL2Calculator for core stats
+	local stats = BL2Calculator:CalculateAllStats(base, partsList, level)
 
-	-- Apply level scaling (1.05× per level = 5% increase)
-	local levelMod = 1 + (level * 0.05)
-	stats.Damage = math.floor(stats.Damage * levelMod)
+	-- BL2Calculator handles:
+	-- - Damage (with level scaling)
+	-- - FireRate
+	-- - Capacity (Magazine)
+	-- - Accuracy
+	-- - ReloadTime
+	-- - DPS
+	-- - All additive stats (CritChance, CritDamage, etc.)
 
-	-- Apply manufacturer bonuses
-	if parts.Manufacturer and parts.Manufacturer.Modifiers then
-		for statName, value in pairs(parts.Manufacturer.Modifiers) do
-			if type(value) == "number" then
-				if statName:find("Bonus") then
-					local baseStat = statName:gsub("Bonus", "")
-					if stats[baseStat] then
-						stats[baseStat] = stats[baseStat] * (1 + value)
-					end
-				else
-					stats[statName] = (stats[statName] or 0) + value
-				end
-			else
-				stats[statName] = value
-			end
-		end
-	end
-
-	-- Clamp values to reasonable ranges
-	stats.Accuracy = math.clamp(stats.Accuracy, 0, 100)
-	-- Spread is calculated from Accuracy using BL2 formula: (100 - Accuracy) / 12
-	stats.BloomPerShot = math.clamp(stats.BloomPerShot, 0, 5) -- Max 5° per shot
-	stats.MaxBloom = math.clamp(stats.MaxBloom, 0, 30) -- Max 30° total bloom
-	stats.FireRate = math.max(0.05, stats.FireRate)
-	stats.Capacity = math.max(1, math.floor(stats.Capacity))
-	stats.ReloadTime = math.max(0.5, stats.ReloadTime)
-	stats.Pellets = math.max(1, math.floor(stats.Pellets))
-
-	-- Calculate DPS
-	stats.DPS = math.floor((stats.Damage * stats.Pellets) / stats.FireRate)
+	-- Add weapon type name for reference
+	stats.WeaponType = parts.Base.Name
 
 	return stats
 end
