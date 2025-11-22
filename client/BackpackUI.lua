@@ -14,9 +14,11 @@ Last Updated: 2025-11-22
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local playerScripts = player:WaitForChild("PlayerScripts")
 
 print("[BackpackUI] Initializing...")
 
@@ -25,6 +27,7 @@ local Modules = ReplicatedStorage:WaitForChild("Modules")
 local WeaponCard = require(Modules:WaitForChild("WeaponCard"))
 local ShieldCard = require(Modules:WaitForChild("ShieldCard"))
 local PlayerInventory = require(Modules:WaitForChild("PlayerInventory"))
+local DragController = require(playerScripts:WaitForChild("DragController"))
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- UI CREATION
@@ -281,6 +284,67 @@ local function createBackpackUI()
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- DRAG AND DROP SYSTEM
+-- ════════════════════════════════════════════════════════════════════════════
+
+local function makeDraggable(card, itemData)
+	local dragging = false
+	local dragStart = nil
+
+	card.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = tick()
+		end
+	end)
+
+	card.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			if dragging then
+				local dragDuration = tick() - dragStart
+
+				-- If drag was very short (< 0.15s), treat as click (let buttons handle it)
+				-- If drag was longer, initiate drag-and-drop
+				if dragDuration >= 0.15 and not DragController.IsDragging() then
+					DragController.StartDrag(card, itemData)
+				end
+
+				dragging = false
+			end
+		end
+	end)
+end
+
+local function handleDrop(draggedItemData, dropTarget)
+	print("[BackpackUI] Handling drop:", draggedItemData.itemType, "to", dropTarget.zone)
+
+	-- Fire appropriate remote event based on action
+	if dropTarget.action == "stash" then
+		-- Moving from Inventory → Backpack
+		local unequipEvent = ReplicatedStorage:WaitForChild("UnequipToBackpack")
+		if draggedItemData.itemType == "weapon" then
+			unequipEvent:FireServer("weapon", draggedItemData.slotIndex)
+		elseif draggedItemData.itemType == "shield" then
+			unequipEvent:FireServer("shield", 1)
+		end
+	elseif dropTarget.action == "equip" then
+		-- Moving from Backpack → Inventory
+		local equipEvent = ReplicatedStorage:WaitForChild("EquipFromBackpack")
+		if draggedItemData.itemType == "weapon" then
+			equipEvent:FireServer("weapon", draggedItemData.backpackIndex)
+		elseif draggedItemData.itemType == "shield" then
+			equipEvent:FireServer("shield", draggedItemData.backpackIndex)
+		end
+	end
+
+	-- Refresh UI after short delay
+	task.wait(0.1)
+	if isOpen then
+		updateDisplay(backpackUI)
+	end
+end
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- UPDATE DISPLAY
 -- ════════════════════════════════════════════════════════════════════════════
 
@@ -317,6 +381,14 @@ local function updateDisplay(screenGui)
 		if weaponData then
 			local card = WeaponCard.CreateCompact(weaponData, invWeaponsContainer)
 			card.LayoutOrder = i
+
+			-- Make card draggable
+			makeDraggable(card, {
+				itemType = "weapon",
+				sourceType = "inventory",
+				slotIndex = i,
+				weaponData = weaponData
+			})
 
 			-- Slot number
 			local slotLabel = Instance.new("TextLabel")
@@ -431,6 +503,14 @@ local function updateDisplay(screenGui)
 	if shield then
 		local card = ShieldCard.CreateCompact(shield, invShieldContainer)
 
+		-- Make card draggable
+		makeDraggable(card, {
+			itemType = "shield",
+			sourceType = "inventory",
+			slotIndex = 1,
+			shieldData = shield
+		})
+
 		-- Unequip button
 		local unequipButton = Instance.new("TextButton")
 		unequipButton.Size = UDim2.new(0, 60, 0, 20)
@@ -535,6 +615,14 @@ local function updateDisplay(screenGui)
 			local card = WeaponCard.CreateCompact(weaponData, weaponsContainer)
 			card.LayoutOrder = i
 
+			-- Make card draggable
+			makeDraggable(card, {
+				itemType = "weapon",
+				sourceType = "backpack",
+				backpackIndex = i,
+				weaponData = weaponData
+			})
+
 			-- Index number
 			local indexLabel = Instance.new("TextLabel")
 			indexLabel.Size = UDim2.new(0, 25, 0, 25)
@@ -596,6 +684,14 @@ local function updateDisplay(screenGui)
 		for i, shieldData in ipairs(backpackShields) do
 			local card = ShieldCard.CreateCompact(shieldData, shieldsContainer)
 			card.LayoutOrder = i
+
+			-- Make card draggable
+			makeDraggable(card, {
+				itemType = "shield",
+				sourceType = "backpack",
+				backpackIndex = i,
+				shieldData = shieldData
+			})
 
 			-- Index number
 			local indexLabel = Instance.new("TextLabel")
@@ -679,6 +775,32 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if input.KeyCode == Enum.KeyCode.B then
 		toggleBackpack()
 	end
+
+	-- ESC to cancel drag
+	if input.KeyCode == Enum.KeyCode.Escape then
+		if DragController.IsDragging() then
+			DragController.CancelDrag()
+		end
+	end
+end)
+
+-- Handle drag updates (follow mouse)
+RunService.RenderStepped:Connect(function()
+	if DragController.IsDragging() then
+		local mousePos = UserInputService:GetMouseLocation()
+		DragController.UpdateDrag(mousePos)
+	end
+end)
+
+-- Handle mouse release (drop)
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if DragController.IsDragging() then
+			local mousePos = UserInputService:GetMouseLocation()
+			DragController.EndDrag(mousePos, handleDrop)
+		end
+	end
 end)
 
 print("[BackpackUI] Ready - Press B to open Inventory & Backpack")
+print("[BackpackUI] Drag items between Inventory and Backpack!")
