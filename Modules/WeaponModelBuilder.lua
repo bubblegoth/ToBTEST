@@ -208,8 +208,20 @@ function WeaponModelBuilder:BuildBarrel(barrelData, materials, weaponType, paren
 		length = length * 0.7
 	end
 
+	-- Calculate connection gap based on weapon type body size
+	local bodyGap = 0.3 -- Default for rifles (body Z = 0.6)
+	if weaponType == "Pistol" or weaponType == "Revolver" then
+		bodyGap = 0.175 -- Pistol body Z = 0.35
+	elseif weaponType == "Shotgun" then
+		bodyGap = 0.35 -- Shotgun body Z = 0.7
+	elseif weaponType == "Sniper Rifle" then
+		bodyGap = 0.4 -- Sniper body Z = 0.8
+	elseif weaponType == "SMG" then
+		bodyGap = 0.2 -- SMG body Z = 0.4
+	end
+
 	local barrel = CreatePart("BarrelTube", Vector3.new(width, width, length),
-		basePos * CFrame.new(0, 0, -length/2 - 0.3), materials.Color1, materials.Primary, barrelModel)
+		basePos * CFrame.new(0, 0, -length/2 - bodyGap), materials.Color1, materials.Primary, barrelModel)
 
 	local muzzle = CreatePart("Muzzle", Vector3.new(width + 0.02, width + 0.02, 0.08),
 		barrel.CFrame * CFrame.new(0, 0, -length/2 - 0.04), materials.Color2, materials.Secondary, barrelModel)
