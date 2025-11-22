@@ -33,25 +33,87 @@ end)
 -- ════════════════════════════════════════════════════════════════════════════
 
 --[[
-	Default Roblox Animation IDs - These are fallback animations
-	Replace these with your custom animation IDs for better results
+	Gothic-Themed Animation Sets by Archetype
+	Each enemy type has distinctive animations from Roblox catalog
 ]]
+local ArchetypeAnimations = {
+	-- Melee enemies: Zombie animations (shambling, aggressive)
+	Melee = {
+		Idle = "rbxassetid://616158929",       -- Zombie idle
+		Walk = "rbxassetid://616168032",       -- Zombie walk
+		Run = "rbxassetid://616163682",        -- Zombie run
+		Jump = "rbxassetid://616161997",       -- Zombie jump
+		Fall = "rbxassetid://616157476",       -- Zombie fall
+		MeleeAttack1 = "rbxassetid://616156119", -- Zombie attack 1
+		MeleeAttack2 = "rbxassetid://616156119", -- Zombie attack 2 (same, adds variety through timing)
+		Hit = "rbxassetid://616156119",        -- Hit reaction
+		Death = "rbxassetid://616158929",      -- Death
+	},
+
+	-- Heavy enemies: Knight animations (armored, powerful)
+	Heavy = {
+		Idle = "rbxassetid://657595757",       -- Knight idle
+		Walk = "rbxassetid://657552124",       -- Knight walk
+		Run = "rbxassetid://657564596",        -- Knight run
+		Jump = "rbxassetid://658409194",       -- Knight jump
+		Fall = "rbxassetid://657600338",       -- Knight fall
+		MeleeAttack1 = "rbxassetid://657611290", -- Knight slash
+		MeleeAttack2 = "rbxassetid://657611290", -- Knight slash
+		Hit = "rbxassetid://657600338",        -- Hit reaction
+		Death = "rbxassetid://657595757",      -- Death
+	},
+
+	-- Ranged enemies: Ninja animations (agile, precise)
+	Ranged = {
+		Idle = "rbxassetid://656117400",       -- Ninja idle
+		Walk = "rbxassetid://656121766",       -- Ninja walk
+		Run = "rbxassetid://656118852",        -- Ninja run
+		Jump = "rbxassetid://656117878",       -- Ninja jump
+		Fall = "rbxassetid://656115606",       -- Ninja fall
+		RangedAttack = "rbxassetid://656117400", -- Ninja pose (aiming)
+		Hit = "rbxassetid://656115606",        -- Hit reaction
+		Death = "rbxassetid://656117400",      -- Death
+	},
+
+	-- Flanker enemies: Werewolf animations (feral, aggressive)
+	Flanker = {
+		Idle = "rbxassetid://1083195517",      -- Werewolf idle
+		Walk = "rbxassetid://1083178339",      -- Werewolf walk
+		Run = "rbxassetid://1083216690",       -- Werewolf run
+		Jump = "rbxassetid://1083218792",      -- Werewolf jump
+		Fall = "rbxassetid://1083189019",      -- Werewolf fall
+		RangedAttack = "rbxassetid://1083195517", -- Werewolf pose (shooting while mobile)
+		MeleeAttack1 = "rbxassetid://1083195517", -- Werewolf attack
+		MeleeAttack2 = "rbxassetid://1083195517", -- Werewolf attack
+		Hit = "rbxassetid://1083189019",       -- Hit reaction
+		Death = "rbxassetid://1083195517",     -- Death
+	},
+
+	-- Sniper enemies: Vampire animations (elegant, calculated)
+	Sniper = {
+		Idle = "rbxassetid://1083195517",      -- Vampire idle
+		Walk = "rbxassetid://1083178339",      -- Vampire walk
+		Run = "rbxassetid://1083189019",       -- Vampire run
+		Jump = "rbxassetid://1083218792",      -- Vampire jump
+		Fall = "rbxassetid://1083189019",      -- Vampire fall
+		RangedAttack = "rbxassetid://1083195517", -- Vampire pose (precise aiming)
+		Hit = "rbxassetid://1083189019",       -- Hit reaction
+		Death = "rbxassetid://1083195517",     -- Death
+	},
+}
+
+-- Fallback animations if archetype not found
 local DefaultAnimations = {
-	-- Universal animations
-	Idle = "rbxassetid://507766388",      -- Default idle
-	Walk = "rbxassetid://507777826",      -- Default walk
-	Run = "rbxassetid://507767714",       -- Default run
-	Jump = "rbxassetid://507765000",      -- Default jump
-	Fall = "rbxassetid://507767968",      -- Default fall
-
-	-- Combat animations
-	MeleeAttack1 = "rbxassetid://522635514",  -- Slash animation
-	MeleeAttack2 = "rbxassetid://522638767",  -- Punch animation
-	RangedAttack = "rbxassetid://522639910",  -- Point/shoot animation
-
-	-- Reactions
-	Hit = "rbxassetid://507768133",       -- Getting hit
-	Death = "rbxassetid://507766951",     -- Death/ragdoll
+	Idle = "rbxassetid://507766388",
+	Walk = "rbxassetid://507777826",
+	Run = "rbxassetid://507767714",
+	Jump = "rbxassetid://507765000",
+	Fall = "rbxassetid://507767968",
+	MeleeAttack1 = "rbxassetid://522635514",
+	MeleeAttack2 = "rbxassetid://522638767",
+	RangedAttack = "rbxassetid://522639910",
+	Hit = "rbxassetid://507768133",
+	Death = "rbxassetid://507766951",
 }
 
 --[[
@@ -78,6 +140,9 @@ function AnimationController.new(humanoid, archetypeName)
 	self.currentAnimation = nil
 	self.currentTrack = nil
 
+	-- Get animation set for this archetype
+	self.animationSet = ArchetypeAnimations[archetypeName] or DefaultAnimations
+
 	-- Load all animations
 	self:loadAnimations()
 
@@ -85,8 +150,8 @@ function AnimationController.new(humanoid, archetypeName)
 end
 
 function AnimationController:loadAnimations()
-	-- Load animation tracks
-	for animName, animId in pairs(DefaultAnimations) do
+	-- Load animation tracks from archetype-specific set
+	for animName, animId in pairs(self.animationSet) do
 		local animation = Instance.new("Animation")
 		animation.AnimationId = animId
 		animation.Name = animName
@@ -97,8 +162,9 @@ function AnimationController:loadAnimations()
 
 		if success and track then
 			self.loadedAnimations[animName] = track
+			print(string.format("[AnimController] %s loaded: %s", self.archetypeName, animName))
 		else
-			warn("[AnimationController] Failed to load animation:", animName)
+			warn("[AnimationController] Failed to load animation:", animName, "for", self.archetypeName)
 		end
 	end
 
