@@ -467,6 +467,12 @@ function ViewmodelController:applyBob(deltaTime, movementState)
 	-- Calculate bob based on movement speed and time
 	local time = tick()
 	local amplitude = bobPattern.amplitude * math.min(speed / 16, 1)
+
+	-- Reduce bob amplitude when aiming down sights
+	if self.isAiming then
+		amplitude = amplitude * 0.3 -- 70% reduction in bob while ADS
+	end
+
 	local bobX = math.sin(time * bobPattern.frequency) * amplitude
 	local bobY = math.abs(math.cos(time * bobPattern.frequency * 2)) * amplitude * 0.5
 

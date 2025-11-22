@@ -92,6 +92,7 @@ local canFire = true
 -- ADS and combat state
 local isAiming = false
 local lastMeleeTime = 0
+local defaultWalkSpeed = humanoid.WalkSpeed -- Store original walk speed for ADS
 
 -- Spread bloom system
 local currentBloom = 0 -- Current bloom accumulation (degrees)
@@ -464,7 +465,16 @@ local function toggleADS(aimState)
 		viewmodel:setAiming(isAiming)
 	end
 
-	print(string.format("[ProjectileShooter] ADS: %s", isAiming and "ON" or "OFF"))
+	-- Reduce movement speed while aiming
+	if humanoid then
+		if isAiming then
+			humanoid.WalkSpeed = defaultWalkSpeed * 0.6 -- 40% slower when ADS
+		else
+			humanoid.WalkSpeed = defaultWalkSpeed -- Restore normal speed
+		end
+	end
+
+	print(string.format("[ProjectileShooter] ADS: %s | WalkSpeed: %.1f", isAiming and "ON" or "OFF", humanoid.WalkSpeed))
 end
 
 -- ============================================================
