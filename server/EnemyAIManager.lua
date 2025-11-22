@@ -704,9 +704,30 @@ function EnemyAI.new(enemyModel)
 	-- Configure humanoid
 	self.humanoid.WalkSpeed = self.archetype.moveSpeed
 
+	-- CRITICAL: Disable default Roblox Animate script to prevent animation conflicts
+	local animateScript = enemyModel:FindFirstChild("Animate")
+	if animateScript then
+		animateScript.Disabled = true
+		-- Also stop any running animation tracks from the old system
+		local animator = self.humanoid:FindFirstChildOfClass("Animator")
+		if animator then
+			for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+				track:Stop(0)
+			end
+		end
+		print(string.format("[EnemyAI] Disabled Animate script for %s", enemyModel.Name))
+	end
+
 	-- Create animation controller
 	self.animController = AnimationController.new(self.humanoid, self.archetypeName)
 	print(string.format("[EnemyAI] Created animation controller for %s", enemyModel.Name))
+
+	-- Hook into humanoid Running event for responsive movement animations
+	self.humanoid.Running:Connect(function(speed)
+		if self.currentState ~= AIStates.DEAD and self.currentState ~= AIStates.ATTACK then
+			self.animController:playMovement(speed)
+		end
+	end)
 
 	-- Give weapon to ranged enemies
 	local isRangedEnemy = (self.archetypeName == "Ranged" or self.archetypeName == "Sniper" or self.archetypeName == "Flanker")
