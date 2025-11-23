@@ -14,6 +14,7 @@ Last Updated: 2025-11-22
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Debris = game:GetService("Debris")
+local HttpService = game:GetService("HttpService")
 
 print("[WeaponDrop] Initializing...")
 
@@ -73,13 +74,14 @@ local function createDroppedWeaponModel(weaponData, position)
 	-- Position the model
 	droppedModel:PivotTo(CFrame.new(position) * CFrame.Angles(0, math.rad(math.random(0, 360)), 0))
 
-	-- Store weapon data as attributes
+	-- Store complete weapon data as JSON to preserve EVERYTHING
+	local weaponDataJSON = HttpService:JSONEncode(weaponData)
+	droppedModel:SetAttribute("WeaponDataJSON", weaponDataJSON)
+
+	-- Store basic attributes for display (used by proximity prompt)
 	droppedModel:SetAttribute("WeaponName", weaponData.Name)
-	droppedModel:SetAttribute("WeaponType", weaponData.Parts.Base.Name)
 	droppedModel:SetAttribute("Level", weaponData.Level)
 	droppedModel:SetAttribute("Rarity", weaponData.Rarity)
-	droppedModel:SetAttribute("Damage", weaponData.Damage)
-	droppedModel:SetAttribute("DPS", weaponData.DPS)
 
 	-- Create proximity prompt
 	local prompt = Instance.new("ProximityPrompt")
@@ -192,15 +194,7 @@ local function dropWeapon(player, tool)
 	-- Handle pickup
 	prompt.Triggered:Connect(function(triggeringPlayer)
 		if not droppedModel.Parent then return end
-
-		pickupWeapon(triggeringPlayer, droppedModel, {
-			Name = droppedModel:GetAttribute("WeaponName"),
-			WeaponType = droppedModel:GetAttribute("WeaponType"),
-			Level = droppedModel:GetAttribute("Level"),
-			Rarity = droppedModel:GetAttribute("Rarity"),
-			Damage = droppedModel:GetAttribute("Damage"),
-			DPS = droppedModel:GetAttribute("DPS"),
-		})
+		pickupWeapon(triggeringPlayer, droppedModel)
 	end)
 
 	-- Get inventory and try to unequip from slot (if tracked in inventory system)
@@ -231,27 +225,33 @@ end
 -- PICKUP WEAPON
 -- ════════════════════════════════════════════════════════════════════════════
 
-function pickupWeapon(player, droppedModel, weaponData)
+function pickupWeapon(player, droppedModel)
 	if not droppedModel or not droppedModel.Parent then return end
 	if not player or not player.Parent then return end
 
-	-- Reconstruct full weapon data (droppedModel only has basic attributes)
-	local fullWeaponData = WeaponGenerator:GenerateWeapon(
-		weaponData.Level,
-		weaponData.WeaponType,
-		weaponData.Rarity
-	)
+	-- Restore exact weapon data from JSON
+	local weaponDataJSON = droppedModel:GetAttribute("WeaponDataJSON")
 
-	-- Copy over exact stats from dropped weapon to preserve it
-	fullWeaponData.Name = weaponData.Name
-	fullWeaponData.Damage = weaponData.Damage
-	fullWeaponData.DPS = weaponData.DPS
+	if not weaponDataJSON then
+		warn("[WeaponDrop] No weapon data found on dropped model!")
+		return
+	end
 
-	-- Give weapon to player
-	local success = WeaponToolBuilder:GiveWeaponToPlayer(player, fullWeaponData, true)
+	-- Decode JSON to get exact original weapon data
+	local success, weaponData = pcall(function()
+		return HttpService:JSONDecode(weaponDataJSON)
+	end)
 
-	if success then
-		print(string.format("[WeaponDrop] %s picked up %s", player.Name, fullWeaponData.Name))
+	if not success or not weaponData then
+		warn("[WeaponDrop] Failed to decode weapon data:", weaponData)
+		return
+	end
+
+	-- Give the EXACT same weapon back to player
+	local giveSuccess = WeaponToolBuilder:GiveWeaponToPlayer(player, weaponData, true)
+
+	if giveSuccess then
+		print(string.format("[WeaponDrop] %s picked up %s (exact same weapon)", player.Name, weaponData.Name))
 
 		-- Destroy dropped model
 		droppedModel:Destroy()
