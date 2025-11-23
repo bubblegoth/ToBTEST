@@ -49,6 +49,13 @@ local function dropCurrentWeapon()
 		return
 	end
 
+	-- CRITICAL: Request ProjectileShooter to save current ammo to tool BEFORE dropping
+	-- This ensures the server reads the correct ammo when GetWeaponDataFromTool() is called
+	if _G.ProjectileShooter_SaveAmmo then
+		_G.ProjectileShooter_SaveAmmo()
+		print("[WeaponDropClient] Requested ammo save before drop")
+	end
+
 	print("[WeaponDropClient] Dropping weapon:", equippedTool.Name)
 
 	-- Send drop request to server
