@@ -16,6 +16,7 @@ local WeaponToolBuilder = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local WeaponModelBuilder = require(script.Parent.WeaponModelBuilder)
 local WeaponParts = require(script.Parent.WeaponParts)
+local PlayerInventory = require(script.Parent.PlayerInventory)
 
 -- ============================================================
 -- TOOL CREATION
@@ -190,6 +191,33 @@ function WeaponToolBuilder:GiveWeaponToPlayer(player, weaponData, autoEquip)
 	end
 
 	tool.Parent = backpack
+
+	-- Register weapon in PlayerInventory system for BackpackUI tracking
+	local inventory = PlayerInventory.GetInventory(player)
+	if inventory then
+		-- Find first empty slot
+		local emptySlot = nil
+		for slot = 1, 4 do
+			if not inventory:GetEquippedWeapon(slot) then
+				emptySlot = slot
+				break
+			end
+		end
+
+		if emptySlot then
+			-- Register weapon in inventory slot
+			local success = inventory:EquipWeaponToSlot(emptySlot, weaponData)
+			if success then
+				inventory.EquippedWeaponTool = tool
+				inventory.CurrentWeaponSlot = emptySlot
+				print(string.format("[WeaponToolBuilder] Registered %s in inventory slot %d", weaponData.Name, emptySlot))
+			end
+		else
+			warn("[WeaponToolBuilder] All inventory slots full - weapon not registered in inventory")
+		end
+	else
+		warn("[WeaponToolBuilder] No inventory found for", player.Name)
+	end
 
 	-- Auto-equip if requested
 	if autoEquip then
