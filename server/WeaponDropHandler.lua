@@ -163,29 +163,6 @@ local function dropWeapon(player, tool)
 		return false
 	end
 
-	-- Get inventory and remove weapon data from current equipped slot
-	local inventory = PlayerInventory.GetInventory(player)
-	local currentSlot = inventory.CurrentWeaponSlot
-	local currentWeaponData = inventory:GetEquippedWeapon(currentSlot)
-
-	if not currentWeaponData then
-		warn("[WeaponDrop] No weapon equipped in current slot")
-		return false
-	end
-
-	-- Unequip weapon from inventory slot (removes from Inventory, NOT from Backpack)
-	local unequippedData = inventory:UnequipWeaponFromSlot(currentSlot)
-
-	if not unequippedData then
-		warn("[WeaponDrop] Failed to unequip weapon from slot")
-		return false
-	end
-
-	-- Clear equipped tool reference
-	if inventory.EquippedWeaponTool == tool then
-		inventory.EquippedWeaponTool = nil
-	end
-
 	local character = player.Character
 	if not character then return false end
 
@@ -195,14 +172,58 @@ local function dropWeapon(player, tool)
 	-- Calculate drop position (in front of player)
 	local dropPosition = rootPart.Position + (rootPart.CFrame.LookVector * Config.DropDistance)
 
-	-- Use ModularLootGen to spawn the dropped weapon (includes tap/hold pickup mechanics)
-	ModularLootGen:SpawnWeaponLoot(dropPosition, weaponData.Level, weaponData.Rarity)
+	-- Create the dropped weapon model with proximity prompt
+	local droppedModel, prompt = createDroppedWeaponModel(weaponData, dropPosition)
+
+	if not droppedModel then
+		warn("[WeaponDrop] Failed to create dropped weapon model")
+		return false
+	end
+
+	-- Parent to workspace
+	droppedModel.Parent = workspace
+
+	-- Start floating animation
+	animateDroppedWeapon(droppedModel)
+
+	-- Auto-cleanup after lifetime
+	game:GetService("Debris"):AddItem(droppedModel, Config.DropLifetime)
+
+	-- Handle pickup
+	prompt.Triggered:Connect(function(triggeringPlayer)
+		if triggeringPlayer == player or not droppedModel.Parent then return end
+
+		pickupWeapon(triggeringPlayer, droppedModel, {
+			Name = droppedModel:GetAttribute("WeaponName"),
+			WeaponType = droppedModel:GetAttribute("WeaponType"),
+			Level = droppedModel:GetAttribute("Level"),
+			Rarity = droppedModel:GetAttribute("Rarity"),
+			Damage = droppedModel:GetAttribute("Damage"),
+			DPS = droppedModel:GetAttribute("DPS"),
+		})
+	end)
+
+	-- Get inventory and try to unequip from slot (if tracked in inventory system)
+	local inventory = PlayerInventory.GetInventory(player)
+	if inventory then
+		local currentSlot = inventory.CurrentWeaponSlot
+		local currentWeaponData = inventory:GetEquippedWeapon(currentSlot)
+
+		-- Only unequip from slot if weapon is registered there
+		if currentWeaponData then
+			inventory:UnequipWeaponFromSlot(currentSlot)
+		end
+
+		-- Clear equipped tool reference
+		if inventory.EquippedWeaponTool == tool then
+			inventory.EquippedWeaponTool = nil
+		end
+	end
 
 	-- Destroy the original tool
 	tool:Destroy()
 
-	print(string.format("[WeaponDrop] %s dropped %s (unequipped from inventory slot %d)",
-		player.Name, weaponData.Name, currentSlot))
+	print(string.format("[WeaponDrop] %s dropped %s", player.Name, weaponData.Name))
 	return true
 end
 
