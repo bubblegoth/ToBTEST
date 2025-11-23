@@ -565,6 +565,10 @@ local function fireWeapon()
 	-- Consume ammo
 	if not Config.InfiniteAmmo then
 		ammoInMag = ammoInMag - 1
+		-- Update tool attribute so ammo persists when dropped
+		if currentWeapon then
+			currentWeapon:SetAttribute("CurrentAmmo", ammoInMag)
+		end
 		updateAmmoDisplay()
 	end
 
@@ -637,6 +641,11 @@ function reload()
 	ammoInMag = ammoInMag + ammoToAdd
 	ammoPool = ammoPool - ammoToAdd
 
+	-- Update tool attribute so ammo persists when dropped
+	if currentWeapon then
+		currentWeapon:SetAttribute("CurrentAmmo", ammoInMag)
+	end
+
 	isReloading = false
 	canFire = true
 
@@ -651,7 +660,17 @@ end
 local function onWeaponEquipped(tool)
 	currentWeapon = tool
 	weaponStats = getWeaponStats(tool)
-	ammoInMag = weaponStats.Capacity
+
+	-- Read current ammo from tool attribute (preserves ammo when picking up dropped weapons)
+	local savedAmmo = tool:GetAttribute("CurrentAmmo")
+	if savedAmmo and savedAmmo > 0 then
+		ammoInMag = savedAmmo
+		print(string.format("[ProjectileShooter] Restored ammo from tool: %d", ammoInMag))
+	else
+		-- New weapon or no saved ammo - start with full magazine
+		ammoInMag = weaponStats.Capacity
+	end
+
 	isReloading = false
 	canFire = true
 	lastFireTime = 0
@@ -674,6 +693,12 @@ local function onWeaponEquipped(tool)
 end
 
 local function onWeaponUnequipped()
+	-- Save current ammo to tool attribute before unequipping
+	if currentWeapon then
+		currentWeapon:SetAttribute("CurrentAmmo", ammoInMag)
+		print(string.format("[ProjectileShooter] Saved ammo to tool: %d", ammoInMag))
+	end
+
 	currentWeapon = nil
 	weaponStats = {}
 	canFire = false
