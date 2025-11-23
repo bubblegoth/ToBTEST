@@ -19,13 +19,9 @@ local character = player.Character or player.CharacterAdded:Wait()
 
 print("[WeaponDropClient] Initializing...")
 
--- Wait for drop event
-local dropEvent = ReplicatedStorage:WaitForChild("DropWeapon", 10)
-
-if not dropEvent then
-	warn("[WeaponDropClient] DropWeapon RemoteEvent not found!")
-	return
-end
+-- Wait for drop event (no timeout - wait indefinitely)
+local dropEvent = ReplicatedStorage:WaitForChild("DropWeapon")
+print("[WeaponDropClient] Found DropWeapon RemoteEvent")
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- DROP WEAPON FUNCTION
