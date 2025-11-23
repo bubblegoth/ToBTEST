@@ -59,8 +59,14 @@ end
 -- INPUT HANDLING
 -- ════════════════════════════════════════════════════════════════════════════
 
+local function isAnyGUIOpen()
+	-- Check if BackpackUI or SoulVendorGUI is open
+	return (_G.BackpackUIOpen == true) or (_G.SoulVendorGUIOpen == true)
+end
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
+	if isAnyGUIOpen() then return end  -- Don't drop weapon if GUI is open
 
 	-- Q key to drop weapon
 	if input.KeyCode == Enum.KeyCode.Q then

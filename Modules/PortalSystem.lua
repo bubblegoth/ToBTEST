@@ -159,7 +159,9 @@ function PortalSystem:CreateFloorPortals(dungeonModel, currentFloor, spawnPositi
 	-- Exit portal (goes to next floor) - place at furthest point from spawn
 	local exitPos = self:FindFurthestSpawn(spawnsFolder, spawnPosition)
 	if exitPos then
-		local exitPortal = self:CreatePortal(exitPos, "Exit", currentFloor + 1, dungeonModel)
+		-- Raise portal above ground so it's more visible and accessible
+		local raisedPos = exitPos + Vector3.new(0, 5, 0)
+		local exitPortal = self:CreatePortal(raisedPos, "Exit", currentFloor + 1, dungeonModel)
 		return entrancePortal, exitPortal
 	end
 
@@ -282,16 +284,24 @@ function PortalSystem:UsePortal(player, targetFloor, portalType)
 	-- Mark cooldown
 	PlayerCooldowns[player.UserId] = tick()
 
-	-- Play portal effect on player (client-side visual)
-	self:PlayPortalTransition(player)
+	-- ProximityPrompt.Triggered fires on server, so we're already on server
+	-- Call DungeonInstanceManager directly to teleport player
+	if RunService:IsServer() then
+		local DungeonInstanceManager = require(ReplicatedStorage.Modules.DungeonInstanceManager)
+		local success = DungeonInstanceManager.TeleportToFloor(player, targetFloor)
 
-	-- Request server to teleport player (server handles dungeon generation and teleportation)
-	local portalTeleportEvent = ReplicatedStorage:WaitForChild("PortalTeleport", 5)
-	if portalTeleportEvent then
-		portalTeleportEvent:FireServer(targetFloor, portalType)
-		print("[PortalSystem] Sent teleport request to server")
+		if not success then
+			warn("[PortalSystem] Failed to teleport", player.Name, "to floor", targetFloor)
+		end
 	else
-		warn("[PortalSystem] PortalTeleport RemoteEvent not found!")
+		-- If somehow called from client, use RemoteEvent
+		local portalTeleportEvent = ReplicatedStorage:WaitForChild("PortalTeleport", 5)
+		if portalTeleportEvent then
+			portalTeleportEvent:FireServer(targetFloor, portalType)
+			print("[PortalSystem] Sent teleport request to server")
+		else
+			warn("[PortalSystem] PortalTeleport RemoteEvent not found!")
+		end
 	end
 end
 
