@@ -191,7 +191,7 @@ local function dropWeapon(player, tool)
 
 	-- Handle pickup
 	prompt.Triggered:Connect(function(triggeringPlayer)
-		if triggeringPlayer == player or not droppedModel.Parent then return end
+		if not droppedModel.Parent then return end
 
 		pickupWeapon(triggeringPlayer, droppedModel, {
 			Name = droppedModel:GetAttribute("WeaponName"),

@@ -677,6 +677,11 @@ local function onWeaponUnequipped()
 	currentWeapon = nil
 	weaponStats = {}
 	canFire = false
+	ammoInMag = 0
+	ammoPool = 0
+
+	-- Update HUD to show no weapon equipped
+	updateAmmoDisplay()
 
 	print("[ProjectileShooter] Weapon unequipped")
 end
