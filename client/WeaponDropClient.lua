@@ -69,11 +69,17 @@ local function isAnyGUIOpen()
 end
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	-- DEBUG: Log Q key presses to diagnose issues
+	if input.KeyCode == Enum.KeyCode.Q then
+		print("[WeaponDropClient] Q pressed - gameProcessed:", gameProcessed, "GUI open:", isAnyGUIOpen())
+	end
+
 	if gameProcessed then return end
 	if isAnyGUIOpen() then return end  -- Don't drop weapon if GUI is open
 
 	-- Q key to drop weapon
 	if input.KeyCode == Enum.KeyCode.Q then
+		print("[WeaponDropClient] Attempting to drop weapon...")
 		dropCurrentWeapon()
 	end
 end)
