@@ -49,17 +49,18 @@ local function dropCurrentWeapon()
 		return
 	end
 
-	-- CRITICAL: Request ProjectileShooter to save current ammo to tool BEFORE dropping
-	-- This ensures the server reads the correct ammo when GetWeaponDataFromTool() is called
-	if _G.ProjectileShooter_SaveAmmo then
-		_G.ProjectileShooter_SaveAmmo()
-		print("[WeaponDropClient] Requested ammo save before drop")
+	-- CRITICAL: Get current ammo from ProjectileShooter and send it to server
+	-- This avoids attribute replication lag issues
+	local currentAmmo = nil
+	if _G.ProjectileShooter_GetCurrentAmmo then
+		currentAmmo = _G.ProjectileShooter_GetCurrentAmmo()
+		print("[WeaponDropClient] Got current ammo:", currentAmmo)
 	end
 
 	print("[WeaponDropClient] Dropping weapon:", equippedTool.Name)
 
-	-- Send drop request to server
-	dropEvent:FireServer(equippedTool)
+	-- Send drop request to server with current ammo
+	dropEvent:FireServer(equippedTool, currentAmmo)
 end
 
 -- ════════════════════════════════════════════════════════════════════════════

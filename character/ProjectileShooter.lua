@@ -44,14 +44,13 @@ _G.ProjectileShooterCleanup = function()
 	_G.ProjectileShooterActive = false
 end
 
--- Export function to save current ammo to tool (called before dropping weapon)
-_G.ProjectileShooter_SaveAmmo = function()
+-- Export function to get current ammo (called before dropping weapon)
+_G.ProjectileShooter_GetCurrentAmmo = function()
 	if currentWeapon and ammoInMag then
-		currentWeapon:SetAttribute("CurrentAmmo", ammoInMag)
-		print(string.format("[ProjectileShooter] Saved ammo to tool (on demand): %d", ammoInMag))
-		return true
+		print(string.format("[ProjectileShooter] Returning current ammo: %d", ammoInMag))
+		return ammoInMag
 	end
-	return false
+	return nil
 end
 
 -- Clean up when character is destroyed

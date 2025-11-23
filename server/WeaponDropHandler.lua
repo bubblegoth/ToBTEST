@@ -151,10 +151,17 @@ end
 -- DROP WEAPON
 -- ════════════════════════════════════════════════════════════════════════════
 
-local function dropWeapon(player, tool)
+local function dropWeapon(player, tool, currentAmmo)
 	if not tool or not tool:IsA("Tool") then
 		warn("[WeaponDrop] Invalid tool provided")
 		return false
+	end
+
+	-- If client sent current ammo, update tool attribute before reading weapon data
+	-- This bypasses attribute replication lag
+	if currentAmmo then
+		tool:SetAttribute("CurrentAmmo", currentAmmo)
+		print(string.format("[WeaponDrop] Using client-provided ammo: %d", currentAmmo))
 	end
 
 	-- Get weapon data from tool
@@ -277,13 +284,13 @@ local dropEvent = Instance.new("RemoteEvent")
 dropEvent.Name = "DropWeapon"
 dropEvent.Parent = ReplicatedStorage
 
-dropEvent.OnServerEvent:Connect(function(player, tool)
+dropEvent.OnServerEvent:Connect(function(player, tool, currentAmmo)
 	if not tool or tool.Parent ~= player.Character then
 		warn("[WeaponDrop] Invalid drop request from", player.Name)
 		return
 	end
 
-	dropWeapon(player, tool)
+	dropWeapon(player, tool, currentAmmo)
 end)
 
 print("[WeaponDrop] ═══════════════════════════════════════")
