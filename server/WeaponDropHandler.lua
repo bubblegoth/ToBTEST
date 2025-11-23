@@ -165,6 +165,10 @@ local function dropWeapon(player, tool)
 		return false
 	end
 
+	-- DEBUG: Log current ammo being saved
+	print(string.format("[WeaponDrop] Dropping weapon - CurrentAmmo: %s, Capacity: %s",
+		tostring(weaponData.CurrentAmmo), tostring(weaponData.Capacity)))
+
 	local character = player.Character
 	if not character then return false end
 
@@ -246,6 +250,10 @@ function pickupWeapon(player, droppedModel)
 		warn("[WeaponDrop] Failed to decode weapon data:", weaponData)
 		return
 	end
+
+	-- DEBUG: Log ammo being restored
+	print(string.format("[WeaponDrop] Picking up weapon - CurrentAmmo from JSON: %s, Capacity: %s",
+		tostring(weaponData.CurrentAmmo), tostring(weaponData.Capacity)))
 
 	-- Give the EXACT same weapon back to player
 	local giveSuccess = WeaponToolBuilder:GiveWeaponToPlayer(player, weaponData, true)

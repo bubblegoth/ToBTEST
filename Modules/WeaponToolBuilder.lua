@@ -89,7 +89,13 @@ function WeaponToolBuilder:CreateWeaponTool(weaponData)
 	tool:SetAttribute("Damage", weaponData.Damage)
 	tool:SetAttribute("FireRate", weaponData.FireRate)
 	tool:SetAttribute("Capacity", weaponData.Capacity)
-	tool:SetAttribute("CurrentAmmo", weaponData.CurrentAmmo or weaponData.Capacity) -- Initialize with full mag
+
+	-- Set CurrentAmmo - use provided value or default to full capacity
+	local currentAmmo = weaponData.CurrentAmmo or weaponData.Capacity
+	tool:SetAttribute("CurrentAmmo", currentAmmo)
+	print(string.format("[WeaponToolBuilder] CreateWeaponTool - Setting CurrentAmmo: %s (from weaponData.CurrentAmmo: %s, Capacity: %s)",
+		tostring(currentAmmo), tostring(weaponData.CurrentAmmo), tostring(weaponData.Capacity)))
+
 	tool:SetAttribute("Accuracy", weaponData.Accuracy)
 	-- NOTE: Spread is calculated from Accuracy using BL2 formula: (100 - Accuracy) / 12
 	tool:SetAttribute("Range", weaponData.Range)
@@ -285,6 +291,13 @@ function WeaponToolBuilder:GetWeaponDataFromTool(tool)
 		Accessory = findPart(WeaponParts.Accessories, tool:GetAttribute("Part_Accessory")),
 	}
 
+	local currentAmmo = tool:GetAttribute("CurrentAmmo")
+	local capacity = tool:GetAttribute("Capacity")
+
+	-- DEBUG: Log what ammo we're reading from the tool
+	print(string.format("[WeaponToolBuilder] GetWeaponDataFromTool - Reading CurrentAmmo: %s, Capacity: %s from tool %s",
+		tostring(currentAmmo), tostring(capacity), tool.Name))
+
 	local weaponData = {
 		Name = tool.Name,
 		Level = tool:GetAttribute("Level"),
@@ -293,8 +306,8 @@ function WeaponToolBuilder:GetWeaponDataFromTool(tool)
 		Manufacturer = tool:GetAttribute("Manufacturer"),
 		Damage = tool:GetAttribute("Damage"),
 		FireRate = tool:GetAttribute("FireRate"),
-		Capacity = tool:GetAttribute("Capacity"),
-		CurrentAmmo = tool:GetAttribute("CurrentAmmo"), -- Preserve current ammo when dropping/picking up
+		Capacity = capacity,
+		CurrentAmmo = currentAmmo, -- Preserve current ammo when dropping/picking up
 		Accuracy = tool:GetAttribute("Accuracy"),
 		-- Spread is calculated from Accuracy using BL2 formula, not stored
 		Range = tool:GetAttribute("Range"),
