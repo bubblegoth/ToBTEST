@@ -18,13 +18,25 @@ local HttpService = game:GetService("HttpService")
 
 print("[WeaponDrop] Initializing...")
 
--- Load modules
+-- Load modules with error handling
 local Modules = ReplicatedStorage:WaitForChild("Modules")
-local WeaponGenerator = require(Modules:WaitForChild("WeaponGenerator"))
-local WeaponToolBuilder = require(Modules:WaitForChild("WeaponToolBuilder"))
-local WeaponModelBuilder = require(Modules:WaitForChild("WeaponModelBuilder"))
-local PlayerInventory = require(Modules:WaitForChild("PlayerInventory"))
-local ModularLootGen = require(Modules:WaitForChild("ModularLootGen"))
+
+local success, WeaponGenerator = pcall(function() return require(Modules:WaitForChild("WeaponGenerator")) end)
+if not success then warn("[WeaponDrop] Failed to load WeaponGenerator:", WeaponGenerator) return end
+
+local success2, WeaponToolBuilder = pcall(function() return require(Modules:WaitForChild("WeaponToolBuilder")) end)
+if not success2 then warn("[WeaponDrop] Failed to load WeaponToolBuilder:", WeaponToolBuilder) return end
+
+local success3, WeaponModelBuilder = pcall(function() return require(Modules:WaitForChild("WeaponModelBuilder")) end)
+if not success3 then warn("[WeaponDrop] Failed to load WeaponModelBuilder:", WeaponModelBuilder) return end
+
+local success4, PlayerInventory = pcall(function() return require(Modules:WaitForChild("PlayerInventory")) end)
+if not success4 then warn("[WeaponDrop] Failed to load PlayerInventory:", PlayerInventory) return end
+
+local success5, ModularLootGen = pcall(function() return require(Modules:WaitForChild("ModularLootGen")) end)
+if not success5 then warn("[WeaponDrop] Failed to load ModularLootGen:", ModularLootGen) return end
+
+print("[WeaponDrop] All modules loaded successfully")
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- CONFIG
