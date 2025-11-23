@@ -302,6 +302,7 @@ function WeaponToolBuilder:GetWeaponDataFromTool(tool)
 		Name = tool.Name,
 		Level = tool:GetAttribute("Level"),
 		Rarity = tool:GetAttribute("Rarity"),
+		Type = tool:GetAttribute("WeaponType"), -- For WeaponCard display
 		WeaponType = tool:GetAttribute("WeaponType"),
 		Manufacturer = tool:GetAttribute("Manufacturer"),
 		Damage = tool:GetAttribute("Damage"),
