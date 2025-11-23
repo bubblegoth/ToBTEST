@@ -28,6 +28,7 @@ local WeaponCard = require(Modules:WaitForChild("WeaponCard"))
 local ShieldCard = require(Modules:WaitForChild("ShieldCard"))
 local PlayerInventory = require(Modules:WaitForChild("PlayerInventory"))
 local DragController = require(Modules:WaitForChild("DragController"))
+local WeaponToolBuilder = require(Modules:WaitForChild("WeaponToolBuilder"))
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- UI CREATION
@@ -347,12 +348,88 @@ local function handleDrop(draggedItemData, dropTarget)
 end
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- WEAPON MIGRATION
+-- ════════════════════════════════════════════════════════════════════════════
+
+--[[
+	Migrates equipped weapons that aren't registered in PlayerInventory yet.
+	This handles weapons that were given before the WeaponToolBuilder registration fix.
+]]
+local function migrateEquippedWeapons(inventory)
+	if not inventory then return end
+
+	-- Check if any weapon slot is already registered
+	local hasRegisteredWeapon = false
+	for slot = 1, 4 do
+		if inventory:GetEquippedWeapon(slot) then
+			hasRegisteredWeapon = true
+			break
+		end
+	end
+
+	-- If we already have registered weapons, no need to migrate
+	if hasRegisteredWeapon then return end
+
+	local character = player.Character
+	if not character then return end
+
+	-- Look for equipped weapon tools in character
+	for _, child in pairs(character:GetChildren()) do
+		if child:IsA("Tool") and child:GetAttribute("UniqueID") then
+			-- This is a weapon tool - migrate it
+			local weaponData = WeaponToolBuilder:GetWeaponDataFromTool(child)
+			if weaponData then
+				-- Find first empty slot
+				for slot = 1, 4 do
+					if not inventory:GetEquippedWeapon(slot) then
+						local success = inventory:EquipWeaponToSlot(slot, weaponData)
+						if success then
+							inventory.EquippedWeaponTool = child
+							inventory.CurrentWeaponSlot = slot
+							print("[BackpackUI] ✓ Migrated equipped weapon to slot", slot, "-", weaponData.Name)
+						end
+						break
+					end
+				end
+			end
+			break -- Only migrate one weapon at a time
+		end
+	end
+
+	-- Also check backpack for unequipped weapons
+	local backpack = player:FindFirstChild("Backpack")
+	if backpack then
+		for _, child in pairs(backpack:GetChildren()) do
+			if child:IsA("Tool") and child:GetAttribute("UniqueID") then
+				-- This is a weapon tool in backpack - migrate it
+				local weaponData = WeaponToolBuilder:GetWeaponDataFromTool(child)
+				if weaponData then
+					-- Find first empty slot
+					for slot = 1, 4 do
+						if not inventory:GetEquippedWeapon(slot) then
+							local success = inventory:EquipWeaponToSlot(slot, weaponData)
+							if success then
+								print("[BackpackUI] ✓ Migrated backpack weapon to slot", slot, "-", weaponData.Name)
+							end
+							break
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- UPDATE DISPLAY
 -- ════════════════════════════════════════════════════════════════════════════
 
 local function updateDisplay(screenGui)
 	local inventory = PlayerInventory.GetInventory(player)
 	local mainFrame = screenGui.Overlay.MainFrame
+
+	-- Migrate any equipped weapons that aren't registered yet
+	migrateEquippedWeapons(inventory)
 
 	-- ═══════════════════════════════════════════════════════════════════════
 	-- UPDATE INVENTORY (EQUIPPED) SECTION
