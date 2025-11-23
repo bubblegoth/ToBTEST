@@ -294,6 +294,7 @@ function WeaponToolBuilder:GetWeaponDataFromTool(tool)
 		Damage = tool:GetAttribute("Damage"),
 		FireRate = tool:GetAttribute("FireRate"),
 		Capacity = tool:GetAttribute("Capacity"),
+		CurrentAmmo = tool:GetAttribute("CurrentAmmo"), -- Preserve current ammo when dropping/picking up
 		Accuracy = tool:GetAttribute("Accuracy"),
 		-- Spread is calculated from Accuracy using BL2 formula, not stored
 		Range = tool:GetAttribute("Range"),

@@ -847,38 +847,18 @@ local function toggleBackpack()
 	_G.BackpackUIOpen = isOpen  -- Update global flag
 
 	if isOpen then
-		updateDisplay(backpackUI)
+		-- CRITICAL: Unlock mouse/camera FIRST before any other operations
+		print("[BackpackUI] Unlocking mouse and camera")
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		UserInputService.MouseIconEnabled = true
+		Camera.CameraType = Enum.CameraType.Custom
+		player.CameraMode = Enum.CameraMode.Classic
 
-		-- Hide gameplay HUD for cleaner interface
-		if _G.DarkestHUD then
-			_G.DarkestHUD.Enabled = false
-		end
-
-		print("[BackpackUI] Setting up mouse/camera unlock")
-		-- Unlock mouse and camera for GUI interaction
-		local function forceUnlock()
-			-- CRITICAL: Unlock mouse for GUI interaction
-			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-			UserInputService.MouseIconEnabled = true
-
-			-- Unlock camera
-			Camera.CameraType = Enum.CameraType.Custom
-			player.CameraMode = Enum.CameraMode.Classic
-		end
-
-		-- Force unlock immediately (multiple times to ensure it takes)
-		forceUnlock()
-		task.wait()
-		forceUnlock()
-		task.wait()
-		forceUnlock()
-
-		-- Continuously enforce unlock while GUI is open (in case something tries to re-lock)
+		-- Set up continuous enforcement to prevent re-locking
 		if unlockConnection then
 			unlockConnection:Disconnect()
 		end
 
-		-- Use Heartbeat for reliable execution
 		unlockConnection = RunService.Heartbeat:Connect(function()
 			if isOpen and backpackUI.Overlay.Visible then
 				-- Re-enforce unlock every frame
@@ -887,9 +867,19 @@ local function toggleBackpack()
 			end
 		end)
 
+		-- Hide gameplay HUD for cleaner interface
+		if _G.DarkestHUD then
+			_G.DarkestHUD.Enabled = false
+		end
+
+		-- Update display AFTER mouse is unlocked
+		updateDisplay(backpackUI)
+
 		print("[BackpackUI] ✓ Backpack opened - mouse unlocked, GUI visible")
 		print("  Camera.CameraType:", Camera.CameraType)
 		print("  Player.CameraMode:", player.CameraMode)
+		print("  MouseBehavior:", UserInputService.MouseBehavior)
+		print("  MouseIconEnabled:", UserInputService.MouseIconEnabled)
 	else
 		-- Close: restore FPS mouse lock
 		if unlockConnection then
